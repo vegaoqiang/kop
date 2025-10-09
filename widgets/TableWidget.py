@@ -172,7 +172,7 @@ class Table(ListView):
     DEFAULT_CSS = """
         Table {
           height: auto;
-          width: 1fr;
+          # width: 1fr;
           & > TableRow {
               height: 1;
               overflow: hidden hidden;
