@@ -11,7 +11,7 @@ from textual.widgets import Button
 from textual.message import Message
 
 from lib.kube.client import KubeClient
-
+from kubernetes.client.models import V1PodList
 
 from types import SimpleNamespace
 
@@ -98,12 +98,12 @@ class SideMenu(ListView):
         data = KubeClient().list_pods()
 
         # 发出自定义事件，传递给 PodView 或父组件
-        self.post_message(self.MenuDataReady(menu_id, data))
+        self.post_message(self.DataReady(menu_id, data))
 
     
-    class MenuDataReady(Message):
+    class DataReady(Message):
         """当某个菜单数据准备好时，从 SideMenu 发出的事件。"""
-        def __init__(self, menu_id: str, data: list[dict]):
+        def __init__(self, menu_id: str, data: V1PodList):
             super().__init__()
             self.menu_id = menu_id
             self.data = data

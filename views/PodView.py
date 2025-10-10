@@ -28,7 +28,7 @@ class PodView(Screen):
                 yield Table(id="table")
     
     
-    def on_side_menu_menu_data_ready(self, event: SideMenu.MenuDataReady) -> None:
+    def on_side_menu_data_ready(self, event: SideMenu.DataReady) -> None:
         table = self.query_one("#table")
         data: V1PodList = event.data
         self.log(f"Received data for menu_id={event.menu_id}: {data}")
