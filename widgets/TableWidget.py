@@ -2,7 +2,7 @@
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, ListItem, ListView, Button, Static
 from textual.containers import Horizontal
-
+from lib.kube.models import PodViewModel
 
 class NameCol(Static):
     
@@ -38,7 +38,7 @@ class RestartsCol(Static):
      DEFAULT_CSS = """
         RestartsCol {
           height: 1;
-          width: 5%;
+          width: 10%;
         }
       """
 
@@ -65,7 +65,7 @@ class QoSCol(Static):
      DEFAULT_CSS = """
         QoSCol {
           height: 1;
-          width: 5%;
+          width: 10%;
         }
       """
 
@@ -92,7 +92,7 @@ class ActiveCol(Static):
      DEFAULT_CSS = """
         ActiveCol {
           height: 1;
-          width: 20%;
+          width: 10%;
         }
       """
     
@@ -148,22 +148,22 @@ class TableRow(ListItem):
 
     """
 
-    def __init__(self, row_data: dict, *args, **kwargs):
+    def __init__(self, row_data: PodViewModel, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.row_data = row_data
 
 
     def compose(self) -> ComposeResult:
           with Horizontal():
-            yield  NameCol(self.row_data["Name"])
-            yield  NamespaceCol(self.row_data["Namespace"])
-            yield  ContainersCol(self.row_data["Containers"])
-            yield  RestartsCol(self.row_data["Restarts"])
-            yield  ControlledByCol(self.row_data["ControlledBy"])
-            yield  NodeCol(self.row_data["Node"])
-            yield  QoSCol(self.row_data["QoS"])
-            yield  AgeCol(self.row_data["Age"])
-            yield  StatusCol(self.row_data["Status"])
+            yield  NameCol(self.row_data.name)
+            yield  NamespaceCol(self.row_data.namespace)
+            yield  ContainersCol(self.row_data.containers)
+            yield  RestartsCol(self.row_data.restarts)
+            yield  ControlledByCol(self.row_data.controlled_by)
+            yield  NodeCol(self.row_data.node)
+            yield  QoSCol(self.row_data.qos)
+            yield  AgeCol(self.row_data.age)
+            yield  StatusCol(self.row_data.status)
             yield  ActiveGroup()
 
 
@@ -200,30 +200,30 @@ class Table(ListView):
         
     def compose(self) -> ComposeResult:
          yield TableHeader()
-         yield TableRow({
-            "Name": "redis-abc",
-            "Namespace": "cache",
-            "Containers": "2",
-            "Restarts": "1",
-            "ControlledBy": "StatefulSet",
-            "Node": "node-2",
-            "QoS": "Burstable",
-            "Age": "5h",
-            "Status": "Pending",
-            "Active": "No"
-        })
-         yield TableRow({
-            "Name": "redis-abc",
-            "Namespace": "cache",
-            "Containers": "2",
-            "Restarts": "1",
-            "ControlledBy": "StatefulSet",
-            "Node": "node-2",
-            "QoS": "Burstable",
-            "Age": "5h",
-            "Status": "Pending",
-            "Active": "No"
-        })
+        #  yield TableRow({
+        #     "Name": "redis-abc",
+        #     "Namespace": "cache",
+        #     "Containers": "2",
+        #     "Restarts": "1",
+        #     "ControlledBy": "StatefulSet",
+        #     "Node": "node-2",
+        #     "QoS": "Burstable",
+        #     "Age": "5h",
+        #     "Status": "Pending",
+        #     "Active": "No"
+        # })
+        #  yield TableRow({
+        #     "Name": "redis-abc",
+        #     "Namespace": "cache",
+        #     "Containers": "2",
+        #     "Restarts": "1",
+        #     "ControlledBy": "StatefulSet",
+        #     "Node": "node-2",
+        #     "QoS": "Burstable",
+        #     "Age": "5h",
+        #     "Status": "Pending",
+        #     "Active": "No"
+        # })
 
          
     

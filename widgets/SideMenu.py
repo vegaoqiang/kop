@@ -10,52 +10,10 @@ from textual import on
 from textual.widgets import Button
 from textual.message import Message
 
-# from kubernetes import client, config
+from lib.kube.client import KubeClient
 
-from dataclasses import dataclass
+
 from types import SimpleNamespace
-
-
-# @dataclass
-# class WOEKLOADS:
-#     pods: str = "Pods"
-#     deployments: str = "Deployments"
-#     daemonsets: str = "DaemonSets"
-#     statefulsets: str = "StatefulSets"
-#     jobs: str = "Jobs"
-#     cronjobs: str = "CronJobs"
-
-
-# @dataclass
-# class CONFIG:
-#     configmaps: str = "ConfigMaps"
-#     secrets: str = "Secrets"
-
-
-# @dataclass
-# class NETWORK:
-#     services: str = "Services"
-#     endpoints: str = "Endpoints"
-#     ingresses: str = "Ingresses"
-#     ingressclasses: str = "Ingress Classes"
-#     networkpolicies: str = "Network Policies"
-
-
-# @dataclass
-# class STORAGE:
-#     persistentvolumes: str = "Persistent Volumes"
-#     persistentvolumeclaims: str = "Persistent Volume Claims"
-#     storageclasses: str = "Storage Classes"
-
-
-# @dataclass
-# class ACCESS:
-#     serviceaccounts: str = "Service Accounts"
-#     roles: str = "Roles"
-#     rolebindings: str = "Role Bindings"
-#     clusterroles: str = "Cluster Roles"
-#     clusterrolebindings: str = "Cluster Role Bindings"
-
 
 
 WOEKLOADS_MENUS: List[SimpleNamespace] = [
@@ -112,56 +70,35 @@ class SideMenu(ListView):
            yield ListItem(TextRule("test"), disabled=True)
     
 
+    # def on_list_view_highlighted(self, event: ListView.Highlighted):
+    #     """当用户聚焦某个菜单项时触发"""
+    #     item: ListItem | None = event.item
+    #     self.log(item.id)
+    #     if not item.id:
+    #         return
+    #     menu_id = item.id
+
+    #     # 异步调用 Kubernetes API
+    #     self.run_worker(self.fetch_and_send_data(menu_id))
+        
+
     @on(ListView.Highlighted)
-    def handle_highlighted(self, event: ListView.Highlighted):
+    async def handle_highlighted(self, event: ListView.Highlighted):
         """当用户聚焦某个菜单项时触发"""
-        item = event.item
+        item: ListItem | None = event.item
+        self.log(item.id)
         if not item.id:
             return
         menu_id = item.id
 
-        self.log(item)
-
         # 异步调用 Kubernetes API
-        self.run_worker(self.fetch_and_send_data(menu_id))
+        self.run_worker(self.get_kube_data(menu_id))
 
-    async def fetch_and_send_data(self, menu_id: str):
-        """后台线程调用 Kubernetes API，然后发出事件"""
-        try:
-            config.load_kube_config()
-            v1 = client.CoreV1Api()
+    async def get_kube_data(self, menu_id: str):
+        data = KubeClient().list_pods()
 
-            if menu_id == "pods":
-                pods = v1.list_pod_for_all_namespaces(watch=False)
-                data = [
-                    {
-                        "name": p.metadata.name,
-                        "namespace": p.metadata.namespace,
-                        "node": p.spec.node_name or "",
-                        "status": p.status.phase or "",
-                    }
-                    for p in pods.items
-                ]
-
-            elif menu_id == "services":
-                services = v1.list_service_for_all_namespaces(watch=False)
-                data = [
-                    {
-                        "name": s.metadata.name,
-                        "namespace": s.metadata.namespace,
-                        "type": s.spec.type,
-                        "cluster_ip": s.spec.cluster_ip or "",
-                    }
-                    for s in services.items
-                ]
-            else:
-                data = []
-
-            # 发出自定义事件，传递给 PodView 或父组件
-            self.post_message(self.MenuDataReady(menu_id, data))
-
-        except Exception as e:
-            self.post_message(self.MenuDataReady(menu_id, [{"error": str(e)}]))
+        # 发出自定义事件，传递给 PodView 或父组件
+        self.post_message(self.MenuDataReady(menu_id, data))
 
     
     class MenuDataReady(Message):
