@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from kubernetes.client.models import V1Pod
 from datetime import datetime
 
+
 @dataclass
 class PodViewModel:
     name: str
@@ -46,6 +47,24 @@ class PodViewModel:
         if diff.total_seconds() >= 31536000:
             return f"{int(diff.total_seconds()) // 31536000}y"
         return "-"
+
+    class Meta:
+        """元信息，用于映射表头"""
+        Name = "name"
+        Namespace = "namespace"
+        Node = "node"
+        Status = "status"
+        Containers = "containers"
+        Restarts = "restarts"
+        ControlledBy = "controlled_by"
+        QoS = "qos"
+        Age = "age"
+
+    def get(self, key: str) -> str:
+        class_property = getattr(self.Meta, key, "")
+        if not class_property:
+            return ""
+        return getattr(self, class_property)
 
 
 @dataclass
