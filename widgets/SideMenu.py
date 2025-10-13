@@ -95,7 +95,7 @@ class SideMenu(ListView):
         self.run_worker(self.get_kube_data(menu_id))
 
     async def get_kube_data(self, menu_id: str):
-        data = KubeClient().list_pods()
+        data = KubeClient().get_resource(resource_type=menu_id)
 
         # 发出自定义事件，传递给 PodView 或父组件
         self.post_message(self.DataReady(menu_id, data))

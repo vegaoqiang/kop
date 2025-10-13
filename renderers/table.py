@@ -71,7 +71,7 @@ class TableRenderer(ListView):
         }
     """
     
-    def __init__(self, columns, data, model, resource_type: str, **kwargs) -> None:
+    def __init__(self, columns: list, data: list, model, resource_type: str, **kwargs) -> None:
         super().__init__(**kwargs)
         self.columns = columns
         self.data = data

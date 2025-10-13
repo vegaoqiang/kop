@@ -1,42 +1,36 @@
 from abc import ABC, abstractmethod
 from lib.resource.registry import ResourceRegistry
-from lib.kube.models import PodViewModel
+from lib.kube.models import PodViewModel, DepolymentViewModel
 from renderers.table import TableRenderer
 from typing import List
 
 
 class BaseFactory(ABC):
-    """所有资源工厂的抽象基类"""
+    """abstract base class for resource factories"""
 
     resource_type: str  # e.g. "pods"
 
     def __init_subclass__(cls, **kwargs):
-        """自动注册子类"""
+        """auto register subclass"""
         super().__init_subclass__(**kwargs)
         if cls.resource_type:
             ResourceRegistry.register_factory(cls.resource_type, cls)
 
     @abstractmethod
-    def fetch(self):
-        """从 Kubernetes 获取原始数据"""
-        raise NotImplementedError
-
-    @abstractmethod
     def clean(self, raw):
-        """清洗原始数据，返回 ViewModel 列表"""
+        """clean raw data into view models"""
         raise NotImplementedError
 
     @abstractmethod
     def create_renderer(self, data):
-        """创建渲染器实例"""
+        """create renderer from view models"""
         raise NotImplementedError
     
 
 class Podfacotry(BaseFactory):
+    """factory for pods"""
     resource_type = "pods"
 
-    def fetch(self):
-        pass
 
     def clean(self, raw) -> List[PodViewModel]:
         return [PodViewModel.clean(pod) for pod in raw.items]
@@ -49,3 +43,18 @@ class Podfacotry(BaseFactory):
             resource_type=self.resource_type
         )
     
+
+class DeploymentFactory(BaseFactory):
+    """factory for deployments"""
+    resource_type = "deployments"
+
+    def clean(self, raw) -> List[DepolymentViewModel]:
+        return [DepolymentViewModel.clean(dep) for dep in raw.items]
+    
+    def create_renderer(self, data) -> TableRenderer:
+        return TableRenderer(
+            columns=DepolymentViewModel.get_columns(),
+            data=self.clean(data),
+            model=DepolymentViewModel,
+            resource_type=self.resource_type
+        )
