@@ -39,8 +39,6 @@ class Podfacotry(BaseFactory):
         return TableRenderer(
             columns=PodViewModel.get_columns(),
             data=self.clean(data),
-            model=PodViewModel,
-            resource_type=self.resource_type
         )
     
 
@@ -54,7 +52,5 @@ class DeploymentFactory(BaseFactory):
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
             columns=DepolymentViewModel.get_columns(),
-            data=self.clean(data),
-            model=DepolymentViewModel,
-            resource_type=self.resource_type
+            data=self.clean(data)
         )

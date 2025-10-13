@@ -28,11 +28,10 @@ class BaseHeader(ListItem):
 
 class BaseRow(ListItem):
     
-    def __init__(self, row_data, columns, resource_type: str) -> None:
+    def __init__(self, row_data, columns) -> None:
         super().__init__()
         self.row_data = row_data
         self.columns = columns
-        self.resource_type = resource_type
 
     def compose(self) -> ComposeResult:
         # self.columns.pop()  # 移除最后一个 Actions 列，单独处理
@@ -71,14 +70,12 @@ class TableRenderer(ListView):
         }
     """
     
-    def __init__(self, columns: list, data: list, model, resource_type: str, **kwargs) -> None:
+    def __init__(self, columns: list, data: list, **kwargs) -> None:
         super().__init__(**kwargs)
         self.columns = columns
         self.data = data
-        self.model = model
-        self.resource_type = resource_type
     
     def compose(self) -> ComposeResult:
         yield BaseHeader(self.columns)
         for row in self.data:
-            yield BaseRow(row_data=row, columns=self.columns, resource_type=self.resource_type)
+            yield BaseRow(row_data=row, columns=self.columns)

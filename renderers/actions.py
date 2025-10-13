@@ -4,7 +4,7 @@ from textual.widgets import Button
 
 
 class ActionGroup(Horizontal):
-    """资源操作按钮组"""
+    """render action buttons in a row"""
 
     DEFAULT_CSS = """
         ActionGroup {
