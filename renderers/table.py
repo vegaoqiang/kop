@@ -41,7 +41,7 @@ class BaseRow(ListItem):
                 if col.title != "Actions":
                     yield BaseCol(text=self.row_data.get(col.field), width=col.width)
                 else:
-                    yield ActionGroup(resource_type=self.resource_type)
+                    yield ActionGroup(self.row_data.actions)
 
 
 class TableRenderer(ListView):

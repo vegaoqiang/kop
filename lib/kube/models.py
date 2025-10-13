@@ -10,6 +10,13 @@ class ColumnModel:
     width: int
     field: str
 
+@dataclass
+class ActionModel:
+    label: str
+    variant: str
+    tooltip: str
+    action: str
+
 
 @dataclass
 class ViewModel:
@@ -56,13 +63,12 @@ class PodViewModel(ViewModel):
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 10})
     qos: str = field(metadata={"title": "QoS", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5})
-    actions: List[dict] = field(default_factory=list ,metadata={"title": "Actions", "width": 10})
+    actions: List[ActionModel] = field(default_factory=lambda: [
+        ActionModel(">_", "success", "Shell", "shell"),
+        ActionModel("log", "success", "Log", "log"),
+        ActionModel("del", "error", "Delete Pod", "delete")],
+        metadata={"title": "Actions", "width": 10})
 
-    # actions: list[dict] = [
-    #         {"label": ">_", "variant": "success", "tooltip": "Shell", "action": "shell"},
-    #         {"label": "log", "variant": "success", "tooltip": "Log", "action": "log"},
-    #         {"label": "del", "variant": "error", "tooltip": "Pod", "action": "delete"},
-    #     ]
 
     @classmethod
     def clean(cls, data: V1Pod) -> "PodViewModel":
@@ -78,34 +84,6 @@ class PodViewModel(ViewModel):
             age=cls.get_age_text(data.status.start_time), # type: ignore
         )
 
-    # @staticmethod
-    # def get_age_text(start_time: datetime) -> str:
-    #     now = datetime.now(tz=start_time.tzinfo)
-    #     diff = now - start_time
-
-    #     if 0 <= diff.total_seconds() < 60:
-    #         return f"{diff.total_seconds()}s"
-    #     if 60 <= diff.total_seconds() < 3600:
-    #         return f"{int(diff.total_seconds()) // 60}m"
-    #     if 3600 <= diff.total_seconds() < 86400:
-    #         return f"{int(diff.total_seconds()) // 3600}h"
-    #     if 86400 <= diff.total_seconds() < 2592000:
-    #         return f"{int(diff.total_seconds()) // 86400}d"
-    #     if 2592000 <= diff.total_seconds() < 31536000:
-    #         return f"{int(diff.total_seconds()) // 2592000}M"
-    #     if diff.total_seconds() >= 31536000:
-    #         return f"{int(diff.total_seconds()) // 31536000}y"
-    #     return "-"
-
-
-    # def get(self, key: str) -> str:
-    #     return getattr(self, key, "")
-    
-    
-    # @classmethod
-    # def get_columns(cls):
-    #     return [ColumnModel(f.metadata["title"], f.metadata["width"], f.name) for f in fields(cls)]
-
 
 @dataclass
 class DepolymentViewModel(ViewModel):
@@ -115,6 +93,12 @@ class DepolymentViewModel(ViewModel):
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5})
     conditions: str = field(metadata={"title": "Conditions", "width": 20})
+    actions: List[ActionModel] = field(default_factory=lambda: [
+        ActionModel("sc", "success", "Scale", "Scale"),
+        ActionModel("re", "success", "Restart", "restart"),
+        ActionModel("ed", "success", "Edit", "Edit"),
+        ActionModel("del", "error", "Delete Deployment", "delete")],
+        metadata={"title": "Actions", "width": 10})
 
     @classmethod
     def clean(cls, data: V1Deployment) -> "DepolymentViewModel":
@@ -126,30 +110,3 @@ class DepolymentViewModel(ViewModel):
             age=cls.get_age_text(data.metadata.creation_timestamp),
             conditions=" ".join([c.type for c in data.status.conditions]),
         )
-    
-    # @staticmethod
-    # def get_age_text(start_time: datetime) -> str:
-    #     now = datetime.now(tz=start_time.tzinfo)
-    #     diff = now - start_time
-
-    #     if 0 <= diff.total_seconds() < 60:
-    #         return f"{diff.total_seconds()}s"
-    #     if 60 <= diff.total_seconds() < 3600:
-    #         return f"{int(diff.total_seconds()) // 60}m"
-    #     if 3600 <= diff.total_seconds() < 86400:
-    #         return f"{int(diff.total_seconds()) // 3600}h"
-    #     if 86400 <= diff.total_seconds() < 2592000:
-    #         return f"{int(diff.total_seconds()) // 86400}d"
-    #     if 2592000 <= diff.total_seconds() < 31536000:
-    #         return f"{int(diff.total_seconds()) // 2592000}M"
-    #     if diff.total_seconds() >= 31536000:
-    #         return f"{int(diff.total_seconds()) // 31536000}y"
-    #     return "-"
-    
-
-    # @classmethod
-    # def get_columns(cls):
-    #     return [ColumnModel(f.metadata["title"], f.metadata["width"], f.name) for f in fields(cls)]
-
-    # def get(self, key: str) -> str:
-    #     return getattr(self, key, "")
