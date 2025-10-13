@@ -17,14 +17,6 @@ class BaseCol(Static):
 
 class BaseHeader(ListItem):
 
-    DEFAULT_CSS = """
-        BaseHeader {
-          height: 1;
-          width: 1fr;
-          background: steelblue;
-        }
-    """
-
     def __init__(self, columns, **kwargs) -> None:
         super().__init__(**kwargs)
         self.columns = columns
@@ -55,6 +47,31 @@ class BaseRow(ListItem):
 
 
 class TableRenderer(ListView):
+    DEFAULT_CSS = """
+        TableRenderer {
+          height: auto;
+          & > BaseRow {
+              height: 1;
+              overflow: hidden hidden;
+              width: 1fr;
+              
+              &.-hovered {
+                    background: $block-hover-background;
+                }
+                
+              &.-highlight {
+                  color: $block-cursor-blurred-foreground;
+                  background: $block-cursor-blurred-background;
+                  text-style: $block-cursor-blurred-text-style;
+              }
+          }
+          & > BaseHeader {
+              height: 1;
+              overflow: hidden hidden;
+              width: 1fr;
+          }
+        }
+    """
     
     def __init__(self, columns: list[tuple], data, model, resource_type: str, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -68,12 +85,3 @@ class TableRenderer(ListView):
         for row in self.data.items:
             cleaned_row = self.model.clean(row)
             yield BaseRow(row_data=cleaned_row, columns=self.columns, resource_type=self.resource_type)
-
-
-    # @classmethod
-    # def render(cls, table: ListView, columns: list[tuple], data: list[dict]):
-    #     table.clear()
-
-    #     table.mount(BaseHeader(columns))
-    #     for row in data:
-    #         table.mount(BaseRow(row, columns))

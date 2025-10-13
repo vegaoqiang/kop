@@ -38,12 +38,7 @@ class ResourceView(Screen):
             dock: left;
             height: 100%;
             width: 20%;
-        }
-        Table {
-            dock: right;
-            height: 100%;
-            width: 80%;
-        }  
+        } 
         #right_panel {
             dock: right;
             width: 80%;
