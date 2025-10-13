@@ -5,6 +5,12 @@ from renderers.actions import ActionGroup
 
 
 class BaseCol(Static):
+    DEFAULT_CSS = """
+        BaseCol {
+            padding: 0 3 0 0;
+            text-overflow: ellipsis;
+        }
+        """
 
     def __init__(self, text: str, width: int,  **kwargs) -> None:
         super().__init__(text, **kwargs)
