@@ -1,26 +1,23 @@
 from lib.kube.models import PodViewModel
 from renderers.table import TableRenderer
 
-ResourceRegistry = {
-    "pods": {
-        "model": PodViewModel,
-        "renderer": TableRenderer,
-        "columns": [
-            ("Name", 20),
-            ("Namespace", 10),
-            ("Containers", 10),
-            ("Restarts", 10),
-            ("ControlledBy", 10),
-            ("Node", 10),
-            ("QoS", 10),
-            ("Age", 5),
-            ("Status", 5),
-            ("Active", 10)
-        ],
-        "actions": [
-            {"label": ">_", "variant": "success", "tooltip": "进入 shell", "action": "shell"},
-            {"label": "log", "variant": "success", "tooltip": "查看日志", "action": "log"},
-            {"label": "del", "variant": "error", "tooltip": "删除 Pod", "action": "delete"},
-        ],
-    }
-}
+
+class ResourceRegistry:
+    """资源注册中心：存放所有资源类型与对应工厂类"""
+
+    _factories: dict[str, type] = {}
+
+    @classmethod
+    def register_factory(cls, resource_type: str, factory_cls: type):
+        """注册资源工厂"""
+        cls._factories[resource_type] = factory_cls
+
+    @classmethod
+    def get_factory(cls, resource_type: str):
+        """获取资源工厂"""
+        return cls._factories.get(resource_type)
+
+    @classmethod
+    def all(cls):
+        """返回所有已注册资源类型"""
+        return list(cls._factories.keys())

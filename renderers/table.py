@@ -1,7 +1,6 @@
-from textual.app import App, ComposeResult
-from textual.widgets import Footer, ListItem, ListView, Button, Static
+from textual.app import ComposeResult
+from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal
-from lib.kube.models import PodViewModel
 from renderers.actions import ActionGroup
 
 
@@ -23,8 +22,8 @@ class BaseHeader(ListItem):
 
     def compose(self) -> ComposeResult:
         with Horizontal():
-            for col_name, width in self.columns:
-                yield BaseCol(text=col_name, width=width)
+            for col in self.columns:
+                yield BaseCol(text=col.title, width=col.width)
 
 
 class BaseRow(ListItem):
@@ -38,10 +37,9 @@ class BaseRow(ListItem):
     def compose(self) -> ComposeResult:
         # self.columns.pop()  # 移除最后一个 Actions 列，单独处理
         with Horizontal():
-            for col_name, width in self.columns:
-                col_value = self.row_data.get(col_name)
-                if col_name != "Actions":
-                    yield BaseCol(text=col_value, width=width)
+            for col in self.columns:
+                if col.title != "Actions":
+                    yield BaseCol(text=self.row_data.get(col.field), width=col.width)
                 else:
                     yield ActionGroup(resource_type=self.resource_type)
 
@@ -73,7 +71,7 @@ class TableRenderer(ListView):
         }
     """
     
-    def __init__(self, columns: list[tuple], data, model, resource_type: str, **kwargs) -> None:
+    def __init__(self, columns, data, model, resource_type: str, **kwargs) -> None:
         super().__init__(**kwargs)
         self.columns = columns
         self.data = data
@@ -82,6 +80,5 @@ class TableRenderer(ListView):
     
     def compose(self) -> ComposeResult:
         yield BaseHeader(self.columns)
-        for row in self.data.items:
-            cleaned_row = self.model.clean(row)
-            yield BaseRow(row_data=cleaned_row, columns=self.columns, resource_type=self.resource_type)
+        for row in self.data:
+            yield BaseRow(row_data=row, columns=self.columns, resource_type=self.resource_type)

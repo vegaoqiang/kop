@@ -1,19 +1,34 @@
-from dataclasses import dataclass
-from kubernetes.client.models import V1Pod
+from dataclasses import dataclass, field, fields
+from kubernetes.client.models import V1Pod, V1Deployment
 from datetime import datetime
+from typing import List
+
+
+@dataclass
+class ColumnModel:
+    title: str
+    width: int
+    field: str
 
 
 @dataclass
 class PodViewModel:
-    name: str
-    namespace: str
-    node: str
-    status: str
-    containers: str
-    restarts: str
-    controlled_by: str
-    qos: str
-    age: str
+    name: str = field(metadata={"title": "Name", "width": 20})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    node: str = field(metadata={"title": "Node", "width": 10})
+    status: str = field(metadata={"title": "Status", "width": 5})
+    containers: str = field(metadata={"title": "Containers", "width": 10})
+    restarts: str = field(metadata={"title": "Restarts", "width": 10})
+    controlled_by: str = field(metadata={"title": "ControlledBy", "width": 10})
+    qos: str = field(metadata={"title": "QoS", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5})
+    actions: List[dict] = field(default_factory=list ,metadata={"title": "Actions", "width": 10})
+
+    # actions: list[dict] = [
+    #         {"label": ">_", "variant": "success", "tooltip": "Shell", "action": "shell"},
+    #         {"label": "log", "variant": "success", "tooltip": "Log", "action": "log"},
+    #         {"label": "del", "variant": "error", "tooltip": "Pod", "action": "delete"},
+    #     ]
 
     @classmethod
     def clean(cls, data: V1Pod) -> "PodViewModel":
@@ -48,30 +63,32 @@ class PodViewModel:
             return f"{int(diff.total_seconds()) // 31536000}y"
         return "-"
 
-    class Meta:
-        """元信息，用于映射表头"""
-        Name = "name"
-        Namespace = "namespace"
-        Node = "node"
-        Status = "status"
-        Containers = "containers"
-        Restarts = "restarts"
-        ControlledBy = "controlled_by"
-        QoS = "qos"
-        Age = "age"
 
     def get(self, key: str) -> str:
-        class_property = getattr(self.Meta, key, "")
-        if not class_property:
-            return ""
-        return getattr(self, class_property)
+        return getattr(self, key, "")
+    
+    
+    @classmethod
+    def get_columns(cls):
+        return [ColumnModel(f.metadata["title"], f.metadata["width"], f.name) for f in fields(cls)]
 
 
 @dataclass
 class DepolymentViewModel:
     name: str
     namespace: str
-    ready: str
-    up_to_date: int
-    available: int
+    pod: str
+    replicas: str
     age: str
+    conditions: str
+
+    @classmethod
+    def clean(cls, data: V1Deployment) -> "DepolymentViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            pod=data.metadata.name,
+            replicas=data.status.replicas,
+            age=data.metadata.created_at,
+            conditions=data.status.conditions,
+        )
