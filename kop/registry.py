@@ -1,5 +1,5 @@
-from kop.models import PodViewModel
-from kop.renderers.table import TableRenderer
+from models import PodViewModel
+from renderers.table import TableRenderer
 
 
 class ResourceRegistry:
