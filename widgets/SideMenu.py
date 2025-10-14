@@ -71,7 +71,6 @@ class SideMenu(ListView):
     
 
     # def on_list_view_highlighted(self, event: ListView.Highlighted):
-    #     """当用户聚焦某个菜单项时触发"""
     #     item: ListItem | None = event.item
     #     self.log(item.id)
     #     if not item.id:
@@ -84,29 +83,26 @@ class SideMenu(ListView):
 
     @on(ListView.Highlighted)
     async def handle_highlighted(self, event: ListView.Highlighted):
-        """当用户聚焦某个菜单项时触发"""
+        """when menu item is highlighted or clicked"""
         item: ListItem | None = event.item
         self.log(item.id)
         if not item.id:
             return
         menu_id = item.id
 
-        # 异步调用 Kubernetes API
-        self.run_worker(self.get_kube_data(menu_id))
+        # async call
+        self.run_worker(self.resource_render(menu_id))
 
-    async def get_kube_data(self, menu_id: str):
-        data = KubeClient().get_resource(resource_type=menu_id)
-
-        # 发出自定义事件，传递给 PodView 或父组件
-        self.post_message(self.DataReady(menu_id, data))
+    async def resource_render(self, menu_id: str):
+        # send event
+        self.post_message(self.ResourceEvent(menu_id))
 
     
-    class DataReady(Message):
-        """当某个菜单数据准备好时，从 SideMenu 发出的事件。"""
-        def __init__(self, menu_id: str, data: V1PodList):
+    class ResourceEvent(Message):
+        """event for menu item select and click"""
+        def __init__(self, menu_id: str):
             super().__init__()
             self.menu_id = menu_id
-            self.data = data
 
 
 class SideApp(App):

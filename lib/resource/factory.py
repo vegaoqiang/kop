@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from lib.resource.registry import ResourceRegistry
 from lib.kube.models import PodViewModel, DepolymentViewModel
 from renderers.table import TableRenderer
+from lib.kube.client import KubeClient
 from typing import List
 
 
@@ -17,6 +18,11 @@ class BaseFactory(ABC):
             ResourceRegistry.register_factory(cls.resource_type, cls)
 
     @abstractmethod
+    def fetch(self):
+        """fetch raw data from kube api"""
+        raise NotImplementedError
+
+    @abstractmethod
     def clean(self, raw):
         """clean raw data into view models"""
         raise NotImplementedError
@@ -27,11 +33,14 @@ class BaseFactory(ABC):
         raise NotImplementedError
     
 
-class Podfacotry(BaseFactory):
+class PodFacotry(BaseFactory):
     """factory for pods"""
     resource_type = "pods"
 
-
+    def fetch(self):
+        client = KubeClient.core_v1()
+        return client.list_pods()
+        
     def clean(self, raw) -> List[PodViewModel]:
         return [PodViewModel.clean(pod) for pod in raw.items]
     
@@ -45,6 +54,10 @@ class Podfacotry(BaseFactory):
 class DeploymentFactory(BaseFactory):
     """factory for deployments"""
     resource_type = "deployments"
+
+    def fetch(self):
+        client = KubeClient.apps_v1()
+        return client.list_deployments()
 
     def clean(self, raw) -> List[DepolymentViewModel]:
         return [DepolymentViewModel.clean(dep) for dep in raw.items]

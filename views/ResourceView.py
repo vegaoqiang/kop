@@ -1,12 +1,10 @@
-from lib.kube.models import PodViewModel
-from renderers.table import TableRenderer
 from widgets.SideMenu import SideMenu
 from textual.screen import Screen
 from textual.app import ComposeResult, App
 from textual.containers import Horizontal
 from textual.widgets import Static, Footer
 from lib.resource.registry import ResourceRegistry
-from lib.resource.factory import Podfacotry
+from lib.resource.factory import PodFacotry
 
 
 class ResourceView(Screen):
@@ -28,7 +26,7 @@ class ResourceView(Screen):
     """
 
     BINDINGS = [
-        ("d", "delete", "Delete Selected item")
+        ("d", "delete", "Delete Selected Item")
     ]
 
     def compose(self) -> ComposeResult: 
@@ -38,24 +36,17 @@ class ResourceView(Screen):
                 yield Footer(id="footer")
     
     
-    def on_side_menu_data_ready(self, event: SideMenu.DataReady) -> None:
+    def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
         resource_type = event.menu_id
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
             return
         factory = factory_cls()
-        # model = registry["model"]
-        # renderer = registry["renderer"]
-        # columns = registry["columns"]
-        data = event.data
-
-
-        # table = renderer(columns=columns, data=data, model=model, resource_type=resource_type)
+        data = factory.fetch()
         table = factory.create_renderer(data)
 
         right_panel = self.query_one("#right_panel")
         right_panel.remove_children()
-
         right_panel.mount(table)
 
 
