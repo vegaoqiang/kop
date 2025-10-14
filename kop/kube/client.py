@@ -28,6 +28,14 @@ class Kube:
             return _client.list_namespaced_daemon_set(namespace, watch=watch, async_req=async_req)
         return _client.list_daemon_set_for_all_namespaces(watch=watch, async_req=async_req)
 
+    def list_stateful_sets(self, namespace: str | None = None, watch: bool = False, async_req: bool = False):
+        _client = self._clients.get(client.AppsV1Api)
+        if not _client:
+            raise RuntimeError("AppsV1Api client not initialized. Use KubeClient.apps_v1() first.")
+        if namespace:
+            return _client.list_namespaced_stateful_set(namespace, watch=watch, async_req=async_req)
+        return _client.list_stateful_set_for_all_namespaces(watch=watch, async_req=async_req)
+
     def get(self, resource_type: str, **kwargs):
         """
         universal resource fetcher

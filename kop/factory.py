@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from registry import ResourceRegistry
-from models import PodViewModel, DepolymentViewModel, DaemonSetsViewModel
+from models import PodViewModel, DepolymentViewModel, DaemonSetViewModel, StatefulSetViewModel
 from renderers.table import TableRenderer
 from kube.client import KubeClient
 from typing import List
@@ -77,11 +77,29 @@ class DaemonSetFactory(BaseFactory):
         client = KubeClient.apps_v1()
         return client.list_daemon_sets()
 
-    def clean(self, raw) -> List[DaemonSetsViewModel]:
-        return [DaemonSetsViewModel.clean(dep) for dep in raw.items]
+    def clean(self, raw) -> List[DaemonSetViewModel]:
+        return [DaemonSetViewModel.clean(dep) for dep in raw.items]
     
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
-            columns=DaemonSetsViewModel.get_columns(),
+            columns=DaemonSetViewModel.get_columns(),
+            data=self.clean(data)
+        )
+    
+
+class StatefulSetFactory(BaseFactory):
+    """factory for statefulsets"""
+    resource_type = "statefulsets"
+
+    def fetch(self):
+        client = KubeClient.apps_v1()
+        return client.list_stateful_sets()
+
+    def clean(self, raw) -> List[StatefulSetViewModel]:
+        return [StatefulSetViewModel.clean(dep) for dep in raw.items]
+    
+    def create_renderer(self, data) -> TableRenderer:
+        return TableRenderer(
+            columns=StatefulSetViewModel.get_columns(),
             data=self.clean(data)
         )

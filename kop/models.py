@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, fields
-from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet
+from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet, V1StatefulSet
 from datetime import datetime
 from typing import List
 
@@ -113,7 +113,7 @@ class DepolymentViewModel(ViewModel):
 
 
 @dataclass
-class DaemonSetsViewModel(ViewModel):
+class DaemonSetViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 20})
     pods: str = field(metadata={"title": "Pods", "width": 10})
@@ -126,11 +126,35 @@ class DaemonSetsViewModel(ViewModel):
         metadata={"title": "Actions", "width": 10})
     
     @classmethod
-    def clean(cls, data: V1DaemonSet) -> "DaemonSetsViewModel":
+    def clean(cls, data: V1DaemonSet) -> "DaemonSetViewModel":
         return cls(
             name=data.metadata.name,
             namespace=data.metadata.namespace,
             pods="/".join([str(data.status.current_number_scheduled), str(data.status.desired_number_scheduled)]),
             node_selector="".join(f"{k}={v}" for k, v in data.spec.template.spec.node_selector.items()),
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class StatefulSetViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 20})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    pods: str = field(metadata={"title": "Pods", "width": 10})
+    replicas: str = field(metadata={"title": "Replicas", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5})
+    actions: List[ActionModel] = field(default_factory=lambda: [
+        ActionModel("re", "success", "Restart", "restart"),
+        ActionModel("ed", "success", "Edit", "Edit"),
+        ActionModel("del", "error", "Delete StatefulSet", "delete")],
+        metadata={"title": "Actions", "width": 10})
+    
+    @classmethod
+    def clean(cls, data: V1StatefulSet) -> "StatefulSetViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            pods="/".join([str(data.status.ready_replicas), str(data.status.replicas)]),
+            replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
         )
