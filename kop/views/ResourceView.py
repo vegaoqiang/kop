@@ -1,10 +1,10 @@
-from widgets.SideMenu import SideMenu
+from kop.views.SideMenu import SideMenu
 from textual.screen import Screen
 from textual.app import ComposeResult, App
 from textual.containers import Horizontal
 from textual.widgets import Static, Footer
-from lib.resource.registry import ResourceRegistry
-from lib.resource.factory import PodFacotry
+from kop.registry import ResourceRegistry
+from kop.factory import PodFacotry
 
 
 class ResourceView(Screen):

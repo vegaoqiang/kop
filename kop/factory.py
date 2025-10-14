@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from lib.resource.registry import ResourceRegistry
-from lib.kube.models import PodViewModel, DepolymentViewModel
-from renderers.table import TableRenderer
-from lib.kube.client import KubeClient
+from kop.registry import ResourceRegistry
+from kop.models import PodViewModel, DepolymentViewModel
+from kop.renderers.table import TableRenderer
+from kop.kube.client import KubeClient
 from typing import List
 
 

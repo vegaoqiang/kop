@@ -1,19 +1,11 @@
 
 from typing import List
-from textual.app import App, ComposeResult
-from textual.widgets import Footer, ListItem, ListView, Label, Rule
-from textual.containers import Horizontal
-from components.TextRule import TextRule
-
-from textual.widget import Widget
-from textual import on
-from textual.widgets import Button
-from textual.message import Message
-
-from lib.kube.client import KubeClient
-from kubernetes.client.models import V1PodList
-
 from types import SimpleNamespace
+from textual import on
+from textual.message import Message
+from textual.app import App, ComposeResult
+from textual.widgets import Footer, ListItem, ListView, Label
+from kop.components.TextRule import TextRule
 
 
 WOEKLOADS_MENUS: List[SimpleNamespace] = [
