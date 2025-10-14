@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, fields
-from kubernetes.client.models import V1Pod, V1Deployment
+from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet
 from datetime import datetime
 from typing import List
 
@@ -89,7 +89,7 @@ class PodViewModel(ViewModel):
 class DepolymentViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    pod: str = field(metadata={"title": "Pod", "width": 10})
+    pods: str = field(metadata={"title": "Pods", "width": 10})
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5})
     conditions: str = field(metadata={"title": "Conditions", "width": 20})
@@ -105,8 +105,32 @@ class DepolymentViewModel(ViewModel):
         return cls(
             name=data.metadata.name,
             namespace=data.metadata.namespace,
-            pod="/".join([str(data.status.ready_replicas), str(data.status.replicas)]),
+            pods="/".join([str(data.status.ready_replicas), str(data.status.replicas)]),
             replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
             conditions=" ".join([c.type for c in data.status.conditions]),
+        )
+
+
+@dataclass
+class DaemonSetsViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 20})
+    namespace: str = field(metadata={"title": "Namespace", "width": 20})
+    pods: str = field(metadata={"title": "Pods", "width": 10})
+    node_selector: str = field(metadata={"title": "NodeSelector", "width": 30})
+    age: str = field(metadata={"title": "Age", "width": 10})
+    actions: List[ActionModel] = field(default_factory=lambda: [
+        ActionModel("re", "success", "Restart", "restart"),
+        ActionModel("ed", "success", "Edit", "Edit"),
+        ActionModel("del", "error", "Delete Deployment", "delete")],
+        metadata={"title": "Actions", "width": 10})
+    
+    @classmethod
+    def clean(cls, data: V1DaemonSet) -> "DaemonSetsViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            pods="/".join([str(data.status.current_number_scheduled), str(data.status.desired_number_scheduled)]),
+            node_selector="".join(f"{k}={v}" for k, v in data.spec.template.spec.node_selector.items()),
+            age=cls.get_age_text(data.metadata.creation_timestamp),
         )

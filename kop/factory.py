@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from registry import ResourceRegistry
-from models import PodViewModel, DepolymentViewModel
+from models import PodViewModel, DepolymentViewModel, DaemonSetsViewModel
 from renderers.table import TableRenderer
 from kube.client import KubeClient
 from typing import List
@@ -65,5 +65,23 @@ class DeploymentFactory(BaseFactory):
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
             columns=DepolymentViewModel.get_columns(),
+            data=self.clean(data)
+        )
+    
+
+class DaemonSetFactory(BaseFactory):
+    """factory for daemonsets"""
+    resource_type = "daemonsets"
+
+    def fetch(self):
+        client = KubeClient.apps_v1()
+        return client.list_daemon_sets()
+
+    def clean(self, raw) -> List[DaemonSetsViewModel]:
+        return [DaemonSetsViewModel.clean(dep) for dep in raw.items]
+    
+    def create_renderer(self, data) -> TableRenderer:
+        return TableRenderer(
+            columns=DaemonSetsViewModel.get_columns(),
             data=self.clean(data)
         )
