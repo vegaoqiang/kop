@@ -29,6 +29,8 @@ class ResourceView(Screen):
         ("d", "delete", "Delete Selected Item")
     ]
 
+    FACTORY_CACHE: BaseFactory
+
 
     def compose(self) -> ComposeResult: 
             with Horizontal():
@@ -42,7 +44,7 @@ class ResourceView(Screen):
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
             return
-        factory = factory_cls()
+        self.FACTORY_CACHE = factory = factory_cls()
         data = factory.fetch()
         self.RESOURCE_CACHE = data
         table = factory.create_renderer(data)
@@ -53,8 +55,8 @@ class ResourceView(Screen):
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
         raw_data = event.raw_data
-        from renderers.details import DetailModalScreen
-        self.app.push_screen(DetailModalScreen(data=raw_data))
+        from renderers.details import DetailModalRenderer
+        self.app.push_screen(DetailModalRenderer(data=raw_data))
 
 
 class ResApp(App):

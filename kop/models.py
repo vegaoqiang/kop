@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, fields
-from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet, V1StatefulSet
+from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet, V1StatefulSet, V1Container
 from datetime import datetime
 from typing import List
 
@@ -72,6 +72,9 @@ class PodViewModel(ViewModel):
 
     @classmethod
     def clean(cls, data: V1Pod) -> "PodViewModel":
+        """
+        Clean a V1Pod object into a PodViewModel object
+        """
         return cls(
             name=data.metadata.name, # type: ignore
             namespace=data.metadata.namespace, # type: ignore
@@ -83,6 +86,41 @@ class PodViewModel(ViewModel):
             qos=data.status.qos_class, # type: ignore
             age=cls.get_age_text(data.status.start_time), # type: ignore
         )
+
+
+@dataclass
+class ContainerModel(ViewModel):
+    status: str = field(metadata={"title": "Status"})
+    image: str = field(metadata={"title": "Image"})
+    environmnet: str = field(metadata={"title": "Environment"})
+    mount: str = field(metadata={"title": "Mount"})
+    arguments: str = field(metadata={"title": "Arguments"})
+    command: str = field(metadata={"title": "Command"})
+
+    @classmethod
+    def clan(cls, data: V1Container) -> "ContainerModel":
+        return cls(
+            status=data.state.running.started_at, # type: ignore
+            image=data.image, # type: ignore
+            environmnet=data.env, # type: ignore
+            mount=data.volume_mounts, # type: ignore
+            arguments=data.args, # type: ignore
+            command=data.command, # type: ignore
+        )
+
+
+@dataclass
+class PodDetailModel(PodViewModel, ContainerModel):
+    created: str = field(default="", metadata={"title": "Created"})
+    labels: list = field(default=[], metadata={"title": "Labels"})
+    annotations: list = field(default=[], metadata={"title": "Annotations"})
+    pod_ip: str = field(default="", metadata={"title": "Pod IP"})
+    service_account: str = field(default="", metadata={"title": "Service Account"})
+    prioroty: str = field(default="", metadata={"title": "Priority Class"})
+    conditions: list = field(default=[], metadata={"title": "Conditions"})
+    node_selector: list = field(default=[], metadata={"title": "NodeSelector"})
+    tolerations: str = field(default="", metadata={"title": "Tolerations"})
+    affinities: str = field(default="", metadata={"title": "Affinities"})
 
 
 @dataclass

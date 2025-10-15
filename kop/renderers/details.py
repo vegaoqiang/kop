@@ -5,7 +5,7 @@ from textual.widgets import Static, Label, Rule
 from components.Detail import Detail
 
 
-class DetailModalScreen(ModalScreen):
+class DetailModalRenderer(ModalScreen):
 
     DEFAULT_CSS = """
         #dialog {
@@ -14,7 +14,11 @@ class DetailModalScreen(ModalScreen):
         }
     """
 
-    def __init__(self, data: list):
+    BINDINGS = [
+        ("q", "close", "Close"),
+    ]
+
+    def __init__(self, data: dict):
         super().__init__()
         self.data = data
 
@@ -27,3 +31,10 @@ class DetailModalScreen(ModalScreen):
             # for item in self.data:
             #     yield Detail(title=item["title"], value=item["value"])
             #     yield Rule()
+
+
+    def action_close(self):
+        """
+        hander q key event and close this screen
+        """
+        self.app.pop_screen()
