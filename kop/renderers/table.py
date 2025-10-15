@@ -2,6 +2,7 @@ from textual.app import ComposeResult
 from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal
 from renderers.actions import ActionGroup
+from textual.message import Message
 
 
 class BaseCol(Static):
@@ -75,13 +76,36 @@ class TableRenderer(ListView):
           }
         }
     """
+
+    BINDINGS = [
+        ("enter", "selected", "Seleted Item")
+    ]
     
-    def __init__(self, columns: list, data: list, **kwargs) -> None:
+    def __init__(self, columns: list, data: list, raw_data: list, **kwargs) -> None:
         super().__init__(**kwargs)
         self.columns = columns
         self.data = data
-    
+        self.raw_data = raw_data # cache raw data
+        
     def compose(self) -> ComposeResult:
         yield BaseHeader(self.columns)
         for row in self.data:
             yield BaseRow(row_data=row, columns=self.columns)
+
+    def action_selected(self) -> None:
+        """
+        when user press enter key, then this function will be called
+        """
+        if not self.index:
+            return
+        # why -1? because header hold first row, so we need to minus 1
+        index = self.index - 1
+        item = self.children[index]
+        if item:
+            self.post_message(self.RowSelectedEvent(raw_data=self.raw_data[index]))
+
+
+    class RowSelectedEvent(Message):
+        def __init__(self, raw_data):
+            super().__init__()
+            self.raw_data = raw_data

@@ -48,6 +48,7 @@ class PodFacotry(BaseFactory):
         return TableRenderer(
             columns=PodViewModel.get_columns(),
             data=self.clean(data),
+            raw_data=data.items
         )
     
 
@@ -65,7 +66,8 @@ class DeploymentFactory(BaseFactory):
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
             columns=DepolymentViewModel.get_columns(),
-            data=self.clean(data)
+            data=self.clean(data),
+            raw_data=data.items
         )
     
 
@@ -83,7 +85,8 @@ class DaemonSetFactory(BaseFactory):
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
             columns=DaemonSetViewModel.get_columns(),
-            data=self.clean(data)
+            data=self.clean(data),
+            raw_data=data.items
         )
     
 
@@ -101,5 +104,6 @@ class StatefulSetFactory(BaseFactory):
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
             columns=StatefulSetViewModel.get_columns(),
-            data=self.clean(data)
+            data=self.clean(data),
+            raw_data=data.items
         )

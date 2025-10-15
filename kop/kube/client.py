@@ -4,7 +4,9 @@ from threading import Lock
 
 class Kube:
 
-    def list_pods(self, namespace: str | None = None, watch: bool = False, async_req: bool = False):
+    def list_pods(self, namespace: str | None = None, 
+                  watch: bool = False, 
+                  async_req: bool = False):
         _client = self._clients.get(client.CoreV1Api)
         if not _client:
             raise RuntimeError("CoreV1Api client not initialized. Use KubeClient.core_v1() first.")
@@ -12,7 +14,9 @@ class Kube:
             return _client.list_namespaced_pod(namespace, watch=watch, async_req=async_req)
         return _client.list_pod_for_all_namespaces(watch=watch, async_req=async_req)
     
-    def list_deployments(self, namespace: str | None = None, watch: bool = False, async_req: bool = False):
+    def list_deployments(self, namespace: str | None = None, 
+                         watch: bool = False, 
+                         async_req: bool = False):
         _client = self._clients.get(client.AppsV1Api)
         if not _client:
             raise RuntimeError("AppsV1Api client not initialized. Use KubeClient.apps_v1() first.")
@@ -20,7 +24,9 @@ class Kube:
             return _client.list_namespaced_deployment(namespace, watch=watch, async_req=async_req)
         return _client.list_deployment_for_all_namespaces(watch=watch, async_req=async_req)
 
-    def list_daemon_sets(self, namespace: str | None = None, watch: bool = False, async_req: bool = False):
+    def list_daemon_sets(self, namespace: str | None = None, 
+                         watch: bool = False, 
+                         async_req: bool = False):
         _client = self._clients.get(client.AppsV1Api)
         if not _client:
             raise RuntimeError("AppsV1Api client not initialized. Use KubeClient.apps_v1() first.")
@@ -28,7 +34,10 @@ class Kube:
             return _client.list_namespaced_daemon_set(namespace, watch=watch, async_req=async_req)
         return _client.list_daemon_set_for_all_namespaces(watch=watch, async_req=async_req)
 
-    def list_stateful_sets(self, namespace: str | None = None, watch: bool = False, async_req: bool = False):
+    def list_stateful_sets(self, 
+                           namespace: str | None = None, 
+                           watch: bool = False, 
+                           async_req: bool = False):
         _client = self._clients.get(client.AppsV1Api)
         if not _client:
             raise RuntimeError("AppsV1Api client not initialized. Use KubeClient.apps_v1() first.")

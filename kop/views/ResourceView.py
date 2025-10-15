@@ -29,6 +29,7 @@ class ResourceView(Screen):
         ("d", "delete", "Delete Selected Item")
     ]
 
+
     def compose(self) -> ComposeResult: 
             with Horizontal():
                 yield SideMenu(id="side_menu")
@@ -43,11 +44,17 @@ class ResourceView(Screen):
             return
         factory = factory_cls()
         data = factory.fetch()
+        self.RESOURCE_CACHE = data
         table = factory.create_renderer(data)
 
         right_panel = self.query_one("#right_panel")
         right_panel.remove_children()
         right_panel.mount(table)
+
+    def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
+        raw_data = event.raw_data
+        from renderers.details import DetailModalScreen
+        self.app.push_screen(DetailModalScreen(data=raw_data))
 
 
 class ResApp(App):
