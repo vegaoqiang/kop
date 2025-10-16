@@ -1,6 +1,3 @@
-from models import PodViewModel
-from renderers.table import TableRenderer
-
 
 class ResourceRegistry:
     """registry for resource factories"""

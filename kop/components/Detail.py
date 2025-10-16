@@ -20,8 +20,25 @@ class Value(Static):
             content-align: left middle;
             text-align: left;
         }
-    
+        Static {
+            layout: grid;
+            grid-size: 2;
+        }
     """
+
+    def __init__(self, value: str | list | dict, **kwargs):
+        super().__init__(**kwargs)
+        self.value = value
+
+    def compose(self) -> ComposeResult:
+        if isinstance(self.value, list):
+            for item in self.value:
+                yield Static(item)
+        elif isinstance(self.value, dict):
+            for k, v in self.value.items():
+                yield Static(f"{k}: {v}")
+        else:
+            yield Static(self.value)
 
 
 class Detail(Horizontal):

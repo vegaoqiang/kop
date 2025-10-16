@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field, fields
+from dataclasses import dataclass, field, fields, asdict
 from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet, V1StatefulSet, V1Container
 from datetime import datetime
 from typing import List
@@ -7,7 +7,7 @@ from typing import List
 @dataclass
 class ColumnModel:
     title: str
-    width: int
+    width: int | None
     field: str
 
 @dataclass
@@ -23,7 +23,9 @@ class ViewModel:
 
     @classmethod
     def get_columns(cls) -> List[ColumnModel]:
-        return [ColumnModel(f.metadata["title"], f.metadata["width"], f.name) for f in fields(cls)]
+        return [ColumnModel(f.metadata["title"], 
+                            f.metadata["width"] if f.metadata.get("width") else None, 
+                            f.name) for f in fields(cls)]
     
     def get(self, key: str) -> str:
         return getattr(self, key, "")
@@ -53,12 +55,46 @@ class ViewModel:
     
 
 @dataclass
+class ContainerModel(ViewModel):
+    status: str = field(metadata={"title": "Status"})
+    image: str = field(metadata={"title": "Image"})
+    environmnet: str = field(metadata={"title": "Environment"})
+    mount: str = field(metadata={"title": "Mount"})
+    arguments: str = field(metadata={"title": "Arguments"})
+    command: str = field(metadata={"title": "Command"})
+
+    # _raw is used to cache the raw container data
+    _raw: V1Container | None = field(default=None, repr=False)
+
+    def __init__(self, data: V1Container, **kwargs):
+        if data:
+            self._raw = data
+        else:
+            super().__init__(**kwargs)
+
+    @classmethod
+    def clean(cls, data: V1Container) -> "ContainerModel":
+        return cls(
+            status=data.state.running.started_at, # type: ignore
+            image=data.image, # type: ignore
+            environmnet=data.env, # type: ignore
+            mount=data.volume_mounts, # type: ignore
+            arguments=data.args, # type: ignore
+            command=data.command, # type: ignore
+        )
+    
+    def lazy_clean(self):
+        if not self._raw:
+            raise ValueError("No raw container data to clean.")
+        return self.__class__.clean(self._raw)
+
+@dataclass
 class PodViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     node: str = field(metadata={"title": "Node", "width": 10})
     status: str = field(metadata={"title": "Status", "width": 5})
-    containers: str = field(metadata={"title": "Containers", "width": 10})
+    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 10})
     restarts: str = field(metadata={"title": "Restarts", "width": 10})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 10})
     qos: str = field(metadata={"title": "QoS", "width": 10})
@@ -89,38 +125,47 @@ class PodViewModel(ViewModel):
 
 
 @dataclass
-class ContainerModel(ViewModel):
-    status: str = field(metadata={"title": "Status"})
-    image: str = field(metadata={"title": "Image"})
-    environmnet: str = field(metadata={"title": "Environment"})
-    mount: str = field(metadata={"title": "Mount"})
-    arguments: str = field(metadata={"title": "Arguments"})
-    command: str = field(metadata={"title": "Command"})
-
-    @classmethod
-    def clan(cls, data: V1Container) -> "ContainerModel":
-        return cls(
-            status=data.state.running.started_at, # type: ignore
-            image=data.image, # type: ignore
-            environmnet=data.env, # type: ignore
-            mount=data.volume_mounts, # type: ignore
-            arguments=data.args, # type: ignore
-            command=data.command, # type: ignore
-        )
-
-
-@dataclass
-class PodDetailModel(PodViewModel, ContainerModel):
-    created: str = field(default="", metadata={"title": "Created"})
-    labels: list = field(default=[], metadata={"title": "Labels"})
-    annotations: list = field(default=[], metadata={"title": "Annotations"})
+class PodDetailModel(PodViewModel):
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    annotations: list = field(default_factory=list, metadata={"title": "Annotations"})
     pod_ip: str = field(default="", metadata={"title": "Pod IP"})
     service_account: str = field(default="", metadata={"title": "Service Account"})
-    prioroty: str = field(default="", metadata={"title": "Priority Class"})
-    conditions: list = field(default=[], metadata={"title": "Conditions"})
-    node_selector: list = field(default=[], metadata={"title": "NodeSelector"})
+    priority: str = field(default="", metadata={"title": "Priority Class"})
+    conditions: list = field(default_factory=list, metadata={"title": "Conditions"})
+    node_selector: list = field(default_factory=list, metadata={"title": "NodeSelector"})
     tolerations: str = field(default="", metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})
+
+
+    @classmethod
+    def clean(cls, data: V1Pod) -> "PodDetailModel":
+        base = asdict(super().clean(data))
+        base.update({
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'pod_ip': data.status.pod_ip,
+            'service_account': data.spec.service_account_name,
+            'priority': data.spec.priority_class_name,
+            'conditions': data.status.conditions,
+            'node_selector': data.spec.node_selector,
+            'tolerations': data.spec.tolerations,
+            'affinities': data.spec.affinity,
+            'containers': [ContainerModel(c) for c in data.spec.containers], # re-assign containers
+        })
+        return cls(**base)
+        # return cls(
+        #     labels=data.metadata.labels,
+        #     annotations=data.metadata.annotations,
+        #     pod_ip=data.status.pod_ip,
+        #     service_account=data.spec.service_account_name,
+        #     priority=data.spec.priority_class_name,
+        #     conditions=data.status.conditions,
+        #     node_selector=data.spec.node_selector,
+        #     tolerations=data.spec.tolerations,
+        #     affinities=data.spec.affinity,
+        #     # containers=[ContainerModel(c) for c in data.spec.containers], # re-assign containers
+        # )
+    
 
 
 @dataclass

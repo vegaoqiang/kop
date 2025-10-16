@@ -8,7 +8,7 @@ from components.Detail import Detail
 class DetailModalRenderer(ModalScreen):
 
     DEFAULT_CSS = """
-        #dialog {
+        #detail {
             width: 40%;
             dock: right;
         }
@@ -18,19 +18,19 @@ class DetailModalRenderer(ModalScreen):
         ("q", "close", "Close"),
     ]
 
-    def __init__(self, data: dict):
-        super().__init__()
+    def __init__(self, columns: list, data, **kwargs):
+        """
+        :param data: PodDetailModel
+        """
+        super().__init__(**kwargs)
+        self.columns = columns
         self.data = data
 
-
     def compose(self) -> ComposeResult:
-        with VerticalScroll(id="dialog"):
-            yield Detail(title="test1", value="value1")
-            yield Detail(title="test2", value="value2")
-            yield Rule()
-            # for item in self.data:
-            #     yield Detail(title=item["title"], value=item["value"])
-            #     yield Rule()
+        with VerticalScroll(id="detail"):
+            for item in self.columns:
+                yield Detail(title=item.title, value=self.data.get(item.field))
+                yield Rule()
 
 
     def action_close(self):

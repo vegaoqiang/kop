@@ -46,7 +46,6 @@ class ResourceView(Screen):
             return
         self.FACTORY_CACHE = factory = factory_cls()
         data = factory.fetch()
-        self.RESOURCE_CACHE = data
         table = factory.create_renderer(data)
 
         right_panel = self.query_one("#right_panel")
@@ -55,8 +54,8 @@ class ResourceView(Screen):
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
         raw_data = event.raw_data
-        from renderers.details import DetailModalRenderer
-        self.app.push_screen(DetailModalRenderer(data=raw_data))
+        renderer = self.FACTORY_CACHE.create_detail_renderer(raw_data)
+        self.app.push_screen(renderer)
 
 
 class ResApp(App):

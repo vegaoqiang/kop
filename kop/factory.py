@@ -1,9 +1,14 @@
 from abc import ABC, abstractmethod
 from registry import ResourceRegistry
-from models import PodViewModel, DepolymentViewModel, DaemonSetViewModel, StatefulSetViewModel
 from renderers.table import TableRenderer
+from renderers.details import DetailModalRenderer
 from kube.client import KubeClient
 from typing import List
+from models import (PodViewModel, 
+                    DepolymentViewModel, 
+                    DaemonSetViewModel, 
+                    StatefulSetViewModel,
+                    PodDetailModel)
 
 
 class BaseFactory(ABC):
@@ -26,10 +31,20 @@ class BaseFactory(ABC):
     def clean(self, raw):
         """clean raw data into view models"""
         raise NotImplementedError
+    
+    @abstractmethod
+    def clean_detail(self, raw):
+        """clean raw data into detail models"""
+        raise NotImplementedError
 
     @abstractmethod
     def create_renderer(self, data):
         """create renderer from view models"""
+        raise NotImplementedError
+    
+    @abstractmethod
+    def create_detail_renderer(self, data):
+        """create renderer from detail models"""
         raise NotImplementedError
     
 
@@ -44,11 +59,20 @@ class PodFacotry(BaseFactory):
     def clean(self, raw) -> List[PodViewModel]:
         return [PodViewModel.clean(pod) for pod in raw.items]
     
+    def clean_detail(self, raw) -> PodDetailModel:
+        return PodDetailModel.clean(raw)
+    
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
             columns=PodViewModel.get_columns(),
             data=self.clean(data),
             raw_data=data.items
+        )
+
+    def create_detail_renderer(self, data) -> DetailModalRenderer:
+        return DetailModalRenderer(
+            columns=PodDetailModel.get_columns(),
+            data=self.clean_detail(data),
         )
     
 
