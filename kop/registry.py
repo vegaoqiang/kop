@@ -1,3 +1,4 @@
+from typing import Any, Type, Callable
 
 class ResourceRegistry:
     """registry for resource factories"""
@@ -18,3 +19,24 @@ class ResourceRegistry:
     def all(cls):
         """get all registered resource types"""
         return list(cls._factories.keys())
+    
+
+class RendererRegistry:
+    """Registry for data type renderers (Strategy Registry)"""
+
+    _renderers: dict[Type[Any], Callable] = {}  # type: data_type -> renderer_func
+
+    @classmethod
+    def register_renderer(cls, data_type: Type[Any]):
+        """Register a renderer for a specific data type (Strategy)"""
+        def decorator(renderer: Callable):
+            cls._renderers[data_type] = renderer
+            return renderer  # return the decorated function
+        return decorator
+
+
+    @classmethod
+    def get_renderer(cls, data_type: Type[Any]) -> Callable:
+        """Get renderer, set default to str if not found"""
+        return cls._renderers.get(data_type, str)
+

@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, fields, asdict
-from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet, V1StatefulSet, V1Container
+from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet, V1StatefulSet, V1Container, V1ContainerStatus
 from datetime import datetime
 from typing import List
 
@@ -9,6 +9,7 @@ class ColumnModel:
     title: str
     width: int | None
     field: str
+
 
 @dataclass
 class ActionModel:
@@ -55,27 +56,65 @@ class ViewModel:
     
 
 @dataclass
+class ContainerStatusModel(ViewModel):
+    name: str | None = field(default=None, metadata={"title": "Name"})
+    state: str | None = field(default=None, metadata={"title": "State"})
+    last_state: dict | None = field(default=None, metadata={"title": "Last State"})
+
+    _raw: V1ContainerStatus | None = field(default=None, repr=False)
+
+    # def __post_init__(self, data: V1ContainerStatus|None = None):
+    #     if data:
+    #         self._raw = data
+        # else:
+        #     super().__init__()
+
+    @classmethod
+    def clean(cls, data: V1ContainerStatus) -> "ContainerStatusModel":
+        return cls(
+            name=data.name,
+            state=data.state,
+            last_state=data.last_state
+        )
+    
+    def lazy_clean(self):
+        if not self._raw:
+            raise ValueError("No raw container status data to clean.")
+        return self.__class__.clean(self._raw)
+
+
+
+@dataclass
 class ContainerModel(ViewModel):
-    status: str = field(metadata={"title": "Status"})
-    image: str = field(metadata={"title": "Image"})
-    environmnet: str = field(metadata={"title": "Environment"})
-    mount: str = field(metadata={"title": "Mount"})
-    arguments: str = field(metadata={"title": "Arguments"})
-    command: str = field(metadata={"title": "Command"})
+    image: str = field(default="", metadata={"title": "Image"})
+    environmnet: str = field(default="", metadata={"title": "Environment"})
+    mount: str = field(default="", metadata={"title": "Mount"})
+    arguments: str = field(default="", metadata={"title": "Arguments"})
+    command: str = field(default="", metadata={"title": "Command"})
+    status: ContainerStatusModel | None = field(default=None, metadata={"title": "Status"})
 
     # _raw is used to cache the raw container data
     _raw: V1Container | None = field(default=None, repr=False)
+    # _status: ContainerStatusModel | None = field(default=None, repr=False)
 
-    def __init__(self, data: V1Container, **kwargs):
-        if data:
-            self._raw = data
-        else:
-            super().__init__(**kwargs)
+    # need receive container status, because container status data is not in the raw container data
+    # def __init__(self, data: V1Container|None = None, status: ContainerStatusModel | None = None):
+    #     if data:
+    #         self._raw = data
+    #         self._status = status
+    #     else:
+    #         super().__init__()
+
+    # @classmethod
+    # def from_instance(cls, data: V1Container, status: ContainerStatusModel | None = None) -> "ContainerModel":
+    #     instance = cls()
+    #     instance._raw = data
+    #     instance._status = status
+    #     return instance
 
     @classmethod
     def clean(cls, data: V1Container) -> "ContainerModel":
         return cls(
-            status=data.state.running.started_at, # type: ignore
             image=data.image, # type: ignore
             environmnet=data.env, # type: ignore
             mount=data.volume_mounts, # type: ignore
@@ -87,6 +126,10 @@ class ContainerModel(ViewModel):
         if not self._raw:
             raise ValueError("No raw container data to clean.")
         return self.__class__.clean(self._raw)
+        # model = self.__class__.clean(self._raw)
+        # model._status = self._status
+        # return model
+
 
 @dataclass
 class PodViewModel(ViewModel):
@@ -150,7 +193,7 @@ class PodDetailModel(PodViewModel):
             'node_selector': data.spec.node_selector,
             'tolerations': data.spec.tolerations,
             'affinities': data.spec.affinity,
-            'containers': [ContainerModel(c) for c in data.spec.containers], # re-assign containers
+            'containers': [ContainerModel(_raw=_c, status=ContainerStatusModel(_raw=_status)) for _c, _status in zip(data.spec.containers, data.status.container_statuses)], # re-assign containers
         })
         return cls(**base)
         # return cls(
