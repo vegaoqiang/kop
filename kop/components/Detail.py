@@ -49,7 +49,7 @@ class TextDetail(Horizontal):
 class ListDetail(Horizontal):
     DEFAULT_CSS = """
         ListDetail {
-            height: 1;
+            height: auto;
             & > Grid {
                 grid-size: 2;
                 grid-columns: 1fr 2fr;
@@ -80,7 +80,7 @@ class DictDetail(Horizontal):
 
     DEFAULT_CSS = """
         DictDetail {
-            height: 1;
+            height: auto;
             & > Grid {
                 grid-size: 2;
                 grid-columns: 1fr 2fr;

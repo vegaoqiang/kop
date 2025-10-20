@@ -34,7 +34,6 @@ def render_list(title: str, desc: list) -> ComposeResult:
     yield ListDetail(title=title, description=desc)
 
 
-@RendererRegistry.register_renderer(ContainerModel)
 def render_containers(desc: ContainerModel) -> ComposeResult:
     desc = desc.lazy_clean()
     columns = desc.get_columns()
@@ -46,7 +45,6 @@ def render_containers(desc: ContainerModel) -> ComposeResult:
         yield from renderer(title=col.title, desc=field_value)
     
 
-@RendererRegistry.register_renderer(ContainerStatusModel)
 def render_container_status(desc: ContainerStatusModel) -> ComposeResult:
     desc = desc.lazy_clean()
     columns = desc.get_columns()
