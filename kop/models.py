@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field, fields, asdict
-from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet, V1StatefulSet, V1Container, V1ContainerStatus
+from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet, V1StatefulSet, V1Container, V1ContainerStatus, V1EnvVar
 from datetime import datetime
 from typing import List
 
@@ -24,9 +24,17 @@ class ViewModel:
 
     @classmethod
     def get_columns(cls) -> List[ColumnModel]:
-        return [ColumnModel(f.metadata["title"], 
-                            f.metadata["width"] if f.metadata.get("width") else None, 
-                            f.name) for f in fields(cls)]
+        columns: List[ColumnModel] = []
+        for item in fields(cls):
+            if item.name.startswith("_"):
+                continue
+            columns.append(ColumnModel(item.metadata["title"], 
+                                       item.metadata["width"] if item.metadata.get("width") else None, 
+                                       item.name))
+        return columns
+        # return [ColumnModel(f.metadata["title"], 
+        #                     f.metadata["width"] if f.metadata.get("width") else None, 
+        #                     f.name) for f in fields(cls)]
     
     def get(self, key: str) -> str:
         return getattr(self, key, "")
@@ -54,6 +62,24 @@ class ViewModel:
     def clean(cls, data):
         raise NotImplementedError
     
+
+@dataclass
+class ContainerEnvironmentModel(ViewModel):
+    name: str | None = field(default=None, metadata={"title": "Name"})
+    value: str | None = field(default=None, metadata={"title": "Value"})
+
+    _raw: V1EnvVar | None = field(default=None, repr=False)
+
+    @classmethod
+    def clean(cls, data):
+        return cls(name=data.name, value=data.value)
+    
+
+    def lazy_clean(self):
+        if not self._raw:
+            raise ValueError("No raw container environment data to clean.")
+        return self.__class__.clean(self._raw)
+
 
 @dataclass
 class ContainerStatusModel(ViewModel):
@@ -87,7 +113,7 @@ class ContainerStatusModel(ViewModel):
 @dataclass
 class ContainerModel(ViewModel):
     image: str = field(default="", metadata={"title": "Image"})
-    environmnet: str = field(default="", metadata={"title": "Environment"})
+    environmnet: List[ContainerEnvironmentModel] | str = field(default="", metadata={"title": "Environment"})
     mount: str = field(default="", metadata={"title": "Mount"})
     arguments: str = field(default="", metadata={"title": "Arguments"})
     command: str = field(default="", metadata={"title": "Command"})
@@ -116,7 +142,7 @@ class ContainerModel(ViewModel):
     def clean(cls, data: V1Container) -> "ContainerModel":
         return cls(
             image=data.image, # type: ignore
-            environmnet=data.env, # type: ignore
+            environmnet=[ContainerEnvironmentModel(_raw=_env) for _env in data.env], # type: ignore
             mount=data.volume_mounts, # type: ignore
             arguments=data.args, # type: ignore
             command=data.command, # type: ignore
