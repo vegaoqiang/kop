@@ -1,5 +1,13 @@
 from dataclasses import dataclass, field, fields, asdict
-from kubernetes.client.models import V1Pod, V1Deployment, V1DaemonSet, V1StatefulSet, V1Container, V1ContainerStatus, V1EnvVar
+from kubernetes.client.models import (
+    V1Pod, 
+    V1Deployment, 
+    V1DaemonSet, 
+    V1StatefulSet, 
+    V1Container, 
+    V1ContainerStatus, 
+    V1EnvVar, 
+    V1Toleration)
 from datetime import datetime
 from typing import List
 
@@ -79,6 +87,16 @@ class ContainerEnvironmentModel(ViewModel):
         if not self._raw:
             raise ValueError("No raw container environment data to clean.")
         return self.__class__.clean(self._raw)
+
+
+@dataclass
+class TolerationsModel(ViewModel):
+    key: str | None = field(default=None, metadata={"title": "Key"})
+    operator: str | None = field(default=None, metadata={"title": "Operator"})
+    value: str | None = field(default=None, metadata={"title": "Value"})
+    effect: str | None = field(default=None, metadata={"title": "Effect"})
+
+    _raw: V1Toleration | None = field(default=None, repr=False)
 
 
 @dataclass
@@ -202,7 +220,7 @@ class PodDetailModel(PodViewModel):
     priority: str = field(default="", metadata={"title": "Priority Class"})
     conditions: list = field(default_factory=list, metadata={"title": "Conditions"})
     node_selector: list = field(default_factory=list, metadata={"title": "NodeSelector"})
-    tolerations: str = field(default="", metadata={"title": "Tolerations"})
+    tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})
 
 
@@ -217,7 +235,7 @@ class PodDetailModel(PodViewModel):
             'priority': data.spec.priority_class_name,
             'conditions': data.status.conditions,
             'node_selector': data.spec.node_selector,
-            'tolerations': data.spec.tolerations,
+            'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
             'containers': [ContainerModel(_raw=_c, status=ContainerStatusModel(_raw=_status)) for _c, _status in zip(data.spec.containers, data.status.container_statuses)], # re-assign containers
         })

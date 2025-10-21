@@ -1,5 +1,6 @@
 from textual.app import ComposeResult
-from textual.widgets import Static
+from textual.events import Mount
+from textual.widgets import Static, DataTable
 from textual.containers import Horizontal, Grid, ItemGrid, HorizontalGroup, Vertical
 
 
@@ -96,3 +97,33 @@ class DictDetail(Horizontal):
             Title(self.title),
             ItemGrid(*[Description(f"{k}={v}") for k, v in self.description.items()])
         )
+
+
+class TolerationsDetail(Horizontal): # TODO: add tolerations
+    DEFAULT_CSS = """
+        TolerationsDetail {
+            & > Grid {
+                grid-size: 2;
+                grid-columns: 1fr 2fr;
+            }
+        }
+    """
+
+    def __init__(self, title: str = 'Tolerations', description: list = [], header: tuple = (), **kwargs):
+        super().__init__(**kwargs)
+        self.title = title
+        self.description = description
+        self.header = header
+        self.styles.height = f"{len(self.description) + 2}"
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Title(self.title),
+            DataTable(id="tolerations")
+        )
+
+    def on_mount(self) -> None:
+        print('TolerationsDetail:', self.description)
+        table = self.query_one(DataTable)
+        table.add_columns(*self.header)
+        table.add_rows(self.description)

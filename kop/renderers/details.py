@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Grid
 from textual.widgets import Static, Label, Rule
-from components.Detail import TextDetail, ListDetail, DictDetail
+from components.Detail import TextDetail, ListDetail, DictDetail, TolerationsDetail
 from registry import RendererRegistry
 from models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel
 
@@ -21,6 +21,8 @@ def render_dict(title: str, desc: dict) -> ComposeResult:
 def render_list(title: str, desc: list) -> ComposeResult:
     if not desc:
         return
+    if title == 'Tolerations':
+        yield from render_tolerations(title=title, desc=desc)
     for item in desc:
         if isinstance(item, ContainerModel):
             yield from render_containers(desc=item)
@@ -37,6 +39,11 @@ def render_list(title: str, desc: list) -> ComposeResult:
         if isinstance(item, dict):
             yield DictDetail(title=title, description=item)
             
+
+def render_tolerations(title: str, desc: list) -> ComposeResult:
+    header: tuple = ('key', 'value', 'operator', 'effect', 'toleration_seconds')
+    row: list[tuple]  = [tuple([item.to_dict().get(key, '') for key in header]) for item in desc]
+    yield TolerationsDetail(title=title, description=row, header=header)
 
 
 def render_containers(desc: ContainerModel) -> ComposeResult:
