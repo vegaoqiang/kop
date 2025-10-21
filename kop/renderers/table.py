@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal
-from renderers.actions import ActionGroup
+from components.Actions import ActionGroup
 from textual.message import Message
 
 

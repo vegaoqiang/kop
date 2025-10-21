@@ -34,6 +34,9 @@ def render_list(title: str, desc: list) -> ComposeResult:
         if isinstance(item, str):
             yield ListDetail(title=title, description=desc)
             return
+        if isinstance(item, dict):
+            yield DictDetail(title=title, description=item)
+            
 
 
 def render_containers(desc: ContainerModel) -> ComposeResult:
