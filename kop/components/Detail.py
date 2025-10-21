@@ -1,6 +1,6 @@
 from textual.app import ComposeResult
 from textual.widgets import Static
-from textual.containers import Horizontal, Grid
+from textual.containers import Horizontal, Grid, ItemGrid, HorizontalGroup, Vertical
 
 
 class Title(Static):
@@ -19,6 +19,7 @@ class Description(Static):
         Description {
             content-align: left middle;
             text-align: left;
+            height: 1;
         }
     """
 
@@ -49,30 +50,26 @@ class TextDetail(Horizontal):
 class ListDetail(Horizontal):
     DEFAULT_CSS = """
         ListDetail {
-            height: auto;
             & > Grid {
                 grid-size: 2;
                 grid-columns: 1fr 2fr;
             }
         }
-        .list-detail {
-            grid-size: 4;
-            grid-columns: auto;
-            grid-gutter: 1;
-        }
+
     """
 
     def __init__(self, title: str, description: list, **kwargs):
         super().__init__(**kwargs)
         self.title = title
         self.description = description
+        self.styles.height = f"{len(self.description)}"
 
 
     def compose(self) -> ComposeResult:
         print('description in ListDetail', self.description)
         yield Grid(
             Title(self.title),
-            Grid(*[Description(f"{item}") for item in self.description], id="list-detail")
+            ItemGrid(*[Description(f"{item}") for item in self.description])
         )
 
 
@@ -80,16 +77,10 @@ class DictDetail(Horizontal):
 
     DEFAULT_CSS = """
         DictDetail {
-            height: auto;
             & > Grid {
                 grid-size: 2;
                 grid-columns: 1fr 2fr;
             }
-        }
-        .list-detail {
-            grid-size: 4;
-            grid-columns: auto;
-            grid-gutter: 1;
         }
     """
 
@@ -97,10 +88,11 @@ class DictDetail(Horizontal):
         super().__init__(**kwargs)
         self.title = title
         self.description = description
+        self.styles.height = f"{len(self.description)}"
 
     def compose(self) -> ComposeResult:
         print('description in DictDetail', self.description)
         yield Grid(
             Title(self.title),
-            Grid(*[Description(f"{k}={v}") for k, v in self.description.items()], id="dict-detail")
+            ItemGrid(*[Description(f"{k}={v}") for k, v in self.description.items()])
         )

@@ -31,7 +31,9 @@ def render_list(title: str, desc: list) -> ComposeResult:
         if isinstance(item, ContainerEnvironmentModel):
             yield from render_container_env(title=title, desc=desc)
             return
-    yield ListDetail(title=title, description=desc)
+        if isinstance(item, str):
+            yield ListDetail(title=title, description=desc)
+            return
 
 
 def render_containers(desc: ContainerModel) -> ComposeResult:
