@@ -99,7 +99,37 @@ class DictDetail(Horizontal):
         )
 
 
-class TolerationsDetail(Horizontal): # TODO: add tolerations
+class EnvironmentDetail(Horizontal):
+    DEFAULT_CSS = """
+        EnvironmentDetail {
+            & > Grid {
+                grid-size: 2;
+                grid-columns: 1fr 2fr;
+            }
+        }
+    """
+
+    def __init__(self, title: str, description: list = [], **kwargs):
+        super().__init__(**kwargs)
+        self.title = title
+        self.description = description
+        self.styles.height = f"{len(self.description)}"
+
+    def compose(self) -> ComposeResult:
+        print('description in EnvironmentDetail', self.description)
+        yield Grid(
+            Title(self.title),
+            DataTable(show_header=False)
+        )
+
+    def on_mount(self) -> None:
+        print('EnvironmentDetail:', self.description)
+        table = self.query_one(DataTable)
+        table.add_columns('environment')
+        table.add_rows(self.description)
+
+
+class TolerationsDetail(Horizontal):
     DEFAULT_CSS = """
         TolerationsDetail {
             & > Grid {
@@ -114,7 +144,7 @@ class TolerationsDetail(Horizontal): # TODO: add tolerations
         self.title = title
         self.description = description
         self.header = header
-        self.styles.height = f"{len(self.description) + 2}"
+        self.styles.height = f"{len(self.description) + 2}" # why + 2, because of header and footer scroll hold 2 rows
 
     def compose(self) -> ComposeResult:
         yield Grid(

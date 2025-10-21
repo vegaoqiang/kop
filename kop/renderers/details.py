@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Grid
 from textual.widgets import Static, Label, Rule
-from components.Detail import TextDetail, ListDetail, DictDetail, TolerationsDetail
+from components.Detail import TextDetail, ListDetail, DictDetail, TolerationsDetail, EnvironmentDetail
 from registry import RendererRegistry
 from models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel
 
@@ -23,6 +23,8 @@ def render_list(title: str, desc: list) -> ComposeResult:
         return
     if title == 'Tolerations':
         yield from render_tolerations(title=title, desc=desc)
+    if title == 'Environment':
+        yield from render_environment(title=title, desc=desc)
     for item in desc:
         if isinstance(item, ContainerModel):
             yield from render_containers(desc=item)
@@ -30,15 +32,23 @@ def render_list(title: str, desc: list) -> ComposeResult:
         if isinstance(item, ContainerStatusModel):
             yield from render_container_status(desc=item)
             continue
-        if isinstance(item, ContainerEnvironmentModel):
-            yield from render_container_env(title=title, desc=desc)
-            return
+        # if isinstance(item, ContainerEnvironmentModel):
+        #     yield from render_container_env(title=title, desc=desc)
+        #     return
         if isinstance(item, str):
             yield ListDetail(title=title, description=desc)
             return
         if isinstance(item, dict):
             yield DictDetail(title=title, description=item)
             
+
+def render_environment(title: str, desc: list) -> ComposeResult:
+    env: list[tuple] = []
+    for item in desc:
+        item = item.lazy_clean()
+        env.append(tuple([f"{item.name}={item.value}"]))
+    yield EnvironmentDetail(title=title, description=env)
+
 
 def render_tolerations(title: str, desc: list) -> ComposeResult:
     header: tuple = ('key', 'value', 'operator', 'effect', 'toleration_seconds')
