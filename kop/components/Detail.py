@@ -10,6 +10,7 @@ class Title(Static):
             content-align: left middle;
             text-style: bold;
             text-align: left;
+            margin-left: 1;
         }
     
     """
@@ -88,7 +89,6 @@ class ConditionsDetail(Drawer):
     DEFAULT_CSS = """
         Label {
             background: $block-cursor-background;
-            # margin: 1 1 0 0;
             margin-bottom: 1;
             margin-right: 1;
         }
