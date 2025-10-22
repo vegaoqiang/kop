@@ -38,15 +38,6 @@ class Drawer(Horizontal):
 
 
 class TextDetail(Drawer):
-    # DEFAULT_CSS = """
-    #     TextDetail {
-    #         height: 1;
-    #         & > Grid {
-    #             grid-size: 2;
-    #             grid-columns: 1fr 2fr;
-    #         }
-    #     }
-    # """
 
     def __init__(self, title: str, description: str, **kwargs):
         super().__init__(**kwargs)
@@ -61,15 +52,6 @@ class TextDetail(Drawer):
 
 
 class ListDetail(Drawer):
-    # DEFAULT_CSS = """
-    #     ListDetail {
-    #         & > Grid {
-    #             grid-size: 2;
-    #             grid-columns: 1fr 2fr;
-    #         }
-    #     }
-
-    # """
 
     def __init__(self, title: str, description: list, **kwargs):
         super().__init__(**kwargs)
@@ -87,15 +69,6 @@ class ListDetail(Drawer):
 
 
 class DictDetail(Drawer):
-
-    # DEFAULT_CSS = """
-    #     DictDetail {
-    #         & > Grid {
-    #             grid-size: 2;
-    #             grid-columns: 1fr 2fr;
-    #         }
-    #     }
-    # """
 
     def __init__(self, title: str, description: dict, **kwargs):
         super().__init__(**kwargs)
@@ -126,71 +99,19 @@ class ConditionsDetail(Drawer):
         super().__init__(**kwargs)
         self.title = title
         self.description = description
-        # self.styles.height = 10
-        # self.test: list = [
-        #     "Layout",
-        #     "Is",
-        #     "Vertical",
-        #     "Layout",
-        #     "Is",
-        #     "Layout",
-        #     "Is",
-        #     "Vertical",
-        #     "Layout",
-        #     "Is",
-        #     "Layout",
-        #     "Is",
-        #     "Vertical",
-        #     "Layout",
-        #     "Is",
-        #     "Layout",
-        #     "Is",
-        #     "Vertical",
-        #     "Layout",
-        #     "Is",
-        #     "Layout",
-        #     "Is",
-        #     "Vertical",
-        #     "Layout",
-        #     "Is",
-        # ]
 
     def compose(self) -> ComposeResult:
         yield Grid(
             Title(self.title),
-            # Description(f"{self.description}")
-            # Container(*[Description(f"{item}") for item in self.description])
-            Vertical(
-                # Horizontal(
-                #     Label("Layout"),
-                #     Label("Is"),
-                #     Label("Vertical"),
-                #     Label("Layout"),
-                #     Label("Is"),),
-                # Horizontal(
-                #     Label("Vertical"),
-                #     Label("Layout"),
-                #     Label("Is"),
-                #     Label("Vertical"),
-                #     Label("Layout"),
-                #     Label("Is"),
-                #     Label("Vertical"),
-                #     Label("Layout"),
-                #     Label("Is"),
-                #     Label("Vertical"),
-                #     Label("Layout"),
-                #     Label("Is"),
-                #     id="horizontal"
-                # ),
-                id="layout"
-            ),
+            Vertical(id="vertical")
         )
     
     def on_show(self) -> None:
         self.call_after_refresh(self.break_line)
 
     def break_line(self):
-        container_size_width = self.query_one('#layout').container_size.width - 10 # 10 for right scrollbar width
+        _vertical = self.query_one('#vertical')
+        container_size_width = _vertical.container_size.width - 10 # 10 for right scrollbar width
         vertical: list[Horizontal] = []
         horizontal: list[Static] = []
         if not self.description:
@@ -207,7 +128,6 @@ class ConditionsDetail(Drawer):
                 horizontal.append(Label(item))
         if horizontal:
             vertical.append(Horizontal(*horizontal))
-        _vertical = self.query_one('#layout')
         _vertical.remove_children()
         _vertical.mount_all(vertical)
         self.styles.height = f"{len(vertical)}"
@@ -215,14 +135,6 @@ class ConditionsDetail(Drawer):
 
 
 class EnvironmentDetail(Drawer):
-    # DEFAULT_CSS = """
-    #     EnvironmentDetail {
-    #         & > Grid {
-    #             grid-size: 2;
-    #             grid-columns: 1fr 2fr;
-    #         }
-    #     }
-    # """
 
     def __init__(self, title: str, description: list = [], **kwargs):
         super().__init__(**kwargs)
@@ -245,15 +157,6 @@ class EnvironmentDetail(Drawer):
 
 
 class TolerationsDetail(Drawer):
-    # DEFAULT_CSS = """
-    #     TolerationsDetail {
-    #         & > Grid {
-    #             grid-size: 2;
-    #             grid-columns: 1fr 2fr;
-    #         }
-    #     }
-    # """
-
 
     def __init__(self, title: str = 'Tolerations', description: list = [], header: tuple = (), **kwargs):
         super().__init__(**kwargs)
