@@ -89,7 +89,6 @@ class ConditionsDetail(Drawer):
     DEFAULT_CSS = """
         Label {
             background: $block-cursor-background;
-            margin-bottom: 1;
             margin-right: 1;
         }
         Horizontal {
@@ -132,7 +131,7 @@ class ConditionsDetail(Drawer):
             vertical.append(Horizontal(*horizontal))
         _vertical.remove_children()
         _vertical.mount_all(vertical)
-        self.styles.height = f"{len(vertical)*2}"
+        self.styles.height = f"{len(vertical)*2}" # *2 for Horizontal Style: height: 2;
 
 
 
