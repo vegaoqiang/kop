@@ -7,7 +7,8 @@ from kubernetes.client.models import (
     V1Container, 
     V1ContainerStatus, 
     V1EnvVar, 
-    V1Toleration)
+    V1Toleration, 
+    V1Condition)
 from datetime import datetime
 from typing import List
 
@@ -218,7 +219,7 @@ class PodDetailModel(PodViewModel):
     pod_ip: str = field(default="", metadata={"title": "Pod IP"})
     service_account: str = field(default="", metadata={"title": "Service Account"})
     priority: str = field(default="", metadata={"title": "Priority Class"})
-    conditions: list = field(default_factory=list, metadata={"title": "Conditions"})
+    conditions: list[V1Condition] = field(default_factory=list, metadata={"title": "Conditions"})
     node_selector: list = field(default_factory=list, metadata={"title": "NodeSelector"})
     tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})

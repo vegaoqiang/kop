@@ -2,7 +2,7 @@ from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Grid
 from textual.widgets import Static, Label, Rule
-from components.Detail import TextDetail, ListDetail, DictDetail, TolerationsDetail, EnvironmentDetail
+from components.Detail import TextDetail, ListDetail, DictDetail, TolerationsDetail, EnvironmentDetail, ConditionsDetail
 from registry import RendererRegistry
 from models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel
 
@@ -25,6 +25,8 @@ def render_list(title: str, desc: list) -> ComposeResult:
         yield from render_tolerations(title=title, desc=desc)
     if title == 'Environment':
         yield from render_environment(title=title, desc=desc)
+    if title == 'Conditions':
+        yield from render_conditions(title=title, desc=desc)
     for item in desc:
         if isinstance(item, ContainerModel):
             yield from render_containers(desc=item)
@@ -41,6 +43,14 @@ def render_list(title: str, desc: list) -> ComposeResult:
         if isinstance(item, dict):
             yield DictDetail(title=title, description=item)
             
+
+def render_conditions(title: str, desc: list) -> ComposeResult:
+    conditions: list = []
+    for item in desc:
+        if item.status == 'True':
+            conditions.append(item.type)
+    yield ConditionsDetail(title=title, description=conditions)
+
 
 def render_environment(title: str, desc: list) -> ComposeResult:
     env: list[tuple] = []
