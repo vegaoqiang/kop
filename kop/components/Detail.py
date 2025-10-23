@@ -54,6 +54,13 @@ class TextDetail(Drawer):
 
 class ListDetail(Drawer):
 
+    DEFAULT_CSS = """
+        # Label {
+        #     # background: $block-cursor-background;   
+        #     # text-style: underline;
+        # }
+    """
+
     def __init__(self, title: str, description: list, **kwargs):
         super().__init__(**kwargs)
         self.title = title
@@ -65,11 +72,17 @@ class ListDetail(Drawer):
         print('description in ListDetail', self.description)
         yield Grid(
             Title(self.title),
-            ItemGrid(*[Description(f"{item}") for item in self.description])
+            ItemGrid(*[Label(f"{item}") for item in self.description])
         )
 
 
 class DictDetail(Drawer):
+
+    # DEFAULT_CSS = """
+    #     Label {
+    #         background: $block-cursor-background;   
+    #     }
+    # """
 
     def __init__(self, title: str, description: dict, **kwargs):
         super().__init__(**kwargs)
@@ -81,7 +94,7 @@ class DictDetail(Drawer):
         print('description in DictDetail', self.description)
         yield Grid(
             Title(self.title),
-            ItemGrid(*[Description(f"{k}={v}") for k, v in self.description.items()])
+            ItemGrid(*[Label(f"{k}={v}") for k, v in self.description.items()])
         )
 
 
@@ -131,7 +144,9 @@ class ConditionsDetail(Drawer):
             vertical.append(Horizontal(*horizontal))
         _vertical.remove_children()
         _vertical.mount_all(vertical)
-        self.styles.height = f"{len(vertical)*2}" # *2 for Horizontal Style: height: 2;
+        # *2 for Horizontal Style: height: 2;
+        # -1 for last blank line
+        self.styles.height = f"{len(vertical)*2 -1}" 
 
 
 

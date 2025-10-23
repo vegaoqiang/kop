@@ -53,11 +53,11 @@ def render_conditions(title: str, desc: list) -> ComposeResult:
 
 
 def render_environment(title: str, desc: list) -> ComposeResult:
-    env: list[tuple] = []
+    env: list[str] = []
     for item in desc:
         item = item.lazy_clean()
-        env.append(tuple([f"{item.name}={item.value}"]))
-    yield EnvironmentDetail(title=title, description=env)
+        env.append(f"{item.name}={item.value}")
+    yield ListDetail(title=title, description=env)
 
 
 def render_tolerations(title: str, desc: list) -> ComposeResult:
