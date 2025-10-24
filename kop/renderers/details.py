@@ -58,11 +58,11 @@ def render_conditions(title: str, desc: list) -> ComposeResult:
     yield ItemListDetail(title=title, description=conditions)
 
 
-@RendererRegistry.register_renderer('environment')
+@RendererRegistry.register_renderer('environmnet')
 def render_environment(title: str, desc: list) -> ComposeResult:
     env: list[str] = []
     for item in desc:
-        item = item.lazy_clean()
+        # item = item.lazy_clean()
         env.append(f"{item.name}={item.value}")
     yield ListDetail(title=title, description=env)
 
@@ -90,6 +90,7 @@ def render_container(desc: ContainerModel) -> ComposeResult:
             continue
         # renderer = RendererRegistry.get_renderer(field_value.__class__)
         renderer = RendererRegistry.get_renderer(col.field)
+        print("render_container:", renderer)
         if not renderer:
             renderer = render_simple
         yield from renderer(title=col.title, desc=field_value)

@@ -117,7 +117,7 @@ class ContainerStatusModel(ViewModel):
 class ContainerModel(ViewModel):
     name: str = field(default="", metadata={"title": "Name"})
     image: str = field(default="", metadata={"title": "Image"})
-    environmnet: List[ContainerEnvironmentModel] | str = field(default="", metadata={"title": "Environment"})
+    environmnet: List[V1EnvVar] | str = field(default="", metadata={"title": "Environment"})
     mount: str = field(default="", metadata={"title": "Mount"})
     arguments: str = field(default="", metadata={"title": "Arguments"})
     command: str = field(default="", metadata={"title": "Command"})
@@ -131,7 +131,7 @@ class ContainerModel(ViewModel):
         return cls(
             name=data.name,
             image=data.image, # type: ignore
-            environmnet=[ContainerEnvironmentModel(_raw=_env) for _env in data.env], # type: ignore
+            environmnet=data.env, # type: ignore
             mount=data.volume_mounts, # type: ignore
             arguments=data.args, # type: ignore
             command=data.command, # type: ignore
