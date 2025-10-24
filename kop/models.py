@@ -121,7 +121,7 @@ class ContainerModel(ViewModel):
     mount: str = field(default="", metadata={"title": "Mount"})
     arguments: str = field(default="", metadata={"title": "Arguments"})
     command: str = field(default="", metadata={"title": "Command"})
-    status: ContainerStatusModel | None = field(default=None, metadata={"title": "Status"})
+    container_statuses: ContainerStatusModel | None = field(default=None, metadata={"title": "Status"})
 
     # _raw is used to cache the raw container data
     _raw: V1Container | None = field(default=None, repr=False)
@@ -205,7 +205,7 @@ class PodDetailModel(PodViewModel):
             'node_selector': data.spec.node_selector,
             'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
-            'containers': [ContainerModel(_raw=_c, status=ContainerStatusModel(_raw=_status)) for _c, _status in zip(data.spec.containers, data.status.container_statuses)], # re-assign containers
+            'containers': [ContainerModel(_raw=_c, container_statuses=ContainerStatusModel(_raw=_status)) for _c, _status in zip(data.spec.containers, data.status.container_statuses)], # re-assign containers
         })
         return cls(**base)
         # return cls(
