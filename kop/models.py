@@ -91,28 +91,12 @@ class ContainerEnvironmentModel(ViewModel):
 
 
 @dataclass
-class TolerationsModel(ViewModel):
-    key: str | None = field(default=None, metadata={"title": "Key"})
-    operator: str | None = field(default=None, metadata={"title": "Operator"})
-    value: str | None = field(default=None, metadata={"title": "Value"})
-    effect: str | None = field(default=None, metadata={"title": "Effect"})
-
-    _raw: V1Toleration | None = field(default=None, repr=False)
-
-
-@dataclass
 class ContainerStatusModel(ViewModel):
     name: str | None = field(default=None, metadata={"title": "Name"})
     state: str | None = field(default=None, metadata={"title": "State"})
     last_state: dict | None = field(default=None, metadata={"title": "Last State"})
 
     _raw: V1ContainerStatus | None = field(default=None, repr=False)
-
-    # def __post_init__(self, data: V1ContainerStatus|None = None):
-    #     if data:
-    #         self._raw = data
-        # else:
-        #     super().__init__()
 
     @classmethod
     def clean(cls, data: V1ContainerStatus) -> "ContainerStatusModel":
@@ -131,6 +115,7 @@ class ContainerStatusModel(ViewModel):
 
 @dataclass
 class ContainerModel(ViewModel):
+    name: str = field(default="", metadata={"title": "Name"})
     image: str = field(default="", metadata={"title": "Image"})
     environmnet: List[ContainerEnvironmentModel] | str = field(default="", metadata={"title": "Environment"})
     mount: str = field(default="", metadata={"title": "Mount"})
@@ -140,26 +125,11 @@ class ContainerModel(ViewModel):
 
     # _raw is used to cache the raw container data
     _raw: V1Container | None = field(default=None, repr=False)
-    # _status: ContainerStatusModel | None = field(default=None, repr=False)
-
-    # need receive container status, because container status data is not in the raw container data
-    # def __init__(self, data: V1Container|None = None, status: ContainerStatusModel | None = None):
-    #     if data:
-    #         self._raw = data
-    #         self._status = status
-    #     else:
-    #         super().__init__()
-
-    # @classmethod
-    # def from_instance(cls, data: V1Container, status: ContainerStatusModel | None = None) -> "ContainerModel":
-    #     instance = cls()
-    #     instance._raw = data
-    #     instance._status = status
-    #     return instance
 
     @classmethod
     def clean(cls, data: V1Container) -> "ContainerModel":
         return cls(
+            name=data.name,
             image=data.image, # type: ignore
             environmnet=[ContainerEnvironmentModel(_raw=_env) for _env in data.env], # type: ignore
             mount=data.volume_mounts, # type: ignore
@@ -171,9 +141,6 @@ class ContainerModel(ViewModel):
         if not self._raw:
             raise ValueError("No raw container data to clean.")
         return self.__class__.clean(self._raw)
-        # model = self.__class__.clean(self._raw)
-        # model._status = self._status
-        # return model
 
 
 @dataclass

@@ -1,4 +1,4 @@
-from typing import Any, Type, Callable
+from typing import Any, Type, Callable, Union
 
 class ResourceRegistry:
     """registry for resource factories"""
@@ -24,10 +24,10 @@ class ResourceRegistry:
 class RendererRegistry:
     """Registry for data type renderers (Strategy Registry)"""
 
-    _renderers: dict[Type[Any], Callable] = {}  # type: data_type -> renderer_func
+    _renderers: dict[Union[str, Type[Any]], Callable] = {}  # type: data_type -> renderer_func
 
     @classmethod
-    def register_renderer(cls, data_type: Type[Any]):
+    def register_renderer(cls, data_type: Union[str, Type[Any]]):
         """Register a renderer for a specific data type (Strategy)"""
         def decorator(renderer: Callable):
             cls._renderers[data_type] = renderer

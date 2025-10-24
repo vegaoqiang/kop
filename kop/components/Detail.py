@@ -98,7 +98,7 @@ class DictDetail(Drawer):
         )
 
 
-class ConditionsDetail(Drawer):
+class ItemListDetail(Drawer):
     DEFAULT_CSS = """
         Label {
             background: $block-cursor-background;

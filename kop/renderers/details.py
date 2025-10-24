@@ -2,9 +2,16 @@ from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Grid
 from textual.widgets import Static, Label, Rule
-from components.Detail import TextDetail, ListDetail, DictDetail, TolerationsDetail, EnvironmentDetail, ConditionsDetail
+from components.Detail import (
+    TextDetail, 
+    ListDetail, 
+    DictDetail,
+    TolerationsDetail,
+    EnvironmentDetail, 
+    ItemListDetail)
 from registry import RendererRegistry
 from models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel
+from components.Rules import LableRule
 
 
 @RendererRegistry.register_renderer(str)
@@ -27,10 +34,12 @@ def render_list(title: str, desc: list) -> ComposeResult:
         yield from render_environment(title=title, desc=desc)
     if title == 'Conditions':
         yield from render_conditions(title=title, desc=desc)
+    if title == 'Containers':
+        yield from render_containers(title=title, desc=desc)
     for item in desc:
-        if isinstance(item, ContainerModel):
-            yield from render_containers(desc=item)
-            continue
+        # if isinstance(item, ContainerModel):
+        #     yield from render_containers(desc=item)
+        #     continue
         if isinstance(item, ContainerStatusModel):
             yield from render_container_status(desc=item)
             continue
@@ -44,14 +53,16 @@ def render_list(title: str, desc: list) -> ComposeResult:
             yield DictDetail(title=title, description=item)
             
 
+@RendererRegistry.register_renderer('conditions')
 def render_conditions(title: str, desc: list) -> ComposeResult:
     conditions: list = []
     for item in desc:
         if item.status == 'True':
             conditions.append(item.type)
-    yield ConditionsDetail(title=title, description=conditions)
+    yield ItemListDetail(title=title, description=conditions)
 
 
+@RendererRegistry.register_renderer('environment')
 def render_environment(title: str, desc: list) -> ComposeResult:
     env: list[str] = []
     for item in desc:
@@ -60,13 +71,21 @@ def render_environment(title: str, desc: list) -> ComposeResult:
     yield ListDetail(title=title, description=env)
 
 
+@RendererRegistry.register_renderer('tolerations')
 def render_tolerations(title: str, desc: list) -> ComposeResult:
     header: tuple = ('key', 'value', 'operator', 'effect', 'toleration_seconds')
     row: list[tuple]  = [tuple([item.to_dict().get(key, '') for key in header]) for item in desc]
     yield TolerationsDetail(title=title, description=row, header=header)
 
 
-def render_containers(desc: ContainerModel) -> ComposeResult:
+@RendererRegistry.register_renderer('containers')
+def render_containers(title: str, desc: list[ContainerModel]) -> ComposeResult:
+    yield LableRule(text=title)
+    for item in desc:
+        yield from render_container(desc=item)
+
+
+def render_container(desc: ContainerModel) -> ComposeResult:
     desc = desc.lazy_clean()
     columns = desc.get_columns()
     for col in columns:
@@ -124,7 +143,8 @@ class DetailModalRenderer(ModalScreen):
                 if not field_value:
                     continue
 
-                renderer = RendererRegistry.get_renderer(field_value.__class__)
+                # renderer = RendererRegistry.get_renderer(field_value.__class__)
+                renderer = RendererRegistry.get_renderer(item.field)
                 yield from renderer(title=item.title, desc=field_value)
                 yield Rule()
 
