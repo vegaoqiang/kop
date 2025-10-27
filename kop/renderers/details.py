@@ -22,31 +22,6 @@ def render_simple(title: str, desc: str) -> ComposeResult:
 @RendererRegistry.register_renderer(dict)
 def render_dict(title: str, desc: dict) -> ComposeResult:
     yield DictDetail(title=title, description=desc)
-
-
-# @RendererRegistry.register_renderer(list)
-# def render_list(title: str, desc: list) -> ComposeResult:
-#     if not desc:
-#         return
-#     if title == 'Tolerations':
-#         yield from render_tolerations(title=title, desc=desc)
-#     if title == 'Environment':
-#         yield from render_environment(title=title, desc=desc)
-#     if title == 'Conditions':
-#         yield from render_conditions(title=title, desc=desc)
-#     if title == 'Containers':
-#         yield from render_containers(title=title, desc=desc)
-#     for item in desc:
-
-#         if isinstance(item, ContainerStatusModel):
-#             yield from render_container_status(desc=item)
-#             continue
-
-#         if isinstance(item, str):
-#             yield ListDetail(title=title, description=desc)
-#             return
-#         if isinstance(item, dict):
-#             yield DictDetail(title=title, description=item)
             
 
 @RendererRegistry.register_renderer('conditions')
@@ -89,10 +64,7 @@ def render_container(desc: ContainerModel) -> ComposeResult:
         if not field_value:
             continue
         # renderer = RendererRegistry.get_renderer(field_value.__class__)
-        renderer = RendererRegistry.get_renderer(col.field)
-        print("render_container:", renderer)
-        if not renderer:
-            renderer = render_simple
+        renderer = RendererRegistry.get_renderer(col.field, render_default)
         yield from renderer(title=col.title, desc=field_value)
     
 
@@ -110,8 +82,6 @@ def container_status(desc: ContainerStatusModel) -> ComposeResult:
         if not field_value:
             continue
         renderer = RendererRegistry.get_renderer(col.field)
-        if not renderer:
-            renderer = render_simple
         yield from renderer(title=col.title, desc=field_value)
 
 
@@ -169,9 +139,7 @@ class DetailModalRenderer(ModalScreen):
                     continue
 
                 # renderer = RendererRegistry.get_renderer(field_value.__class__)
-                renderer = RendererRegistry.get_renderer(item.field)
-                if not renderer:
-                    renderer = render_simple
+                renderer = RendererRegistry.get_renderer(item.field, render_default)
                 yield from renderer(title=item.title, desc=field_value)
                 yield Rule()
 
