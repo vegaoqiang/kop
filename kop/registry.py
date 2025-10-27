@@ -38,7 +38,4 @@ class RendererRegistry:
     @classmethod
     def get_renderer(cls, data_type: Union[str, Type[Any]], default: Callable = str) -> Callable:
         """Get renderer, set default to str if not found"""
-        renderer = cls._renderers.get(data_type)
-        if not renderer:
-            renderer = default
-        return renderer
+        return cls._renderers.get(data_type, default)
