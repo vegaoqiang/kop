@@ -21,7 +21,7 @@ class ClusterConfig(Static):
         self.styles.width = f"{self.width}%"
 
 
-class ClusterConfigContainer(ListItem):
+class ClusterConfigItem(ListItem):
     """
     read and renderer cluster config
     """
@@ -33,14 +33,10 @@ class ClusterConfigContainer(ListItem):
             yield ClusterConfig("test3", width=10)
 
 
-
-class StartupView(ListView):
+class ClusterConfigView(ListView):
 
     DEFAULT_CSS = """
-        StartupView {
-            align: center middle;
-        }
-        ClusterConfigContainer {
+        ClusterConfigView {
             border: dashed $secondary;
             border-title-align: left;
             border-title-color: green;
@@ -53,15 +49,46 @@ class StartupView(ListView):
     """
 
     def compose(self) -> ComposeResult:
-        container = ClusterConfigContainer()
-        container.border_title = "Chosse a Cluster to Connect"
-        yield container
+        yield ClusterConfigItem()
+
+
+
+# class StartupView(Screen):
+
+#     DEFAULT_CSS = """
+#         StartupView {
+#             align: center middle;
+#         }
+#         ClusterConfigContainer {
+#             border: dashed $secondary;
+#             border-title-align: left;
+#             border-title-color: green;
+#             border-title-background: white;
+#             border-title-style: bold;
+#             height: 70%;
+#             width: 70%;
+#             align: left top;
+#         }
+#     """
+
+#     def compose(self) -> ComposeResult:
+#         container = ClusterConfigContainer()
+#         container.border_title = "Chosse a Cluster to Connect"
+#         yield container
 
 
 class StartScreen(Screen):
 
+    DEFAULT_CSS = """
+        StartScreen {
+            align: center middle;
+        }
+    """
+
     def compose(self) -> ComposeResult:
-        yield StartupView()
+        screen = ClusterConfigView()
+        screen.border_title = "Chosse a Cluster to Connect"
+        yield screen
 
 
 
