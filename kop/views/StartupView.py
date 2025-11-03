@@ -1,104 +1,109 @@
-from textual.app import ComposeResult, App
-from textual.screen import Screen
-from textual.widgets import ListItem, ListView, Label, Static
-from textual.containers import Horizontal
+from textual.app import App, ComposeResult
+from textual.containers import VerticalScroll, Grid
+from textual.widgets import Header, Static, Button
+from textual.reactive import Reactive
 
 
-
-class ClusterConfig(Static):
+class ConfigContainer(VerticalScroll):
+    """
+    make a VerticalScroll container and set container border
+    """
     DEFAULT_CSS = """
-        ClusterConfig {
-            padding: 0 3 0 0;
-            text-overflow: ellipsis;
-        }
-        """
-
-    def __init__(self, text: str, width: int = 10,  **kwargs) -> None:
-        super().__init__(text, **kwargs)
-        self.width = width
-
-    def on_mount(self) -> None:
-        self.styles.width = f"{self.width}%"
-
-
-class ClusterConfigItem(ListItem):
+    ConfigContainer {
+        border: dashed $secondary;
+        border-title-align: left;
+        border-title-color: green;
+        border-title-background: white;
+        border-title-style: bold;
+        height: 70%;
+        width: 70%;
+        align: left top;
+    }
     """
-    read and renderer cluster config
+
+
+class ConfigRow(Grid):
     """
+    make a row contain 4 columns button
+    """
+    DEFAULT_CSS = """
+    ConfigRow {
+        grid-size: 4 1;
+        grid-columns: 1fr 1fr 1fr 1fr;
+        grid-gutter: 1;
+        height: auto;
+        padding-bottom: 1;
+    }
+    """
+
+    # config: Reactive[list[dict]] = Reactive([])
+
+    def __init__(self, config: list[dict], **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.config = config
+
 
     def compose(self) -> ComposeResult:
-        with Horizontal():
-            yield ClusterConfig("test1", width=10)
-            yield ClusterConfig("test2", width=10)
-            yield ClusterConfig("test3", width=10)
+        for i in self.config:
+            yield Button(f"{i.values}")
 
 
-class ClusterConfigView(ListView):
 
-    DEFAULT_CSS = """
-        ClusterConfigView {
-            border: dashed $secondary;
-            border-title-align: left;
-            border-title-color: green;
-            border-title-background: white;
-            border-title-style: bold;
-            height: 70%;
-            width: 70%;
-            align: left top;
-        }
+class ConfigView(ConfigContainer):
+    """
+    make a VerticalScroll container and set container border
     """
 
-    def compose(self) -> ComposeResult:
-        yield ClusterConfigItem()
+    KubeConfig: Reactive[list[dict]] = Reactive([])
 
+    def __init__(self, kube_config: list[dict], column_length: int = 4, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.kube_config = kube_config
+        self.column_length = column_length
+        self.set_reactive(ConfigView.KubeConfig, kube_config)
+        self.border_title = "Clusters"
 
-
-# class StartupView(Screen):
-
-#     DEFAULT_CSS = """
-#         StartupView {
-#             align: center middle;
-#         }
-#         ClusterConfigContainer {
-#             border: dashed $secondary;
-#             border-title-align: left;
-#             border-title-color: green;
-#             border-title-background: white;
-#             border-title-style: bold;
-#             height: 70%;
-#             width: 70%;
-#             align: left top;
-#         }
-#     """
-
-#     def compose(self) -> ComposeResult:
-#         container = ClusterConfigContainer()
-#         container.border_title = "Chosse a Cluster to Connect"
-#         yield container
-
-
-class StartScreen(Screen):
-
-    DEFAULT_CSS = """
-        StartScreen {
-            align: center middle;
-        }
-    """
 
     def compose(self) -> ComposeResult:
-        screen = ClusterConfigView()
-        screen.border_title = "Chosse a Cluster to Connect"
-        yield screen
+        for i in range(0, len(self.KubeConfig), self.column_length):
+            yield ConfigRow(t[i:i+self.column_length])
 
+    def watch_kube_config(self, value: list[dict]) -> None:
+        self.KubeConfig = value
 
-
-class StartupApp(App):
-
-  def on_mount(self) -> None:
-      self.push_screen(StartScreen())
+    def update_kube_config(self) -> None:
+        self.KubeConfig = self.kube_config
+        self.mutate_reactive(ConfigView.KubeConfig)
+    
 
     
 
-if __name__ == '__main__':
-    app = StartupApp()
+class TestApp(App):
+
+    def __init__(self, kube_config: list[dict], **kwargs):
+        super().__init__(**kwargs)
+        self.kube_config = kube_config
+
+    def compose(self) -> ComposeResult:
+        yield Header()
+        yield ConfigView(kube_config=self.kube_config)
+ 
+
+
+
+
+if __name__ == "__main__":
+    t = [
+            {"name": "test1"},
+            {"name": "test2"},
+            {"name": "test3"},
+            {"name": "test4"},
+            {"name": "test5"},
+            {"name": "test6"},
+            {"name": "test7"},
+            {"name": "test8"},
+            {"name": "test9"},
+            {"name": "test10"},
+        ]
+    app = TestApp(kube_config=t)
     app.run()
