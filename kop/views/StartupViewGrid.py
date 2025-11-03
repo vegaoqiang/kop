@@ -6,12 +6,12 @@ from textual.geometry import Size
 from textual.reactive import Reactive
 
 
-class Test(VerticalScroll):
+class ConfigContainer(VerticalScroll):
     """
     make a VerticalScroll container and set container border
     """
     DEFAULT_CSS = """
-    Test {
+    ConfigContainer {
         border: round white;
         height: 70%;
         width: 70%;
@@ -19,12 +19,12 @@ class Test(VerticalScroll):
     """
 
 
-class Test1(Grid):
+class ConfigRow(Grid):
     """
     make a row contain 4 columns button
     """
     DEFAULT_CSS = """
-    Test1 {
+    ConfigRow {
         # layout: grid;
         grid-size: 4 1;
         grid-columns: 1fr 1fr 1fr 1fr;
@@ -47,7 +47,7 @@ class Test1(Grid):
 
 
 
-class Test2(Test):
+class ConfigView(ConfigContainer):
     """
     make a VerticalScroll container and set container border
     """
@@ -74,17 +74,22 @@ class Test2(Test):
             {"name": "test10"},
         ]
         for i in range(0, len(t), self.column_length):
-            yield Test1(t[i:i+self.column_length])
+            yield ConfigRow(t[i:i+self.column_length])
 
     def watch_kube_config(self, value: list[dict] | None) -> None:
         self.KubeConfig = value
+
+    def update_kube_config(self) -> None:
+        self.KubeConfig = self.kube_config
+        self.mutate_reactive(ConfigView.KubeConfig)
+    
 
     
 
 class TestApp(App):
 
     def compose(self) -> ComposeResult:
-        yield Test2(kube_config=[])
+        yield ConfigView(kube_config=[])
  
 
 
