@@ -1,8 +1,6 @@
 from textual.app import App, ComposeResult
-from textual.containers import Container, Horizontal, VerticalScroll, Grid
+from textual.containers import VerticalScroll, Grid
 from textual.widgets import Header, Static, Button
-from textual.scroll_view import ScrollView
-from textual.geometry import Size
 from textual.reactive import Reactive
 
 
@@ -12,9 +10,14 @@ class ConfigContainer(VerticalScroll):
     """
     DEFAULT_CSS = """
     ConfigContainer {
-        border: round white;
+        border: dashed $secondary;
+        border-title-align: left;
+        border-title-color: green;
+        border-title-background: white;
+        border-title-style: bold;
         height: 70%;
         width: 70%;
+        align: left top;
     }
     """
 
@@ -25,7 +28,6 @@ class ConfigRow(Grid):
     """
     DEFAULT_CSS = """
     ConfigRow {
-        # layout: grid;
         grid-size: 4 1;
         grid-columns: 1fr 1fr 1fr 1fr;
         grid-gutter: 1;
@@ -52,31 +54,21 @@ class ConfigView(ConfigContainer):
     make a VerticalScroll container and set container border
     """
 
-    KubeConfig: Reactive[list[dict] | None] = Reactive(default=None)
+    KubeConfig: Reactive[list[dict]] = Reactive([])
 
     def __init__(self, kube_config: list[dict], column_length: int = 4, **kwargs) -> None:
         super().__init__(**kwargs)
         self.kube_config = kube_config
         self.column_length = column_length
+        self.set_reactive(ConfigView.KubeConfig, kube_config)
+        self.border_title = "Clusters"
 
 
     def compose(self) -> ComposeResult:
-        t = [
-            {"name": "test1"},
-            {"name": "test2"},
-            {"name": "test3"},
-            {"name": "test4"},
-            {"name": "test5"},
-            {"name": "test6"},
-            {"name": "test7"},
-            {"name": "test8"},
-            {"name": "test9"},
-            {"name": "test10"},
-        ]
-        for i in range(0, len(t), self.column_length):
+        for i in range(0, len(self.KubeConfig), self.column_length):
             yield ConfigRow(t[i:i+self.column_length])
 
-    def watch_kube_config(self, value: list[dict] | None) -> None:
+    def watch_kube_config(self, value: list[dict]) -> None:
         self.KubeConfig = value
 
     def update_kube_config(self) -> None:
@@ -88,13 +80,30 @@ class ConfigView(ConfigContainer):
 
 class TestApp(App):
 
+    def __init__(self, kube_config: list[dict], **kwargs):
+        super().__init__(**kwargs)
+        self.kube_config = kube_config
+
     def compose(self) -> ComposeResult:
-        yield ConfigView(kube_config=[])
+        yield Header()
+        yield ConfigView(kube_config=self.kube_config)
  
 
 
 
 
 if __name__ == "__main__":
-    app = TestApp()
+    t = [
+            {"name": "test1"},
+            {"name": "test2"},
+            {"name": "test3"},
+            {"name": "test4"},
+            {"name": "test5"},
+            {"name": "test6"},
+            {"name": "test7"},
+            {"name": "test8"},
+            {"name": "test9"},
+            {"name": "test10"},
+        ]
+    app = TestApp(kube_config=t)
     app.run()
