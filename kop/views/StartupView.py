@@ -1,6 +1,6 @@
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll, Grid
-from textual.widgets import Header, Static, Button
+from textual.widgets import Header, Footer, Static, Button
 from textual.reactive import Reactive
 
 
@@ -10,9 +10,9 @@ class ConfigContainer(VerticalScroll):
     """
     DEFAULT_CSS = """
     ConfigContainer {
-        border: dashed $secondary;
+        border: round $secondary;
         border-title-align: left;
-        border-title-color: green;
+        border-title-color: $secondary;
         border-title-background: white;
         border-title-style: bold;
         height: 70%;
@@ -79,6 +79,17 @@ class ConfigView(ConfigContainer):
     
 
 class TestApp(App):
+    
+    DEFAULT_CSS = """
+        Screen {
+            align: center middle;
+        }
+    """
+    BINDINGS = [
+        ('a', 'add', 'Add New Cluster'),
+        ('d', 'delete', 'Delete Cluster'),
+        ('c', 'connect', 'Connect Cluster')
+    ]
 
     def __init__(self, kube_config: list[dict], **kwargs):
         super().__init__(**kwargs)
@@ -87,6 +98,7 @@ class TestApp(App):
     def compose(self) -> ComposeResult:
         yield Header()
         yield ConfigView(kube_config=self.kube_config)
+        yield Footer()
  
 
 
@@ -104,6 +116,36 @@ if __name__ == "__main__":
             {"name": "test8"},
             {"name": "test9"},
             {"name": "test10"},
+            {"name": "test11"},
+            {"name": "test12"},
+            {"name": "test13"},
+            {"name": "test14"},
+            {"name": "test15"},
+            {"name": "test16"},
+            {"name": "test17"},
+            {"name": "test18"},
+            {"name": "test19"},
+            {"name": "test20"},
+            {"name": "test21"},
+            {"name": "test22"},
+            {"name": "test23"},
+            {"name": "test24"},
+            {"name": "test25"},
+            {"name": "test26"},
+            {"name": "test27"},
+            {"name": "test28"},
+            {"name": "test29"},
+            {"name": "test30"},
+            {"name": "test31"},
+            {"name": "test32"},
+            {"name": "test33"},
+            {"name": "test34"},
+            {"name": "test35"},
+            {"name": "test36"},
+            {"name": "test37"},
+            {"name": "test38"},
+            {"name": "test39"},
+            {"name": "test40"},
         ]
     app = TestApp(kube_config=t)
     app.run()
