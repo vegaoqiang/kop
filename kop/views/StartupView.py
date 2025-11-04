@@ -1,39 +1,22 @@
 from textual.app import App, ComposeResult
-from textual.containers import VerticalScroll, Grid
-from textual.widgets import Header, Footer, Static, Button
+from textual.containers import VerticalScroll, Grid, Horizontal
+from textual.widgets import Header, Footer, Static, Button, ListView, ListItem
+from textual.widget import Widget
 from textual.reactive import Reactive
+from textual.screen import Screen
+from rich.columns import Columns
 
 
-class ConfigContainer(VerticalScroll):
-    """
-    make a VerticalScroll container and set container border
-    """
-    DEFAULT_CSS = """
-    ConfigContainer {
-        border: round $secondary;
-        border-title-align: left;
-        border-title-color: $secondary;
-        border-title-background: white;
-        border-title-style: bold;
-        height: 70%;
-        width: 70%;
-        align: left top;
-    }
-    """
 
-
-class ConfigRow(Grid):
+class ConfigRow(ListItem):
     """
     make a row contain 4 columns button
     """
     DEFAULT_CSS = """
-    ConfigRow {
-        grid-size: 4 1;
-        grid-columns: 1fr 1fr 1fr 1fr;
-        grid-gutter: 1;
-        height: auto;
-        padding-bottom: 1;
-    }
+        Static {
+            height: 1;
+            width: 25%;
+        }
     """
 
     # config: Reactive[list[dict]] = Reactive([])
@@ -44,14 +27,32 @@ class ConfigRow(Grid):
 
 
     def compose(self) -> ComposeResult:
-        for i in self.config:
-            yield Button(f"{i.values}")
+        with Horizontal():
+            for i in self.config:
+                yield Static(f"{i.values}")
 
 
 
-class ConfigView(ConfigContainer):
+class ConfigView(ListView):
     """
     make a VerticalScroll container and set container border
+    """
+    DEFAULT_CSS = """
+        ConfigView {
+            border: round $secondary;
+            border-title-align: left;
+            border-title-color: $secondary;
+            border-title-background: white;
+            border-title-style: bold;
+            height: 70%;
+            width: 70%;
+            align: left top;
+            & > ConfigRow {
+                height: 1;
+                overflow: hidden hidden;
+                width: 1fr;
+            }
+        }
     """
 
     KubeConfig: Reactive[list[dict]] = Reactive([])
@@ -74,17 +75,17 @@ class ConfigView(ConfigContainer):
     def update_kube_config(self) -> None:
         self.KubeConfig = self.kube_config
         self.mutate_reactive(ConfigView.KubeConfig)
-    
 
     
 
-class TestApp(App):
-    
+class ConfigScreen(Screen):
+
     DEFAULT_CSS = """
-        Screen {
+        ConfigScreen {
             align: center middle;
         }
     """
+
     BINDINGS = [
         ('a', 'add', 'Add New Cluster'),
         ('d', 'delete', 'Delete Cluster'),
@@ -99,6 +100,17 @@ class TestApp(App):
         yield Header()
         yield ConfigView(kube_config=self.kube_config)
         yield Footer()
+    
+
+
+class TestApp(App):
+    
+    def __init__(self, kube_config: list[dict], **kwargs):
+        super().__init__(**kwargs)
+        self.kube_config = kube_config
+
+    def on_mount(self) -> None:
+        self.push_screen(ConfigScreen(self.kube_config))
  
 
 
