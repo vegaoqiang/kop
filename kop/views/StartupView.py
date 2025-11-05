@@ -1,7 +1,6 @@
-from textual.app import App, ComposeResult, RenderResult
-from textual.containers import VerticalScroll, Grid, Horizontal
-from textual.widgets import Header, Footer, Static, Button, ListView, ListItem
-from textual.widget import Widget
+from textual.app import App, ComposeResult
+from textual.containers import VerticalScroll, Horizontal
+from textual.widgets import Header, Footer
 from textual.reactive import Reactive
 from textual.screen import Screen
 from components.Focusable import ConfigItem
