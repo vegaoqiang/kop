@@ -1,7 +1,6 @@
 from textual.app import ComposeResult
-from textual.events import Mount
 from textual.widgets import Static, DataTable, Label
-from textual.containers import Horizontal, Grid, ItemGrid, HorizontalGroup, Vertical, Container
+from textual.containers import Horizontal, Grid, ItemGrid, Vertical
 
 
 class Title(Static):
