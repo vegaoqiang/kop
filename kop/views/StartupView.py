@@ -113,7 +113,7 @@ class ConfigView(VerticalScroll):
         elif event.key == "up" and idx - row_len >= 0:
             new_idx = idx - row_len
 
-        if new_idx != idx:
+        if new_idx != idx and new_idx < total:
             items[new_idx].focus()
             self.scroll_to_center(items[new_idx])
             event.stop()
