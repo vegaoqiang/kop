@@ -4,8 +4,7 @@ from textual.widgets import Header, Footer, Static, Button, ListView, ListItem
 from textual.widget import Widget
 from textual.reactive import Reactive
 from textual.screen import Screen
-from rich.columns import Columns
-from components.Focusable import FocusableItem
+from components.Focusable import ConfigItem
 
 
 
@@ -15,8 +14,8 @@ class ConfigRow(Horizontal):
     make a row contain 4 columns button
     """
     DEFAULT_CSS = """
-        FocusableItem {
-            height: 2;
+        ConfigItem {
+            height: 4;
             width: 25%;
         }
     """
@@ -30,8 +29,8 @@ class ConfigRow(Horizontal):
 
     def compose(self) -> ComposeResult:
         # with Horizontal():
-        for i in self.config:
-            yield FocusableItem(f"{i.values}")     
+        for item in self.config:
+            yield ConfigItem(title=item.get("name"), ctx=item.get("content"))     
 
 
 
@@ -95,7 +94,7 @@ class ConfigView(VerticalScroll):
         if event.key not in ("up", "down", "left", "right", "tab"):
             return
 
-        items = list(self.query(FocusableItem))
+        items = list(self.query(ConfigItem))
         focused = self.app.focused
         if focused not in items:
             return
@@ -160,56 +159,56 @@ class TestApp(App):
 
 if __name__ == "__main__":
     t = [
-            {"name": "test1"},
-            {"name": "test2"},
-            {"name": "test3"},
-            {"name": "test4"},
-            {"name": "test5"},
-            {"name": "test6"},
-            {"name": "test7"},
-            {"name": "test8"},
-            {"name": "test9"},
-            {"name": "test10"},
-            {"name": "test11"},
-            {"name": "test12"},
-            {"name": "test13"},
-            {"name": "test14"},
-            {"name": "test15"},
-            {"name": "test16"},
-            {"name": "test17"},
-            {"name": "test18"},
-            {"name": "test19"},
-            {"name": "test20"},
-            {"name": "test21"},
-            {"name": "test22"},
-            {"name": "test23"},
-            {"name": "test24"},
-            {"name": "test25"},
-            {"name": "test26"},
-            {"name": "test27"},
-            {"name": "test28"},
-            {"name": "test29"},
-            {"name": "test30"},
-            {"name": "test31"},
-            {"name": "test32"},
-            {"name": "test33"},
-            {"name": "test34"},
-            {"name": "test35"},
-            {"name": "test36"},
-            {"name": "test37"},
-            {"name": "test38"},
-            {"name": "test39"},
-            {"name": "test40"},
-            {"name": "test41"},
-            {"name": "test42"},
-            {"name": "test43"},
-            {"name": "test44"},
-            {"name": "test45"},
-            {"name": "test46"},
-            {"name": "test47"},
-            {"name": "test48"},
-            {"name": "test49"},
-            {"name": "test50"}
+            {"name": "test1", "content": "hello world"},
+            {"name": "test2", "content": "hello world"},
+            {"name": "test3", "content": "hello world"},
+            {"name": "test4", "content": "hello world"},
+            {"name": "test5", "content": "hello world"},
+            {"name": "test6", "content": "hello world"},
+            {"name": "test7", "content": "hello world"},
+            {"name": "test8", "content": "hello world"},
+            {"name": "test9", "content": "hello world"},
+            {"name": "test10", "content": "hello world"},
+            {"name": "test11", "content": "hello world"},
+            {"name": "test12", "content": "hello world"},
+            {"name": "test13", "content": "hello world"},
+            {"name": "test14", "content": "hello world"},
+            {"name": "test15", "content": "hello world"},
+            {"name": "test16", "content": "hello world"},
+            {"name": "test17", "content": "hello world"},
+            {"name": "test18", "content": "hello world"},
+            {"name": "test19", "content": "hello world"},
+            {"name": "test20", "content": "hello world"},
+            {"name": "test21", "content": "hello world"},
+            {"name": "test22", "content": "hello world"},
+            {"name": "test23", "content": "hello world"},
+            {"name": "test24", "content": "hello world"},
+            {"name": "test25", "content": "hello world"},
+            {"name": "test26", "content": "hello world"},
+            {"name": "test27", "content": "hello world"},
+            {"name": "test28", "content": "hello world"},
+            {"name": "test29", "content": "hello world"},
+            {"name": "test30", "content": "hello world"},
+            {"name": "test31", "content": "hello world"},
+            {"name": "test32", "content": "hello world"},
+            {"name": "test33", "content": "hello world"},
+            {"name": "test34", "content": "hello world"},
+            {"name": "test35", "content": "hello world"},
+            {"name": "test36", "content": "hello world"},
+            {"name": "test37", "content": "hello world"},
+            {"name": "test38", "content": "hello world"},
+            {"name": "test39", "content": "hello world"},
+            {"name": "test40", "content": "hello world"},
+            {"name": "test41", "content": "hello world"},
+            {"name": "test42", "content": "hello world"},
+            {"name": "test43", "content": "hello world"},
+            {"name": "test44", "content": "hello world"},
+            {"name": "test45", "content": "hello world"},
+            {"name": "test46", "content": "hello world"},
+            {"name": "test47", "content": "hello world"},
+            {"name": "test48", "content": "hello world"},
+            {"name": "test49", "content": "hello world"},
+            {"name": "test50", "content": "hello world"}
         ]
     app = TestApp(kube_config=t)
     app.run()

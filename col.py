@@ -26,3 +26,4 @@ users = json.loads(urlopen("https://randomuser.me/api/?results=30").read())["res
 console.print(users, overflow="ignore", crop=False)
 user_renderables = [Panel(get_content(user), expand=True) for user in users]
 console.print(Columns(user_renderables))
+console.print(Panel("Hello,\n [red]World!",expand=False, title="Welcome", subtitle="Thank you"))
