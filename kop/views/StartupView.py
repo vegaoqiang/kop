@@ -185,7 +185,7 @@ class AddClusterScreen(Screen):
             type="text",
             validators=[ClusterNameValidator()],
             valid_empty=False,
-            # validate_on=["changed"],
+            validate_on=["changed"],
             max_length=24)
         yield Label("Paste Your Cluster Config Content")
         yield TextArea(language="yaml")
