@@ -165,12 +165,6 @@ class AddClusterScreen(Screen):
             text-style: bold;
             margin: 1 0 0 1;
         }
-        # #save {
-        #     margin-top: 1;
-        #     margin-bottom: 1;
-        #     margin-left: 1;
-        #     align-horizontal: left;
-        # }
         #button_group {
             margin-top: 1;
             margin-bottom: 1;
@@ -210,7 +204,6 @@ class AddClusterScreen(Screen):
             Button(label="Clear", variant="default", id="clear", tooltip="Clear cluster config content"),
             id="button_group"
         )
-        # yield Button(label="Save", variant="success", id="save")
         yield Footer()
 
     @on(Button.Pressed, "#save")
