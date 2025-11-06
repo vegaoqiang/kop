@@ -1,9 +1,9 @@
 from textual import on
+from textual.screen import Screen
+from textual.reactive import Reactive
 from textual.app import App, ComposeResult
 from textual.containers import VerticalScroll, Horizontal
 from textual.widgets import Header, Footer, TextArea, Input, Label, Button
-from textual.reactive import Reactive
-from textual.screen import Screen
 from validations import ClusterNameValidator, ClusterContentValidator
 from components.Focusable import ConfigItem
 
@@ -213,13 +213,15 @@ class AddClusterScreen(Screen):
         # yield Button(label="Save", variant="success", id="save")
         yield Footer()
 
-
+    @on(Button.Pressed, "#save")
     def action_close(self):
         self.app.pop_screen()
 
+    @on(Button.Pressed, "#cancel")
     def action_save(self):
         ...
 
+    @on(Button.Pressed, "#clear")
     def action_clear(self):
         self.query_one(TextArea).clear()
 
