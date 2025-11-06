@@ -4,7 +4,7 @@ from textual.containers import VerticalScroll, Horizontal
 from textual.widgets import Header, Footer, TextArea, Input, Label, Button
 from textual.reactive import Reactive
 from textual.screen import Screen
-from validations import ClusterNameValidator
+from validations import ClusterNameValidator, ClusterContentValidator
 from components.Focusable import ConfigItem
 
 
@@ -165,11 +165,20 @@ class AddClusterScreen(Screen):
             text-style: bold;
             margin: 1 0 0 1;
         }
-        #save {
+        # #save {
+        #     margin-top: 1;
+        #     margin-bottom: 1;
+        #     margin-left: 1;
+        #     align-horizontal: left;
+        # }
+        #button_group {
             margin-top: 1;
             margin-bottom: 1;
             margin-left: 1;
-            align-horizontal: left;
+            height: auto;
+        }
+        Button {
+            margin-right: 1;
         }
         Toast {
             align: right top;
@@ -177,8 +186,10 @@ class AddClusterScreen(Screen):
     """
 
     BINDINGS = [
-        ("escape", "close", "Cancel"),
         ("ctrl+s", "save", "Save"),
+        ("ctrl+l", "clear", "Clear"), # clear TextArea content
+        # ("meta+l", "clear", "Clear"),
+        ("escape", "close", "Cancel"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -193,12 +204,24 @@ class AddClusterScreen(Screen):
             max_length=24)
         yield Label("Paste Your Cluster Config Content")
         yield TextArea(language="yaml")
-        yield Button(label="Save", variant="success", id="save")
+        yield Horizontal(
+            Button(label="Save", variant="success", id="save", tooltip="Save cluster config"),
+            Button(label="Cancel", variant="default", id="cancel", tooltip="Cancel and go back to previous screen"),
+            Button(label="Clear", variant="default", id="clear", tooltip="Clear cluster config content"),
+            id="button_group"
+        )
+        # yield Button(label="Save", variant="success", id="save")
         yield Footer()
 
 
     def action_close(self):
         self.app.pop_screen()
+
+    def action_save(self):
+        ...
+
+    def action_clear(self):
+        self.query_one(TextArea).clear()
 
     
     @on(Input.Changed)
@@ -211,6 +234,16 @@ class AddClusterScreen(Screen):
                 markup=False
                 )
 
+
+    @on(TextArea.Changed)
+    def validate_config_content(self, event: TextArea.Changed) -> None:
+        if not ClusterContentValidator(event.text_area.text).validate:
+            self.notify(
+                'Invalid Cluster Config Content',
+                severity="error",
+                timeout=3,
+                markup=False
+                )
 
 
 class TestApp(App):

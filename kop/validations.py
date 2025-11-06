@@ -1,6 +1,5 @@
 from textual.validation import Validator, ValidationResult
-from rich.markup import escape
-from rich.text import Text
+from yaml import safe_load
 
 class ClusterNameValidator(Validator):
     """
@@ -15,3 +14,25 @@ class ClusterNameValidator(Validator):
         if not value.isalnum():
             return self.failure(f"`{value}` Not Allowed! Cluster Name Only contains: [a-z][A-Z][0-9][-_]")
         return self.success()
+    
+
+
+class ClusterContentValidator:
+    """
+    For AddClusterScreen input cluster content.
+    To validate the TextArea value is valid yaml
+    """
+    
+    def __init__(self, content: str) -> None:
+        self.content = content
+    
+
+    @property
+    def validate(self):
+        if not self.content:
+            return True
+        try:
+            safe_load(self.content)
+            return True
+        except Exception as e:
+            return False
