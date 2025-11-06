@@ -185,6 +185,7 @@ class AddClusterScreen(Screen):
         yield Label("Input Your Cluster Name")
         yield Input(
             placeholder="Cluster Name Text",
+            name="cluster_name",
             type="text",
             validators=[ClusterNameValidator()],
             valid_empty=False,
