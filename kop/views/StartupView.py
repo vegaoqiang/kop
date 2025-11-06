@@ -171,6 +171,9 @@ class AddClusterScreen(Screen):
             margin-left: 1;
             align-horizontal: left;
         }
+        Toast {
+            align: right top;
+        }
     """
 
     BINDINGS = [
@@ -196,21 +199,12 @@ class AddClusterScreen(Screen):
     def action_close(self):
         self.app.pop_screen()
 
-
-    def is_pure_text(self, value: str) -> bool:
-        """
-        To validate the value only contains: [a-z][A-Z][0-9][-_]
-        """
-        if value in ["-", "_"]:
-            value = value.replace("-", "").replace("_", "")
-        return value.isalnum()
-    
     
     @on(Input.Changed)
     def show_invalid_reasons(self, event: Input.Changed) -> None:
         if not event.validation_result.is_valid:
             self.notify(
-                '/n'.join(event.validation_result.failure_descriptions),
+                '\n'.join(event.validation_result.failure_descriptions),
                 severity="warning",
                 timeout=3,
                 markup=False
