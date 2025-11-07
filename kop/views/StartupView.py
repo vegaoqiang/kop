@@ -2,7 +2,7 @@ from textual import on
 from textual.screen import Screen
 from textual.reactive import Reactive
 from textual.app import App, ComposeResult
-from textual.containers import VerticalScroll, Horizontal
+from textual.containers import VerticalScroll, Horizontal, Container
 from textual.widgets import Header, Footer, TextArea, Input, Label, Button
 from validations import ClusterNameValidator, ClusterContentValidator
 from components.Focusable import ConfigItem
@@ -59,6 +59,7 @@ class ConfigView(VerticalScroll):
 
     BINDINGS = [
         ('d', 'delete', 'Delete Cluster'),
+        ('c', 'connect', 'Connect Cluster'),
     ]
 
     KubeConfig: Reactive[list[dict]] = Reactive([], recompose=True)
@@ -89,6 +90,9 @@ class ConfigView(VerticalScroll):
         idx = items.index(focused)
         self.KubeConfig.pop(idx)
         self.mutate_reactive(ConfigView.KubeConfig)
+
+    def action_connect(self):
+        ...
 
     
     def on_key(self, event):
@@ -141,8 +145,6 @@ class ConfigScreen(Screen):
 
     BINDINGS = [
         ('a', 'add', 'Add New Cluster'),
-        ('d', 'delete', 'Delete Cluster'),
-        ('c', 'connect', 'Connect Cluster'),
     ]
 
     def __init__(self, kube_config: list[dict], **kwargs):
@@ -153,16 +155,15 @@ class ConfigScreen(Screen):
         yield Header()
         yield ConfigView(kube_config=self.kube_config)
         yield Horizontal(
-            Button(label="Add", variant="success", id="add", tooltip="Add cluster"),
-            Button(label="Delete", variant="error", id="delete", tooltip="Delete current chosen cluster"),
-            Button(label="Connect", variant="default", id="connect", tooltip="Connect current chosen cluster"),
+            Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
             id="button_group"
         )
         yield Footer()
     
+    @on(Button.Pressed, "#add")
     def action_add(self):
         self.app.push_screen(AddClusterScreen())
-    
+
 
 
 class AddClusterScreen(Screen):
