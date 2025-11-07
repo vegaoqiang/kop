@@ -126,12 +126,23 @@ class ConfigScreen(Screen):
         ConfigScreen {
             align: center middle;
         }
+        #button_group {
+            margin-top: 1;
+            margin-bottom: 1;
+            margin-left: 1;
+            width: 70%;
+            height: auto;
+            align: left top;
+        }
+        Button {
+            margin-right: 1;
+        }
     """
 
     BINDINGS = [
         ('a', 'add', 'Add New Cluster'),
         ('d', 'delete', 'Delete Cluster'),
-        ('c', 'connect', 'Connect Cluster')
+        ('c', 'connect', 'Connect Cluster'),
     ]
 
     def __init__(self, kube_config: list[dict], **kwargs):
@@ -141,6 +152,12 @@ class ConfigScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Header()
         yield ConfigView(kube_config=self.kube_config)
+        yield Horizontal(
+            Button(label="Add", variant="success", id="add", tooltip="Add cluster"),
+            Button(label="Delete", variant="error", id="delete", tooltip="Delete current chosen cluster"),
+            Button(label="Connect", variant="default", id="connect", tooltip="Connect current chosen cluster"),
+            id="button_group"
+        )
         yield Footer()
     
     def action_add(self):
