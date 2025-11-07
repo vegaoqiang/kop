@@ -31,8 +31,19 @@ class ConfigRow(Horizontal):
     def compose(self) -> ComposeResult:
         # with Horizontal():
         for item in self.config:
-            yield ConfigItem(title=item.get("name"), ctx=item.get("content"))     
+            yield ConfigItem(
+                title=item.get("name"), 
+                ctx=item.get("content"), 
+                )     
+            
+    # def watch_config(self, config: list[dict]):
+    #     self.config = config
+    #     self.mutate_reactive(ConfigRow.config)
 
+
+    # def action_delete(self):
+    #     focused = self.app.focused
+    #     print('action_delete:', focused.id)
 
 
 class ConfigView(VerticalScroll):
@@ -57,12 +68,14 @@ class ConfigView(VerticalScroll):
         }
     """
 
+    BINDINGS = [
+        ('d', 'delete', 'Delete Cluster'),
+    ]
 
-    KubeConfig: Reactive[list[dict]] = Reactive([])
+    KubeConfig: Reactive[list[dict]] = Reactive([], recompose=True)
 
     def __init__(self, kube_config: list[dict], column_length: int = 4, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.kube_config = kube_config
         self.column_length = column_length
         self.set_reactive(ConfigView.KubeConfig, kube_config)
         self.border_title = "Clusters"
@@ -73,24 +86,22 @@ class ConfigView(VerticalScroll):
             yield ConfigRow(t[i:i+self.column_length])
 
 
-    def watch_kube_config(self, value: list[dict]) -> None:
+    def update_kube_config(self, value: list[dict]) -> None:
+        """
+        For update kube config add new cluster
+        """
         self.KubeConfig = value
 
-    def update_kube_config(self) -> None:
-        self.KubeConfig = self.kube_config
+    def action_delete(self) -> None:
+        items = list(self.query(ConfigItem))
+        focused = self.app.focused
+        if not focused or focused not in items:
+            return
+        idx = items.index(focused)
+        self.KubeConfig.pop(idx)
         self.mutate_reactive(ConfigView.KubeConfig)
 
-    # def on_show(self) -> None:
-    #     self.call_after_refresh(self.resize_config_view)
-
-    # def resize_config_view(self) -> None:
-    #     grid = self.query_one(Grid)
-    #     grid.styles.grid_size_columns = self.column_length
-    #     grid.styles.grid_size_rows = (len(self.KubeConfig) + self.column_length - 1) // self.column_length
-    #     grid.mount_all([Button(f"{i}") for i in self.KubeConfig])
-    #     print('self.column_length:', self.column_length)
-    #     print('grid_size_rows:', (len(self.KubeConfig) + self.column_length - 1) // self.column_length)
-        
+    
     def on_key(self, event):
         if event.key not in ("up", "down", "left", "right", "tab"):
             return
@@ -146,12 +157,6 @@ class ConfigScreen(Screen):
     def action_add(self):
         self.app.push_screen(AddClusterScreen())
     
-    def on_delete(self, event):
-        self.app.push_screen(DeleteClusterScreen(kube_config=self.kube_config))
-    
-    def on_connect(self, event):
-        self.app.push_screen(TestApp(kube_config=self.kube_config))
-
 
 
 class AddClusterScreen(Screen):
@@ -206,11 +211,11 @@ class AddClusterScreen(Screen):
         )
         yield Footer()
 
-    @on(Button.Pressed, "#save")
+    @on(Button.Pressed, "#cancel")
     def action_close(self):
         self.app.pop_screen()
 
-    @on(Button.Pressed, "#cancel")
+    @on(Button.Pressed, "#save")
     def action_save(self):
         ...
 
