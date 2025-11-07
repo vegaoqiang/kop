@@ -7,4 +7,5 @@ requires-python = ">=3.13"
 dependencies = [
     "kubernetes>=33.1.0",
     "textual>=6.1.0",
+    "textual[syntax]>=6.1.0",
 ]

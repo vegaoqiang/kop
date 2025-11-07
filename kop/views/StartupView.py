@@ -12,7 +12,7 @@ from components.Focusable import ConfigItem
 
 class ConfigRow(Horizontal):
     """
-    make a row contain 4 columns button
+    make a row contain 4 columns
     """
     DEFAULT_CSS = """
         ConfigItem {
@@ -20,8 +20,6 @@ class ConfigRow(Horizontal):
             width: 25%;
         }
     """
-
-    # config: Reactive[list[dict]] = Reactive([])
 
     def __init__(self, config: list[dict], **kwargs) -> None:
         super().__init__(**kwargs)
@@ -36,15 +34,6 @@ class ConfigRow(Horizontal):
                 ctx=item.get("content"), 
                 )     
             
-    # def watch_config(self, config: list[dict]):
-    #     self.config = config
-    #     self.mutate_reactive(ConfigRow.config)
-
-
-    # def action_delete(self):
-    #     focused = self.app.focused
-    #     print('action_delete:', focused.id)
-
 
 class ConfigView(VerticalScroll):
     """
