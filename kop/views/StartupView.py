@@ -141,6 +141,16 @@ class ConfigScreen(Screen):
         Button {
             margin-right: 1;
         }
+        #title {
+            border: round $secondary;
+            margin-top: 1;
+            margin-bottom: 1;
+            height: auto;
+            width: 70%;
+            height: auto;
+            text-style: bold;
+            text-align: center;
+        }
     """
 
     BINDINGS = [
@@ -153,6 +163,7 @@ class ConfigScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
+        yield Label("Kubernetes Clusters - Choose one to connect", id="title")
         yield ConfigView(kube_config=self.kube_config)
         yield Horizontal(
             Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
