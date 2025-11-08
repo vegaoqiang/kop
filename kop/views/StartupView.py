@@ -43,8 +43,8 @@ class ConfigView(VerticalScroll):
         ConfigView {
             border: round $secondary;
             border-title-align: left;
-            border-title-color: $secondary;
-            border-title-background: white;
+            border-title-color: white;
+            border-title-background: $secondary;
             border-title-style: bold;
             height: 70%;
             width: 70%;
