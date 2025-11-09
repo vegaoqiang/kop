@@ -75,7 +75,7 @@ class Config:
         if not path.is_file():
             return
         # The kubernetes default config file cannot be deleted
-        if self.kube_default_path == path:
+        if self.kube_default_path.joinpath("config") == path:
             return 
         path.unlink()
 
