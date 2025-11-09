@@ -27,12 +27,13 @@ class ConfigRow(Horizontal):
 
 
     def compose(self) -> ComposeResult:
-        # with Horizontal():
         for item in self.config:
-            yield ConfigItem(
+            config_item = ConfigItem(
                 title=item.name, 
                 ctx=item.server, 
-                )     
+                ) 
+            config_item.path = item.path
+            yield config_item 
             
 
 class ConfigView(VerticalScroll):
@@ -90,6 +91,7 @@ class ConfigView(VerticalScroll):
         if not focused or focused not in items:
             return
         idx = items.index(focused)
+        Config().delete_config(config_path=focused.path)
         self.KubeConfig.pop(idx)
         self.mutate_reactive(ConfigView.KubeConfig)
 

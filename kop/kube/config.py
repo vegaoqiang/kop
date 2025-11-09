@@ -70,8 +70,8 @@ class Config:
         with path.open("w") as f:
             yaml.safe_dump(yaml_obj, f)
     
-    def delete_config(self, config: ConfigModel) -> None:
-        path = Path(config.path)
+    def delete_config(self, config_path: str) -> None:
+        path = Path(config_path)
         if not path.is_file():
             return
         # The kubernetes default config file cannot be deleted

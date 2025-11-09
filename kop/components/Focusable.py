@@ -12,8 +12,8 @@ class Focusable(Static, can_focus=True):
         }
     """
 
-    def __init__(self, label):
-        super().__init__()
+    def __init__(self, label, **kwargs):
+        super().__init__(**kwargs)
         self.label = label
 
     def render(self):
@@ -31,9 +31,10 @@ class ConfigItem(Focusable):
             text-style: bold;
         }
     """
+    path: str = ""
 
     def __init__(self, title: str, ctx: str, **kwargs):
         panel = Panel(f"[b]{title}[/b]\n[cyan]{ctx}", expand=True)
-        super().__init__(panel)
+        super().__init__(panel, **kwargs)
 
     
