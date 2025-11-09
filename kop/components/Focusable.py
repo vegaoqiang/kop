@@ -31,7 +31,7 @@ class ConfigItem(Focusable):
             text-style: bold;
         }
     """
-    path: str = ""
+    path: str
 
     def __init__(self, title: str, ctx: str, **kwargs):
         panel = Panel(f"[b]{title}[/b]\n[cyan]{ctx}", expand=True)
