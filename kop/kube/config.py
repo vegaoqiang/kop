@@ -1,5 +1,5 @@
-import os
 import yaml
+import uuid
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -49,14 +49,29 @@ class Config:
             version=cluster.get("version", ""), 
             path=str(path))
         
+    def update_config(self):
+        ...
 
-
-    def save_config(self):
-        return
+    def save_config(self, content: str) -> None:
+        try:
+            yaml_obj = yaml.safe_load(content)
+        except yaml.YAMLError as exc:
+            print(exc)
+            return
+        path = Path(self.kop_default_path).joinpath(uuid.uuid4().hex)
+        if not path.parent.is_dir():
+            path.parent.mkdir(parents=True)
+        with path.open("w") as f:
+            yaml.safe_dump(yaml_obj, f)
     
-    def delete_config(self):
-        return
-    
+    def delete_config(self, config: ConfigModel) -> None:
+        path = Path(config.path)
+        if not path.is_file():
+            return
+        # The kubernetes default config file cannot be deleted
+        if self.kube_default_path == path:
+            return 
+        path.unlink()
 
     def get_configs(self) -> list[ConfigModel] | None:
         """
