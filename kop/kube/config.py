@@ -39,9 +39,9 @@ class Config:
         if not contexts:
             """kubernetes config file is not valid"""
             return
-        cluster: dict = next(item for item in yaml_obj["clusters"] if item["name"] == contexts["cluster"])
-        user: dict = next(item for item in yaml_obj["users"] if item["name"] == contexts["user"])
-        return ConfigModel(name=user["name"], server=cluster["server"], version=cluster.get("version", ""), path=str(path))
+        cluster: dict = next(item for item in yaml_obj["clusters"] if item["name"] == contexts["context"]["cluster"])
+        user: dict = next(item for item in yaml_obj["users"] if item["name"] == contexts["context"]["user"])
+        return ConfigModel(name=user["name"], server=cluster["cluster"]["server"], version=cluster.get("version", ""), path=str(path))
         
 
 
@@ -60,9 +60,9 @@ class Config:
         if kube_default_config := self.get_kube_default_config():
             configs.append(kube_default_config)
         if not self.kop_default_path.is_dir():
-            return None
+            return configs
         for path in Path.iterdir(self.kop_default_path):
-            if config := self.load_config(path)
+            if config := self.load_config(path):
                 configs.append(config)
         return configs
     
@@ -78,3 +78,7 @@ class Config:
             return
         return self.load_config(self.kube_default_path.joinpath("config"))
     
+
+if __name__ == "__main__":
+    config = Config()
+    config.get_configs()
