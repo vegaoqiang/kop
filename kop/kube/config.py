@@ -40,9 +40,12 @@ class Config:
             """kubernetes config file is not valid"""
             return
         current_context: str = yaml_obj["current-context"]
-        contexts: dict = next(item for item in yaml_obj["contexts"] if item["name"] == current_context)
-        if not contexts:
-            contexts = yaml_obj["contexts"][0]
+        contexts: dict = next(
+            (item for item in yaml_obj["contexts"] if item["name"] == current_context),
+            yaml_obj["contexts"][0]
+            )
+        # if not contexts:
+        #     contexts = yaml_obj["contexts"][0]
         cluster: dict = next(item for item in yaml_obj["clusters"] if item["name"] == contexts["context"]["cluster"])
         user: dict = next(item for item in yaml_obj["users"] if item["name"] == contexts["context"]["user"])
         return ConfigModel(
