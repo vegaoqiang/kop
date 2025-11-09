@@ -11,6 +11,8 @@ class ConfigModel:
     name: str = ""
     # the kubernetes cluster api-server endpoint
     server: str = ""
+    # the kubernetes cluster user
+    user: str = ""
     # the kubernetes cluster version, not contain `version` field in config by default, it will add by kop
     version: str = ""
     # the kubernetes config file absolute path
@@ -41,7 +43,11 @@ class Config:
             return
         cluster: dict = next(item for item in yaml_obj["clusters"] if item["name"] == contexts["context"]["cluster"])
         user: dict = next(item for item in yaml_obj["users"] if item["name"] == contexts["context"]["user"])
-        return ConfigModel(name=user["name"], server=cluster["cluster"]["server"], version=cluster.get("version", ""), path=str(path))
+        return ConfigModel(
+            name=cluster["name"], 
+            server=cluster["cluster"]["server"], 
+            version=cluster.get("version", ""), 
+            path=str(path))
         
 
 

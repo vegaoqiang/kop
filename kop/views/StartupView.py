@@ -2,11 +2,11 @@ from textual import on
 from textual.screen import Screen
 from textual.reactive import Reactive
 from textual.app import App, ComposeResult
-from textual.containers import VerticalScroll, Horizontal, Container
+from textual.containers import VerticalScroll, Horizontal
 from textual.widgets import Header, Footer, TextArea, Input, Label, Button
 from validations import ClusterNameValidator, ClusterContentValidator
 from components.Focusable import ConfigItem
-
+from kube.config import Config, ConfigModel
 
 
 
@@ -21,7 +21,7 @@ class ConfigRow(Horizontal):
         }
     """
 
-    def __init__(self, config: list[dict], **kwargs) -> None:
+    def __init__(self, config: list[ConfigModel], **kwargs) -> None:
         super().__init__(**kwargs)
         self.config = config
 
@@ -30,8 +30,8 @@ class ConfigRow(Horizontal):
         # with Horizontal():
         for item in self.config:
             yield ConfigItem(
-                title=item.get("name"), 
-                ctx=item.get("content"), 
+                title=item.name, 
+                ctx=item.server, 
                 )     
             
 
@@ -62,9 +62,9 @@ class ConfigView(VerticalScroll):
         ('c', 'connect', 'Connect Cluster'),
     ]
 
-    KubeConfig: Reactive[list[dict]] = Reactive([], recompose=True)
+    KubeConfig: Reactive[list[ConfigModel]] = Reactive([], recompose=True)
 
-    def __init__(self, kube_config: list[dict], column_length: int = 4, **kwargs) -> None:
+    def __init__(self, kube_config: list[ConfigModel], column_length: int = 4, **kwargs) -> None:
         super().__init__(**kwargs)
         self.column_length = column_length
         self.set_reactive(ConfigView.KubeConfig, kube_config)
@@ -72,8 +72,10 @@ class ConfigView(VerticalScroll):
 
 
     def compose(self) -> ComposeResult:
+        if not self.KubeConfig:
+            return
         for i in range(0, len(self.KubeConfig), self.column_length):
-            yield ConfigRow(t[i:i+self.column_length])
+            yield ConfigRow(self.KubeConfig[i:i+self.column_length])
 
 
     def update_kube_config(self, value: list[dict]) -> None:
@@ -157,7 +159,7 @@ class ConfigScreen(Screen):
         ('a', 'add', 'Add New Cluster'),
     ]
 
-    def __init__(self, kube_config: list[dict], **kwargs):
+    def __init__(self, kube_config: list[ConfigModel], **kwargs):
         super().__init__(**kwargs)
         self.kube_config = kube_config
 
@@ -266,7 +268,7 @@ class AddClusterScreen(Screen):
 
 class TestApp(App):
     
-    def __init__(self, kube_config: list[dict], **kwargs):
+    def __init__(self, kube_config: list[ConfigModel], **kwargs):
         super().__init__(**kwargs)
         self.kube_config = kube_config
 
@@ -330,5 +332,7 @@ if __name__ == "__main__":
             {"name": "test49", "content": "hello world"},
             {"name": "test50", "content": "hello world"}
         ]
-    app = TestApp(kube_config=t)
+    config = Config().get_configs()
+    print(config)
+    app = TestApp(kube_config=config)
     app.run()
