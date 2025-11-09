@@ -36,11 +36,13 @@ class Config:
         except yaml.YAMLError as exc:
             print(exc)
             return
+        if not yaml_obj.get("contexts") or not yaml_obj.get("clusters") or not yaml_obj.get("users"):
+            """kubernetes config file is not valid"""
+            return
         current_context: str = yaml_obj["current-context"]
         contexts: dict = next(item for item in yaml_obj["contexts"] if item["name"] == current_context)
         if not contexts:
-            """kubernetes config file is not valid"""
-            return
+            contexts = yaml_obj["contexts"][0]
         cluster: dict = next(item for item in yaml_obj["clusters"] if item["name"] == contexts["context"]["cluster"])
         user: dict = next(item for item in yaml_obj["users"] if item["name"] == contexts["context"]["user"])
         return ConfigModel(
@@ -52,12 +54,26 @@ class Config:
     def update_config(self):
         ...
 
-    def save_config(self, content: str) -> None:
-        try:
-            yaml_obj = yaml.safe_load(content)
-        except yaml.YAMLError as exc:
-            print(exc)
-            return
+    def update_cluster_name(self, yaml_obj: dict, cluster_name: str):
+        """
+        replace cluster name in config to new cluster name
+        """
+        # try:
+        #     yaml_obj = yaml.safe_load(content)
+        # except yaml.YAMLError as exc:
+        #     print(exc)
+        #     return
+        yaml_obj["current-context"] = cluster_name
+        yaml_obj["contexts"][0]["name"] = cluster_name
+        return yaml_obj
+
+
+    def save_config(self, yaml_obj: dict) -> None:
+        # try:
+        #     yaml_obj = yaml.safe_load(content)
+        # except yaml.YAMLError as exc:
+        #     print(exc)
+        #     return
         path = Path(self.kop_default_path).joinpath(uuid.uuid4().hex)
         if not path.parent.is_dir():
             path.parent.mkdir(parents=True)

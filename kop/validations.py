@@ -1,5 +1,5 @@
 from textual.validation import Validator, ValidationResult
-from yaml import safe_load
+from yaml import safe_load, YAMLError
 
 class ClusterNameValidator(Validator):
     """
@@ -36,3 +36,14 @@ class ClusterContentValidator:
             return True
         except Exception as e:
             return False
+    
+    @property
+    def format(self):
+        try:
+            yaml_obj = safe_load(self.content)
+        except YAMLError as exc:
+            return False
+        if not yaml_obj.get("contexts") or not yaml_obj.get("clusters") or not yaml_obj.get("users"):
+            """kubernetes config file is not valid"""
+            return False
+        return yaml_obj

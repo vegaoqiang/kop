@@ -214,7 +214,7 @@ class AddClusterScreen(Screen):
     def compose(self) -> ComposeResult:
         yield Label("Input Your Cluster Name")
         yield Input(
-            placeholder="Cluster Name Text",
+            placeholder="Cluster Name (Optional)",
             name="cluster_name",
             type="text",
             validators=[ClusterNameValidator()],
@@ -237,7 +237,18 @@ class AddClusterScreen(Screen):
 
     @on(Button.Pressed, "#save")
     def action_save(self):
-        ...
+        input = self.query_one(Input)
+        cluster_name: str = input.value
+        textarea = self.query_one(TextArea)
+        cluster_config: str = textarea.text
+        if valid := ClusterContentValidator(cluster_config).format:
+            # if user input cluster name, replace cluster name in config
+            if cluster_name:
+                obj = Config().update_cluster_name(yaml_obj=valid, cluster_name=cluster_name)
+                Config().save_config(yaml_obj=obj)
+            else:
+                Config().save_config(yaml_obj=valid)
+
 
     @on(Button.Pressed, "#clear")
     def action_clear(self):
