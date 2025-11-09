@@ -1,8 +1,8 @@
-from textual import on
-from textual.screen import Screen
+from textual import on, work
 from textual.reactive import Reactive
 from textual.app import App, ComposeResult
-from textual.containers import VerticalScroll, Horizontal
+from textual.screen import Screen, ModalScreen
+from textual.containers import VerticalScroll, Horizontal, Grid
 from textual.widgets import Header, Footer, TextArea, Input, Label, Button
 from validations import ClusterNameValidator, ClusterContentValidator
 from components.Focusable import ConfigItem
@@ -85,7 +85,10 @@ class ConfigView(VerticalScroll):
         """
         self.KubeConfig = value
 
-    def action_delete(self) -> None:
+    @work
+    async def action_delete(self) -> None:
+        if not await self.app.push_screen_wait(DeleteConfigConfirmScreen()):
+            return
         items = list(self.query(ConfigItem))
         focused = self.app.focused
         if not focused or focused not in items:
@@ -127,6 +130,54 @@ class ConfigView(VerticalScroll):
             self.scroll_to_center(items[new_idx])
             event.stop()
     
+
+
+class DeleteConfigConfirmScreen(ModalScreen):
+    """
+    pop up a confirm screen when user click delete
+    """
+
+    DEFAULT_CSS = """
+        DeleteConfigConfirmScreen {
+            align: center middle;
+        }
+        Button {
+            width: 100%;
+        }
+        #dialog {
+            grid-size: 2;
+            grid-gutter: 1 2;
+            grid-rows: 1fr 3;
+            padding: 0 1;
+            width: 60;
+            height: 11;
+            border: thick $background 80%;
+            background: $surface;
+        }
+        #confirm {
+            column-span: 2;
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+        }
+    """
+    
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label("Confirm to delete the cluster?", id="confirm"),
+            Button(label="Yes", variant="success", id="yes"),
+            Button(label="No", variant="error", id="no"),
+            id="dialog"
+        )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        if event.button.id == "yes":
+            self.dismiss(True)
+        elif event.button.id == "no":
+            self.dismiss(False)
+    
+
+
 
 class ConfigScreen(Screen):
 
