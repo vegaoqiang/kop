@@ -58,22 +58,12 @@ class Config:
         """
         replace cluster name in config to new cluster name
         """
-        # try:
-        #     yaml_obj = yaml.safe_load(content)
-        # except yaml.YAMLError as exc:
-        #     print(exc)
-        #     return
-        yaml_obj["current-context"] = cluster_name
-        yaml_obj["contexts"][0]["name"] = cluster_name
+        yaml_obj["contexts"][0]["context"]["cluster"] = cluster_name
+        yaml_obj["clusters"][0]["name"] = cluster_name
         return yaml_obj
 
 
     def save_config(self, yaml_obj: dict) -> None:
-        # try:
-        #     yaml_obj = yaml.safe_load(content)
-        # except yaml.YAMLError as exc:
-        #     print(exc)
-        #     return
         path = Path(self.kop_default_path).joinpath(uuid.uuid4().hex)
         if not path.parent.is_dir():
             path.parent.mkdir(parents=True)
