@@ -18,6 +18,22 @@ class ConfigModel:
     # the kubernetes config file absolute path
     path: str = ""
 
+    @classmethod
+    def from_yaml(cls, yaml_obj: dict, path: Path) -> "ConfigModel":
+        current_context: str = yaml_obj["current-context"]
+        contexts: dict = next(
+            (item for item in yaml_obj["contexts"] if item["name"] == current_context),
+            yaml_obj["contexts"][0]
+            )
+        # if not contexts:
+        #     contexts = yaml_obj["contexts"][0]
+        cluster: dict = next(item for item in yaml_obj["clusters"] if item["name"] == contexts["context"]["cluster"])
+        user: dict = next(item for item in yaml_obj["users"] if item["name"] == contexts["context"]["user"])
+        return cls(
+            name=cluster["name"], 
+            server=cluster["cluster"]["server"], 
+            version=cluster.get("version", ""), 
+            path=str(path))
 
 
 class Config:
@@ -66,12 +82,13 @@ class Config:
         return yaml_obj
 
 
-    def save_config(self, yaml_obj: dict) -> None:
+    def save_config(self, yaml_obj: dict) -> Path:
         path = Path(self.kop_default_path).joinpath(uuid.uuid4().hex)
         if not path.parent.is_dir():
             path.parent.mkdir(parents=True)
         with path.open("w") as f:
             yaml.safe_dump(yaml_obj, f)
+        return path
     
     def delete_config(self, config_path: str) -> None:
         path = Path(config_path)

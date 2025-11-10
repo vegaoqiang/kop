@@ -79,11 +79,12 @@ class ConfigView(VerticalScroll):
             yield ConfigRow(self.KubeConfig[i:i+self.column_length])
 
 
-    def update_kube_config(self, value: list[dict]) -> None:
+    def update_kube_config(self, value: ConfigModel) -> None:
         """
         For update kube config add new cluster
         """
-        self.KubeConfig = value
+        self.KubeConfig.append(value)
+        self.mutate_reactive(ConfigView.KubeConfig)
 
     @work
     async def action_delete(self) -> None:
@@ -227,9 +228,10 @@ class ConfigScreen(Screen):
         yield Footer()
     
     @on(Button.Pressed, "#add")
-    def action_add(self):
-        self.app.push_screen(AddClusterScreen())
-
+    @work
+    async def action_add(self):
+        config_model = await self.app.push_screen_wait(AddClusterScreen())
+        self.query_one(ConfigView).update_kube_config(config_model)
 
 
 class AddClusterScreen(Screen):
@@ -298,9 +300,11 @@ class AddClusterScreen(Screen):
             # if user input cluster name, replace cluster name in config
             if cluster_name:
                 obj = Config().update_cluster_name(yaml_obj=valid, cluster_name=cluster_name)
-                Config().save_config(yaml_obj=obj)
             else:
-                Config().save_config(yaml_obj=valid)
+                obj = valid
+            path = Config().save_config(yaml_obj=obj)
+            config_model = ConfigModel.from_yaml(valid, path)
+            self.dismiss(config_model)
 
 
     @on(Button.Pressed, "#clear")
@@ -397,6 +401,5 @@ if __name__ == "__main__":
             {"name": "test50", "content": "hello world"}
         ]
     config = Config().get_configs()
-    print(config)
     app = TestApp(kube_config=config)
     app.run()
