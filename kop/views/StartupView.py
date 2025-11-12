@@ -7,6 +7,7 @@ from textual.widgets import Header, Footer, TextArea, Input, Label, Button
 from validations import ClusterNameValidator, ClusterContentValidator
 from components.Focusable import ConfigItem
 from kube.config import Config, ConfigModel
+from views.ResourceView import ResourceView
 
 
 
@@ -61,6 +62,7 @@ class ConfigView(VerticalScroll):
     BINDINGS = [
         ('d', 'delete', 'Delete Cluster'),
         ('c', 'connect', 'Connect Cluster'),
+        ('enter', 'connect', 'Connect Cluster')
     ]
 
     KubeConfig: Reactive[list[ConfigModel]] = Reactive([], recompose=True)
@@ -100,7 +102,10 @@ class ConfigView(VerticalScroll):
         self.mutate_reactive(ConfigView.KubeConfig)
 
     def action_connect(self):
-        ...
+        focused = self.app.focused
+        if not focused:
+            return
+        self.app.push_screen(ResourceView(focused.path))
 
     
     def on_key(self, event):
