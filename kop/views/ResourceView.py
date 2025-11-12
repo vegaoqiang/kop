@@ -31,6 +31,10 @@ class ResourceView(Screen):
 
     FACTORY_CACHE: BaseFactory
 
+    def __init__(self, config_file: str, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.config_file = config_file
+
 
     def compose(self) -> ComposeResult: 
             with Horizontal():
@@ -44,7 +48,7 @@ class ResourceView(Screen):
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
             return
-        self.FACTORY_CACHE = factory = factory_cls()
+        self.FACTORY_CACHE = factory = factory_cls(self.config_file)
         data = factory.fetch()
         table = factory.create_renderer(data)
 
@@ -59,11 +63,15 @@ class ResourceView(Screen):
 
 
 class ResApp(App):
+  
+  def __init__(self, config_file: str, **kwargs):
+      super().__init__(**kwargs)
+      self.config_file = config_file
 
   def on_mount(self) -> None:
-      self.push_screen(ResourceView())
+      self.push_screen(ResourceView(config_file=self.config_file))
 
 
 if __name__ == "__main__":
-    app = ResApp()
+    app = ResApp(config_file="~/.kube/config")
     app.run()

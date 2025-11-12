@@ -1,5 +1,6 @@
 from kubernetes import client, config
 from threading import Lock
+from abc import abstractmethod
 
 
 class Kube:
@@ -57,8 +58,8 @@ class Kube:
             raise RuntimeError(f"Resource type {resource_type} not supported.")
         return method(**kwargs)
     
-    @classmethod
-    def set_client(cls, api_class):
+    @abstractmethod
+    def set_client(self, api_class):
         raise NotImplementedError
 
 
@@ -70,6 +71,13 @@ class KubeClient(Kube):
     _instance_lock = Lock()
     _clients: dict = {}
 
+    def __init__(self, config_file: str):
+        self.config_file = config_file
+        if not self._initialized:
+            with self._instance_lock:
+                config.load_kube_config(config_file=config_file)
+                self._initialized = True
+
     @classmethod
     def _ensure_loaded(cls):
         """only load kube config once"""
@@ -79,36 +87,36 @@ class KubeClient(Kube):
                     config.load_kube_config(config_file="~/.kube/config")
                     cls._initialized = True
 
-    @classmethod
-    def set_client(cls, api_class):
+    # @classmethod
+    def set_client(self, api_class):
         """
         set client type
         :param api_class: client class
         :return: KubeClient()
         """
-        cls._ensure_loaded()
-        if api_class not in cls._clients:
-            with cls._instance_lock:
-                if api_class not in cls._clients:
-                    cls._clients[api_class] = api_class()
-        return cls()
+        # cls._ensure_loaded()
+        if api_class not in self._clients:
+            with self._instance_lock:
+                if api_class not in self._clients:
+                    self._clients[api_class] = api_class()
+        return self
 
     # set client type aliases
-    @classmethod
-    def core_v1(cls):
-        return cls.set_client(client.CoreV1Api)
+    # @classmethod
+    def core_v1(self):
+        return self.set_client(client.CoreV1Api)
 
-    @classmethod
-    def apps_v1(cls):
-        return cls.set_client(client.AppsV1Api)
+    # @classmethod
+    def apps_v1(self):
+        return self.set_client(client.AppsV1Api)
 
-    @classmethod
-    def batch_v1(cls):
-        return cls.set_client(client.BatchV1Api)
+    # @classmethod
+    def batch_v1(self):
+        return self.set_client(client.BatchV1Api)
 
 
 
 if __name__ == "__main__":
-    kclient = KubeClient.core_v1()
+    kclient = KubeClient(config_file="~/.kube/config").core_v1()
     pod = kclient.list_pods()
     print(pod)

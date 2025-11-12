@@ -15,12 +15,16 @@ class BaseFactory(ABC):
     """abstract base class for resource factories"""
 
     resource_type: str  # e.g. "pods"
+    _client: KubeClient # save multiple kube cluster client
 
     def __init_subclass__(cls, **kwargs):
         """auto register subclass"""
         super().__init_subclass__(**kwargs)
         if cls.resource_type:
             ResourceRegistry.register_factory(cls.resource_type, cls)
+
+    def __init__(self, config_file: str) -> None:
+        self._client = KubeClient(config_file=config_file)
 
     @abstractmethod
     def fetch(self):
@@ -53,7 +57,7 @@ class PodFacotry(BaseFactory):
     resource_type = "pods"
 
     def fetch(self):
-        client = KubeClient.core_v1()
+        client = self._client.core_v1()
         return client.list_pods()
         
     def clean(self, raw) -> List[PodViewModel]:
@@ -81,7 +85,7 @@ class DeploymentFactory(BaseFactory):
     resource_type = "deployments"
 
     def fetch(self):
-        client = KubeClient.apps_v1()
+        client = self._client.apps_v1()
         return client.list_deployments()
 
     def clean(self, raw) -> List[DepolymentViewModel]:
@@ -100,7 +104,7 @@ class DaemonSetFactory(BaseFactory):
     resource_type = "daemonsets"
 
     def fetch(self):
-        client = KubeClient.apps_v1()
+        client = self._client.apps_v1()
         return client.list_daemon_sets()
 
     def clean(self, raw) -> List[DaemonSetViewModel]:
@@ -119,7 +123,7 @@ class StatefulSetFactory(BaseFactory):
     resource_type = "statefulsets"
 
     def fetch(self):
-        client = KubeClient.apps_v1()
+        client = self._client.apps_v1()
         return client.list_stateful_sets()
 
     def clean(self, raw) -> List[StatefulSetViewModel]:

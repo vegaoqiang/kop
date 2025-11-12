@@ -223,6 +223,7 @@ class ConfigScreen(Screen):
         yield ConfigView(kube_config=self.kube_config)
         yield Horizontal(
             Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
+            Button(label="Sync", variant="default", id="sync", tooltip="Sync cluster from local"),
             id="button_group"
         )
         yield Footer()
