@@ -235,7 +235,6 @@ class ConfigScreen(Screen):
         yield Horizontal(
             Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
             Button(label="Connect", variant="success", id="connect", tooltip="Connect to cluster"),
-            Button(label="Sync", variant="default", id="sync", tooltip="Sync cluster from local"),
             id="button_group"
         )
         yield Footer()
@@ -251,7 +250,7 @@ class ConfigScreen(Screen):
         """
         To connect current selected ConfigItem when user click The Connect Button
         """
-        if not self.selected_path:
+        if not hasattr(self, "selected_path"):
             return
         self.app.push_screen(ResourceView(config_file=self.selected_path))
 
@@ -310,6 +309,7 @@ class AddClusterScreen(Screen):
             Button(label="Save", variant="success", id="save", tooltip="Save cluster config"),
             Button(label="Cancel", variant="default", id="cancel", tooltip="Cancel and go back to previous screen"),
             Button(label="Clear", variant="default", id="clear", tooltip="Clear cluster config content"),
+            Button(label="Sync", variant="default", id="sync", tooltip="Sync cluster from local"),
             id="button_group"
         )
         yield Footer()
