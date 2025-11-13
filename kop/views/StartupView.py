@@ -1,4 +1,5 @@
 from textual import on, work
+from textual.events import Callback
 from textual.reactive import Reactive
 from textual.app import App, ComposeResult
 from textual.screen import Screen, ModalScreen
@@ -102,6 +103,9 @@ class ConfigView(VerticalScroll):
         self.mutate_reactive(ConfigView.KubeConfig)
 
     def action_connect(self):
+        """
+        To connect the selected ConfigItem when user pressed then `enter` key
+        """
         focused = self.app.focused
         if not focused:
             return
@@ -136,6 +140,8 @@ class ConfigView(VerticalScroll):
             self.scroll_to_center(items[new_idx])
             event.stop()
     
+    # def on_config_item_selected(self, event: ConfigItem.Selected) -> None:
+    #     self.selected_path = event.selected_path
 
 
 class DeleteConfigConfirmScreen(ModalScreen):
@@ -228,6 +234,7 @@ class ConfigScreen(Screen):
         yield ConfigView(kube_config=self.kube_config)
         yield Horizontal(
             Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
+            Button(label="Connect", variant="success", id="connect", tooltip="Connect to cluster"),
             Button(label="Sync", variant="default", id="sync", tooltip="Sync cluster from local"),
             id="button_group"
         )
@@ -238,6 +245,21 @@ class ConfigScreen(Screen):
     async def action_add(self):
         config_model = await self.app.push_screen_wait(AddClusterScreen())
         self.query_one(ConfigView).update_kube_config(config_model)
+
+    @on(Button.Pressed, "#connect")
+    def action_connect(self) -> None:
+        """
+        To connect current selected ConfigItem when user click The Connect Button
+        """
+        if not self.selected_path:
+            return
+        self.app.push_screen(ResourceView(config_file=self.selected_path))
+
+    def on_config_item_selected(self, event: ConfigItem.Selected) -> None:
+        """
+        Save user current selected ConfigItem
+        """
+        self.selected_path = event.selected_path
 
 
 class AddClusterScreen(Screen):
