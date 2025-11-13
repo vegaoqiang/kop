@@ -53,7 +53,7 @@ class BaseRow(ListItem):
 class TableRenderer(ListView):
     DEFAULT_CSS = """
         TableRenderer {
-          height: auto;
+          height: 1fr;
           & > BaseRow {
               height: 1;
               overflow: hidden hidden;
