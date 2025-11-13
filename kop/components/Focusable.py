@@ -1,4 +1,5 @@
 from textual.widgets import Static
+from textual.message import Message
 from rich.panel import Panel
 
 
@@ -36,5 +37,15 @@ class ConfigItem(Focusable):
     def __init__(self, title: str, ctx: str, **kwargs):
         panel = Panel(f"[b]{title}[/b]\n[cyan]{ctx}", expand=True)
         super().__init__(panel, **kwargs)
+
+    def on_click(self) -> None:
+        self.post_message(ConfigItem.Selected(selected_path=self.path))
+        
+    class Selected(Message):
+        """export selected message."""
+
+        def __init__(self, selected_path: str | None = None, **kwargs) -> None:
+            super().__init__(**kwargs)
+            self.selected_path = selected_path
 
     
