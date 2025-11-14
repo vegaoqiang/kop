@@ -22,6 +22,7 @@ class ColumnModel:
 
 @dataclass
 class ActionModel:
+    name: str
     label: str
     variant: str
     tooltip: str
@@ -155,9 +156,9 @@ class PodViewModel(ViewModel):
     qos: str = field(metadata={"title": "QoS", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5})
     actions: List[ActionModel] = field(default_factory=lambda: [
-        ActionModel(">_", "success", "Shell", "shell"),
-        ActionModel("log", "success", "Log", "log"),
-        ActionModel("del", "error", "Delete Pod", "delete")],
+        ActionModel("shell", ">_", "success", "Exec shell on pod", "shell"),
+        ActionModel("log", "log", "success", "View the pod logs", "log"),
+        ActionModel("delete", "del", "error", "Delete the Pod", "delete")],
         metadata={"title": "Actions", "width": 10})
 
 

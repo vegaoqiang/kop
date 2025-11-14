@@ -18,6 +18,8 @@ class ActionGroup(Horizontal):
         }
         
     """
+    # save the button group correspond row data
+    row_data: dict = {}
 
     def __init__(self, actions, **kwargs):
         super().__init__(**kwargs)
@@ -32,3 +34,6 @@ class ActionGroup(Horizontal):
                 variant=action.variant,
                 tooltip=action.tooltip,
             )
+
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        print(self.row_data)
