@@ -5,6 +5,7 @@ from textual.containers import Horizontal
 from textual.widgets import Static, Footer
 from registry import ResourceRegistry
 from factory import *
+from components.Actions import ActionGroup
 
 
 class ResourceView(Screen):
@@ -60,6 +61,15 @@ class ResourceView(Screen):
         raw_data = event.raw_data
         renderer = self.FACTORY_CACHE.create_detail_renderer(raw_data)
         self.app.push_screen(renderer)
+
+    def on_action_group_delete_button(self, event: ActionGroup.DeleteButton) -> None:
+        print('event: ActionGroup.DeleteButton:', event.row_data)
+
+    def on_action_group_shell_button(self, event: ActionGroup.ShellButton) -> None:
+        print('event: ActionGroup.ShellButton:', event.row_data)
+
+    def on_action_group_log_button(self, event: ActionGroup.LogButton) -> None:
+        print('event: ActionGroup.LogButton:', event.row_data)
 
 
 class ResApp(App):
