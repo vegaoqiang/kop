@@ -1,16 +1,63 @@
 from kubernetes import client, config
 from threading import Lock
 from abc import abstractmethod
+import os
 
 
-class Kube:
+class KubeAPI:
+    
+    """
+    KubeClient singleton
+    """
+    _initialized = False
+    _instance_lock = Lock()
+    _clients: dict = {}
+
+    def __init__(self, config_file: str):
+        self.config_file = config_file
+        if not self._initialized:
+            with self._instance_lock:
+                config.load_kube_config(config_file=config_file)
+                self._initialized = True
+
+    # @classmethod
+    def set_client(self, api_class):
+        """
+        set client type
+        :param api_class: client class
+        :return: KubeClient()
+        """
+        # cls._ensure_loaded()
+        if api_class not in self._clients:
+            with self._instance_lock:
+                if api_class not in self._clients:
+                    self._clients[api_class] = api_class()
+        return self
+
+    # set client type aliases
+    # @classmethod
+    def core_v1(self):
+        return self.set_client(client.CoreV1Api)
+
+    # @classmethod
+    def apps_v1(self):
+        return self.set_client(client.AppsV1Api)
+
+    # @classmethod
+    def batch_v1(self):
+        return self.set_client(client.BatchV1Api)
+    
+
+
+class KubeClient(KubeAPI):
 
     def list_pods(self, namespace: str | None = None, 
                   watch: bool = False, 
                   async_req: bool = False):
-        _client = self._clients.get(client.CoreV1Api)
-        if not _client:
-            raise RuntimeError("CoreV1Api client not initialized. Use KubeClient.core_v1() first.")
+        # _client = self._clients.get(client.CoreV1Api)
+        _client = client.CoreV1Api()
+        # if not _client:
+        #     raise RuntimeError("CoreV1Api client not initialized. Use KubeClient.core_v1() first.")
         if namespace:
             return _client.list_namespaced_pod(namespace, watch=watch, async_req=async_req)
         return _client.list_pod_for_all_namespaces(watch=watch, async_req=async_req)
@@ -57,66 +104,76 @@ class Kube:
         if not method:
             raise RuntimeError(f"Resource type {resource_type} not supported.")
         return method(**kwargs)
+
+
+class KbsAuthLoader:
     
-    @abstractmethod
-    def set_client(self, api_class):
-        raise NotImplementedError
-
-
-class KubeClient(Kube):
-    """
-    KubeClient singleton
-    """
-    _initialized = False
-    _instance_lock = Lock()
-    _clients: dict = {}
-
-    def __init__(self, config_file: str):
-        self.config_file = config_file
-        if not self._initialized:
-            with self._instance_lock:
-                config.load_kube_config(config_file=config_file)
-                self._initialized = True
-
-    @classmethod
-    def _ensure_loaded(cls):
-        """only load kube config once"""
-        if not cls._initialized:
-            with cls._instance_lock:
-                if not cls._initialized:
-                    config.load_kube_config(config_file="~/.kube/config")
-                    cls._initialized = True
-
-    # @classmethod
-    def set_client(self, api_class):
+    def __init__(self, config_file: str|None = None, context: str = "default"):
         """
-        set client type
-        :param api_class: client class
-        :return: KubeClient()
+        :param config_path: 
+        :param context: 
         """
-        # cls._ensure_loaded()
-        if api_class not in self._clients:
-            with self._instance_lock:
-                if api_class not in self._clients:
-                    self._clients[api_class] = api_class()
-        return self
 
-    # set client type aliases
-    # @classmethod
-    def core_v1(self):
-        return self.set_client(client.CoreV1Api)
+        if not config_file:
+            config_file = os.path.expanduser("~/.kube/config")
 
-    # @classmethod
-    def apps_v1(self):
-        return self.set_client(client.AppsV1Api)
+        self.configuration = client.Configuration()
 
-    # @classmethod
-    def batch_v1(self):
-        return self.set_client(client.BatchV1Api)
+        config.load_kube_config(
+            config_file=config_file,
+            context=context,
+            client_configuration=self.configuration,  # no set default configuration
+            persist_config=False,
+        )
+
+        self.api_client = client.ApiClient(configuration=self.configuration)
+
+
+    def __del__(self):
+        """close api client when object destroyed"""
+        if self.api_client:
+            self.api_client.close()
+
+
+class KbsEndpoint(KbsAuthLoader):
+
+    def list_pods(self, namespace: str | None = None, 
+                  watch: bool = False, 
+                  async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_pod(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_pod_for_all_namespaces(watch=watch, async_req=async_req)
+
+
+    def list_deployments(self, namespace: str | None = None, 
+                         watch: bool = False, 
+                         async_req: bool = False):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_deployment(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_deployment_for_all_namespaces(watch=watch, async_req=async_req)
+
+    def list_daemon_sets(self, namespace: str | None = None, 
+                         watch: bool = False, 
+                         async_req: bool = False):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_daemon_set(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_daemon_set_for_all_namespaces(watch=watch, async_req=async_req)
+
+    def list_stateful_sets(self, 
+                           namespace: str | None = None, 
+                           watch: bool = False, 
+                           async_req: bool = False):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_stateful_set(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_stateful_set_for_all_namespaces(watch=watch, async_req=async_req)
 
 
 
 if __name__ == "__main__":
-    kclient = KubeClient(config_file="~/.kube/config").core_v1()
+    kclient = KbsEndpoint(config_file="~/.kube/config")
     pod = kclient.list_pods()
     print(pod)

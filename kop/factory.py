@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from registry import ResourceRegistry
 from renderers.table import TableRenderer
 from renderers.details import DetailModalRenderer
-from kube.client import KubeClient
+from kube.client import KubeClient, KbsEndpoint
 from typing import List
 from models import (PodViewModel, 
                     DepolymentViewModel, 
@@ -23,8 +23,9 @@ class BaseFactory(ABC):
         if cls.resource_type:
             ResourceRegistry.register_factory(cls.resource_type, cls)
 
-    def __init__(self, config_file: str) -> None:
-        self._client = KubeClient(config_file=config_file)
+    def __init__(self, endpoint: KbsEndpoint) -> None:
+        # self._client = KubeClient(config_file=config_file)
+        self.endpoint = endpoint
 
     @abstractmethod
     def fetch(self):
@@ -57,8 +58,8 @@ class PodFacotry(BaseFactory):
     resource_type = "pods"
 
     def fetch(self):
-        client = self._client.core_v1()
-        return client.list_pods()
+        # client = self._client.core_v1()
+        return self.endpoint.list_pods()
         
     def clean(self, raw) -> List[PodViewModel]:
         return [PodViewModel.clean(pod) for pod in raw.items]
@@ -85,8 +86,8 @@ class DeploymentFactory(BaseFactory):
     resource_type = "deployments"
 
     def fetch(self):
-        client = self._client.apps_v1()
-        return client.list_deployments()
+        # client = self._client.apps_v1()
+        return self.endpoint.list_deployments()
 
     def clean(self, raw) -> List[DepolymentViewModel]:
         return [DepolymentViewModel.clean(dep) for dep in raw.items]
@@ -104,8 +105,8 @@ class DaemonSetFactory(BaseFactory):
     resource_type = "daemonsets"
 
     def fetch(self):
-        client = self._client.apps_v1()
-        return client.list_daemon_sets()
+        # client = self._client.apps_v1()
+        return self.endpoint.list_daemon_sets()
 
     def clean(self, raw) -> List[DaemonSetViewModel]:
         return [DaemonSetViewModel.clean(dep) for dep in raw.items]
@@ -123,8 +124,8 @@ class StatefulSetFactory(BaseFactory):
     resource_type = "statefulsets"
 
     def fetch(self):
-        client = self._client.apps_v1()
-        return client.list_stateful_sets()
+        # client = self._client.apps_v1()
+        return self.endpoint.list_stateful_sets()
 
     def clean(self, raw) -> List[StatefulSetViewModel]:
         return [StatefulSetViewModel.clean(dep) for dep in raw.items]

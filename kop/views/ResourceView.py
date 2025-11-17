@@ -6,6 +6,7 @@ from textual.widgets import Static, Footer
 from registry import ResourceRegistry
 from factory import *
 from components.Actions import ActionGroup
+from kube.client import KbsEndpoint
 
 
 class ResourceView(Screen):
@@ -35,6 +36,7 @@ class ResourceView(Screen):
     def __init__(self, config_file: str, **kwargs) -> None:
         super().__init__(**kwargs)
         self.config_file = config_file
+        self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file)
 
 
     def compose(self) -> ComposeResult: 
@@ -49,7 +51,7 @@ class ResourceView(Screen):
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
             return
-        self.FACTORY_CACHE = factory = factory_cls(self.config_file)
+        self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
         data = factory.fetch()
         table = factory.create_renderer(data)
 
