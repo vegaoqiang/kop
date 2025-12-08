@@ -58,6 +58,7 @@ ANSI_KEYMAP = {
     "ctrl+d": "\x04",
     "left_parenthesis": "(",
     "right_parenthesis": ")",
+    "escape": "\x1b",
 }
 
 CTRL_KEYMAP = {
