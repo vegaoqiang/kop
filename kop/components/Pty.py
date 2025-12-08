@@ -1,18 +1,15 @@
-from textual import work
-from textual import events
-from textual.app import ComposeResult, App, RenderResult
-from textual.widgets import Log
+from textual import work, events
+from textual.app import ComposeResult, App
 from textual.widget import Widget
 from textual.reactive import Reactive
-from textual.scroll_view import ScrollView
-from kube.exec import PodExec
-from pyte import Screen, Stream
+from textual.worker import get_current_worker
+from textual.containers import VerticalScroll
 from rich.console import RenderableType
 from rich.text import Text
 from rich.style import Style
-import asyncio
-from textual.worker import Worker, get_current_worker
-from textual.keys import Keys
+from kube.exec import PodExec
+from pyte import Screen, Stream, HistoryScreen
+
 
 
 # The keyboard name to character mapping
@@ -57,6 +54,8 @@ ANSI_KEYMAP = {
     "question_mark": "?",
     "quotation_mark": "\"",
     "ctrl+u": "\x15",
+    "ctrl+l": "\x0c",
+    "ctrl+d": "\x04",
     "left_parenthesis": "(",
     "right_parenthesis": ")",
 }
@@ -70,17 +69,18 @@ CHAR_WIDTH = 8      # Approx pixel width of monospace font
 CHAR_HEIGHT = 16    # Approx pixel height of monospace font
 
 
-class PodTerminal(Widget):
+class PodTerminal(VerticalScroll):
+
     can_focus = True
 
-    height: Reactive[int] = Reactive(50)
-    width: Reactive[int] = Reactive(70)
+    height: Reactive[int] = Reactive(500)
+    width: Reactive[int] = Reactive(200)
 
 
     def __init__(self, exec: PodExec):
         super().__init__()
         self.exec = exec
-        self.te_screen = Screen(lines=self.height, columns=self.width)
+        self.te_screen = HistoryScreen(lines=500, columns=200, history=1000)
         self.te_stream = Stream(self.te_screen)
 
     def on_key(self, event: events.Key) -> None:
@@ -88,22 +88,16 @@ class PodTerminal(Widget):
             return
 
         key = event.key
-        to_send = ""
-
-        if event.key in ANSI_KEYMAP:
-            to_send = ANSI_KEYMAP[event.key]
+        if character := event.character:
+            self.resp.write_stdin(character)
         else:
-            to_send = key
-
-        if to_send:
-           self.resp.write_stdin(to_send)
+            self.resp.write_stdin(ANSI_KEYMAP[key])
 
         event.stop()
 
     def on_mount(self) -> None:
         try:
             self.resp = self.exec.connect()
-            print('self.resp:', self.resp)
         except Exception as e:
             self.notify(f"Connection failed: {e}", severity="error")
             return
@@ -113,15 +107,28 @@ class PodTerminal(Widget):
         buffer = self.te_screen.buffer
         text = Text()
         
+        # print('buffer:', buffer)
+        # print('self.te_screen.history.position:', self.te_screen.history.position)
+        # print('self.te_screen.history.top:', self.te_screen.history.top)
+        # print('self.te_screen.history.bottom:', self.te_screen.history.bottom)
+        # print('self.te_screen.display:', self.te_screen.display)
+        # print('self.te_screen.columns:', self.te_screen.columns)
+
         for y in range(self.te_screen.lines):
             line = buffer.get(y)
             if not line:
                 text.append("\n")
                 continue
-            
+
             for x in range(self.te_screen.columns):
                 char = line.get(x)
-                if char:
+                
+                # cursor
+                if y == self.te_screen.cursor.y and x == self.te_screen.cursor.x:
+                    cursor_char = char.data if char else " "
+                    text.append(cursor_char, style=Style(reverse=True))
+                    
+                elif char:
                     style = Style(
                         color=char.fg if char.fg != "default" else "white",
                         bgcolor=char.bg if char.bg != "default" else "black",
@@ -131,6 +138,7 @@ class PodTerminal(Widget):
                     text.append(char.data, style=style)
                 else:
                     text.append(" ")
+                    
             text.append("\n")
             
         return text
@@ -150,10 +158,9 @@ class PodTerminal(Widget):
     @work(exclusive=True, thread=True)
     def read_loop(self):
         worker = get_current_worker()
-        while self.resp.is_open():
+        while self.resp.is_open() and worker.is_running:
             try:
                 stdout_data = self.exec.read_stdout(timeout=0.1)
-                print('stdout_data:', stdout_data)
                 if stdout_data:
                     self.app.call_from_thread(self.feed, stdout_data)
                 stderr_data = self.exec.read_stderr(timeout=0.1)
@@ -178,5 +185,5 @@ class TerminalApp(App):
 if __name__ == '__main__':
     from kube.client import KbsAuthLoader
     k = KbsAuthLoader(config_file="~/.kube/config")
-    exec = PodExec(k.api_client, "mysql8-0", "public")
+    exec = PodExec(k.api_client, "nacos-0", "public")
     TerminalApp(exec=exec).run()
