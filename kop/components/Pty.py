@@ -151,7 +151,7 @@ class PodTerminal(ScrollView):
             self.te_screen.buffer[k] = old_buffer[k - 1]
 
         # update pyte screen history bottom, move the last buffer line to history bottom first
-        self.te_screen.history.bottom.append(old_buffer[-1])
+        self.te_screen.history.bottom.appendleft(old_buffer[-1])
 
         # update pyte screen cursor
         self.te_screen.cursor.y = self.te_screen.cursor.y + int(self.scroll_y)
