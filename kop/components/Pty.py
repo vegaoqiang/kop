@@ -1,14 +1,15 @@
 from textual import work, events
 from textual.app import ComposeResult, App
-from textual.widget import Widget
+from textual.scroll_view import ScrollView
 from textual.reactive import Reactive
 from textual.worker import get_current_worker
-from textual.containers import VerticalScroll
+from textual.geometry import Size
 from rich.console import RenderableType
 from rich.text import Text
 from rich.style import Style
 from kube.exec import PodExec
-from pyte import Screen, Stream, HistoryScreen
+from pyte import Stream, HistoryScreen
+from copy import deepcopy
 
 
 
@@ -61,27 +62,20 @@ ANSI_KEYMAP = {
     "escape": "\x1b",
 }
 
-CTRL_KEYMAP = {
-    "c": "\x03",   # Ctrl+C
-    "d": "\x04",   # Ctrl+D
-}
 
-CHAR_WIDTH = 8      # Approx pixel width of monospace font
-CHAR_HEIGHT = 16    # Approx pixel height of monospace font
-
-
-class PodTerminal(VerticalScroll):
+class PodTerminal(ScrollView):
 
     can_focus = True
 
-    height: Reactive[int] = Reactive(500)
-    width: Reactive[int] = Reactive(200)
-
+    # definde the PodTerminal max history line
+    ScrollBackLines: Reactive[int] = Reactive(1000)
 
     def __init__(self, exec: PodExec):
         super().__init__()
+        # The virtual size (scrollable size) of the Widget. This means how many lines the PodTerminal Widget can scroll.
+        self.virtual_size = Size(0, 0)
         self.exec = exec
-        self.te_screen = HistoryScreen(lines=500, columns=200, history=1000)
+        self.te_screen = HistoryScreen(lines=self.size.height, columns=self.size.width, history=self.ScrollBackLines)
         self.te_stream = Stream(self.te_screen)
 
     def on_key(self, event: events.Key) -> None:
@@ -97,6 +91,7 @@ class PodTerminal(VerticalScroll):
         event.stop()
 
     def on_mount(self) -> None:
+        self.scroll_end()
         try:
             self.resp = self.exec.connect()
         except Exception as e:
@@ -108,13 +103,6 @@ class PodTerminal(VerticalScroll):
         buffer = self.te_screen.buffer
         text = Text()
         
-        # print('buffer:', buffer)
-        # print('self.te_screen.history.position:', self.te_screen.history.position)
-        # print('self.te_screen.history.top:', self.te_screen.history.top)
-        # print('self.te_screen.history.bottom:', self.te_screen.history.bottom)
-        # print('self.te_screen.display:', self.te_screen.display)
-        # print('self.te_screen.columns:', self.te_screen.columns)
-
         for y in range(self.te_screen.lines):
             line = buffer.get(y)
             if not line:
@@ -139,13 +127,48 @@ class PodTerminal(VerticalScroll):
                     text.append(char.data, style=style)
                 else:
                     text.append(" ")
-                    
+            # goto next line        
             text.append("\n")
-            
-        return text
 
+        return text
     
+    async def on_mouse_scroll_up(self, event: events.MouseScrollUp):
+        if self.scroll_y == 0:
+            # means is the hisotry scroll end
+            return
+        if len(self.te_screen.history.top) + len(self.te_screen.buffer) < self.size.height:
+            # means all history already display in screen
+            return
+        
+        # update pyte screen buffer, move the last top line to buffer first, 
+        # and all buffer value shift one position to the right
+        last_top_line = self.te_screen.history.top.pop()
+        old_buffer = deepcopy(self.te_screen.buffer)
+        for k in reversed(old_buffer.keys()):
+            if k == 0:
+                self.te_screen.buffer[0] = last_top_line
+                break
+            self.te_screen.buffer[k] = old_buffer[k - 1]
+
+        # update pyte screen history bottom, move the last buffer line to history bottom first
+        self.te_screen.history.bottom.append(old_buffer[-1])
+
+        # update pyte screen cursor
+        self.te_screen.cursor.y = self.te_screen.cursor.y + int(self.scroll_y)
+
+
+    async def on_mouse_scroll_down(self, event: events.MouseScrollDown):
+        
+        print('self.scroll_y_scroll_down:', self.scroll_y)
+    
+
     def feed(self, data: str):
+        # update virtual size, change the right side scrollbar length dinamically.
+        # only user type command and exec it will change the virtual size.
+        total_history_lines = len(self.te_screen.history.top) + len(self.te_screen.history.bottom)
+        new_virtual_size_height = total_history_lines if total_history_lines < self.ScrollBackLines else self.ScrollBackLines
+        self.virtual_size = self.virtual_size.with_height(height=new_virtual_size_height)
+
         self.te_stream.feed(data)
         self.refresh()
 
@@ -172,6 +195,8 @@ class PodTerminal(VerticalScroll):
                 self.notify(f"Read stdout failed: {e}", severity="error")
                 break
 
+
+
 class TerminalApp(App):
 
     def __init__(self, exec: PodExec):
@@ -180,6 +205,7 @@ class TerminalApp(App):
 
     def compose(self) -> ComposeResult:
         yield PodTerminal(exec=self.exec)
+
 
 
 
