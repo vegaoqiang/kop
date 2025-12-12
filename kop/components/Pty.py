@@ -77,6 +77,7 @@ class PodTerminal(ScrollView):
         self.exec = exec
         self.te_screen = HistoryScreen(lines=self.size.height, columns=self.size.width, history=self.ScrollBackLines)
         self.te_stream = Stream(self.te_screen)
+        # self.app.scroll_sensitivity_y = 1
 
     def on_key(self, event: events.Key) -> None:
         if not self.resp or not self.resp.is_open():
@@ -91,7 +92,7 @@ class PodTerminal(ScrollView):
         event.stop()
 
     def on_mount(self) -> None:
-        self.scroll_end()
+        # self.scroll_end()
         try:
             self.resp = self.exec.connect()
         except Exception as e:
@@ -100,11 +101,40 @@ class PodTerminal(ScrollView):
         self.read_loop()
 
     def render(self) -> RenderableType:
-        buffer = self.te_screen.buffer
+        # print('self.scroll_y:', self.scroll_y)
+        # if self.scroll_y + self.size.height <= self.te_screen.history.top.__len__():
+        #     # all rows to be displayed on the screen are in the history.
+        #     buffer = list(self.te_screen.history.top)[int(self.scroll_y):int(self.scroll_y + self.size.height)]
+        #     print('buffer is here:1')
+        # elif self.scroll_y < self.te_screen.history.top.__len__() and self.scroll_y + self.size.height >= self.te_screen.history.top.__len__():
+        #     # some rows to be displayed on the screen are in the history and some in the buffer
+        #     buffer = list(self.te_screen.history.top)[int(self.scroll_y):] + list(self.te_screen.buffer)[:int(self.size.height - (self.te_screen.history.top.__len__() - self.scroll_y))]
+        #     print('buffer is here:2')
+        # else: 
+        #     # self.scroll_y >= self.te_screen.history.top.__len__()
+        #     # all rows to be displayed on the screen are in the buffer
+        #     buffer = self.te_screen.buffer
+        #     print('buffer is here:3')
+
+
+        
         text = Text()
         
         for y in range(self.te_screen.lines):
-            line = buffer.get(y)
+            real_y = y + int(self.scroll_y)
+            if real_y < self.te_screen.history.top.__len__():
+                # the line is in the history top
+                line = list(self.te_screen.history.top)[real_y]
+            else:
+                # the line is in the buffer
+                buffer_y = real_y - self.te_screen.history.top.__len__()
+                if buffer_y >= self.te_screen.buffer.__len__():
+                    # means the buffer is empty
+                    text.append("\n")
+                    continue
+                line = self.te_screen.buffer.get(buffer_y)
+
+            # line = buffer.get(y)
             if not line:
                 text.append("\n")
                 continue
@@ -112,8 +142,8 @@ class PodTerminal(ScrollView):
             for x in range(self.te_screen.columns):
                 char = line.get(x)
                 
-                # cursor
-                if y == self.te_screen.cursor.y and x == self.te_screen.cursor.x:
+                # if scroll_y == self.te_screen.history.top lens then it is the cursor in screen
+                if y == self.te_screen.cursor.y and x == self.te_screen.cursor.x and int(self.scroll_y) == self.te_screen.history.top.__len__():
                     cursor_char = char.data if char else " "
                     text.append(cursor_char, style=Style(reverse=True))
                     
@@ -131,41 +161,118 @@ class PodTerminal(ScrollView):
             text.append("\n")
 
         return text
-    
-    async def on_mouse_scroll_up(self, event: events.MouseScrollUp):
-        if self.scroll_y == 0:
-            # means is the hisotry scroll end
-            return
-        if len(self.te_screen.history.top) + len(self.te_screen.buffer) < self.size.height:
-            # means all history already display in screen
-            return
-        
-        # update pyte screen buffer, move the last top line to buffer first, 
-        # and all buffer value shift one position to the right
-        last_top_line = self.te_screen.history.top.pop()
-        old_buffer = deepcopy(self.te_screen.buffer)
-        for k in reversed(old_buffer.keys()):
-            if k == 0:
-                self.te_screen.buffer[0] = last_top_line
-                break
-            self.te_screen.buffer[k] = old_buffer[k - 1]
 
-        # update pyte screen history bottom, move the last buffer line to history bottom first
-        self.te_screen.history.bottom.appendleft(old_buffer[-1])
+        text = Text()
+
+        # # 1) 拼接所有行（top + buffer + bottom）
+        # lines_top = list(self.te_screen.history.top)
+        # lines_buf = [self.te_screen.buffer.get(i) for i in range(self.te_screen.lines)]
+        # lines_bottom = list(self.te_screen.history.bottom)
+        # all_rows = lines_top + lines_buf + lines_bottom
+        # total_rows = len(all_rows)
+
+
+        # # 3) 可视行数（以整行计）
+        # visible_rows = max(1, int(self.size.height))
+
+        # # 4) scroll_y(px) -> 行偏移
+        # pixel_offset = self.scroll_y
+        # line_offset = int(pixel_offset)
+
+        # # clamp
+        # max_offset = max(total_rows - visible_rows, 0)
+        # if line_offset < 0:
+        #     line_offset = 0
+        # if line_offset > max_offset:
+        #     line_offset = max_offset
+
+        # # 5) 取出要渲染的行
+        # rows_to_render = all_rows[line_offset : line_offset + visible_rows]
+
+        # # 6) 按列渲染每一行（和你原来渲染逻辑一致）
+        # for row in rows_to_render:
+        #     if not row:
+        #         text.append("\n")
+        #         continue
+        #     for x in range(self.te_screen.columns):
+        #         char = row.get(x)
+        #         if char:
+        #             style = Style(
+        #                 color=char.fg if char.fg != "default" else "white",
+        #                 bgcolor=char.bg if char.bg != "default" else "black",
+        #                 bold=char.bold,
+        #                 reverse=char.reverse,
+        #             )
+        #             text.append(char.data, style=style)
+        #         else:
+        #             text.append(" ")
+        #     text.append("\n")
+
+        # return text
+    
+
+    async def on_mouse_scroll_up(self, event: events.MouseScrollUp):
+        print('self.te_screen.cursor.y:', self.te_screen.cursor.y)
+        print('(scroll_up)self.scroll_y:', self.scroll_y)
+        print('self.te_screen.lines:', self.te_screen.lines)
+        print('self.size.height:', self.size.height)
+        print('len(self.te_screen.history.top):', len(self.te_screen.history.top))
+        print('len(self.te_screen.buffer):', len(self.te_screen.buffer))
+        print('len(self.te_screen.history.bottom):', len(self.te_screen.history.bottom))
+
+        # if self.scroll_y == 0:
+        #     # means is the hisotry scroll end
+        #     return
+        # if len(self.te_screen.history.top) + len(self.te_screen.buffer) < self.te_screen.lines:
+        #     # means all history already display in screen
+        #     return
+        
+        # # update pyte screen buffer, move the last top line to buffer first, 
+        # # and all buffer value shift one position to the right
+        # right_top_line = self.te_screen.history.top.pop()
+        # old_buffer = deepcopy(self.te_screen.buffer)
+        # for k in reversed(old_buffer.keys()):
+        #     if k == 0:
+        #         self.te_screen.buffer[0] = right_top_line
+        #         break
+        #     self.te_screen.buffer[k] = old_buffer[k - 1]
+
+        # # update pyte screen history bottom, move the last buffer line to history bottom first
+        # self.te_screen.history.bottom.appendleft(old_buffer[-1])
 
         # update pyte screen cursor
-        self.te_screen.cursor.y = self.te_screen.cursor.y + int(self.scroll_y)
+        # self.te_screen.cursor.y = self.te_screen.cursor.y + int(self.scroll_y)
 
 
     async def on_mouse_scroll_down(self, event: events.MouseScrollDown):
-        
-        print('self.scroll_y_scroll_down:', self.scroll_y)
+        print('self.te_screen.cursor.y:', self.te_screen.cursor.y)
+        print('(scroll_down)self.scroll_y:', self.scroll_y)
+        print('self.te_screen.lines:', self.te_screen.lines)
+        print('len(self.te_screen.history.top):', len(self.te_screen.history.top))
+        print('len(self.te_screen.buffer):', len(self.te_screen.buffer))
+        print('len(self.te_screen.history.bottom):', len(self.te_screen.history.bottom))
+
+        # if 0 <= self.te_screen.cursor.y <= self.te_screen.lines - 1:
+        #     # it means the cursor is currently displayed on the screen.
+        #     return
+        # left_bottom_line = self.te_screen.history.bottom.popleft()
+        # old_buffer = deepcopy(self.te_screen.buffer)
+        # for k in reversed(old_buffer.keys()):
+        #     if k == self.te_screen.lines - 1:
+        #         self.te_screen.buffer[self.te_screen.lines - 1] = left_bottom_line
+        #         break
+        #     self.te_screen.buffer[k] = old_buffer[k + 1]
+
+        # # update pyte screen history top
+        # self.te_screen.history.top.append(old_buffer[0])
+
+        # self.te_screen.cursor.y = self.te_screen.cursor.y - int(self.scroll_y)
     
 
     def feed(self, data: str):
         # update virtual size, change the right side scrollbar length dinamically.
         # only user type command and exec it will change the virtual size.
-        total_history_lines = len(self.te_screen.history.top) + len(self.te_screen.history.bottom)
+        total_history_lines = len(self.te_screen.history.top) + len(self.te_screen.history.bottom) + len(self.te_screen.buffer)
         new_virtual_size_height = total_history_lines if total_history_lines < self.ScrollBackLines else self.ScrollBackLines
         self.virtual_size = self.virtual_size.with_height(height=new_virtual_size_height)
 
