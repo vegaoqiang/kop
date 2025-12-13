@@ -77,6 +77,7 @@ class PodTerminal(ScrollView):
         self.te_screen = HistoryScreen(lines=self.size.height, columns=self.size.width, history=self.ScrollBackLines)
         self.te_stream = Stream(self.te_screen)
         # self.app.scroll_sensitivity_y = 1
+        self.follow_cursor: bool = True
 
     def on_key(self, event: events.Key) -> None:
         if not self.resp or not self.resp.is_open():
@@ -158,28 +159,7 @@ class PodTerminal(ScrollView):
         print('len(self.te_screen.buffer):', len(self.te_screen.buffer))
         print('len(self.te_screen.history.bottom):', len(self.te_screen.history.bottom))
 
-        # if self.scroll_y == 0:
-        #     # means is the hisotry scroll end
-        #     return
-        # if len(self.te_screen.history.top) + len(self.te_screen.buffer) < self.te_screen.lines:
-        #     # means all history already display in screen
-        #     return
-        
-        # # update pyte screen buffer, move the last top line to buffer first, 
-        # # and all buffer value shift one position to the right
-        # right_top_line = self.te_screen.history.top.pop()
-        # old_buffer = deepcopy(self.te_screen.buffer)
-        # for k in reversed(old_buffer.keys()):
-        #     if k == 0:
-        #         self.te_screen.buffer[0] = right_top_line
-        #         break
-        #     self.te_screen.buffer[k] = old_buffer[k - 1]
-
-        # # update pyte screen history bottom, move the last buffer line to history bottom first
-        # self.te_screen.history.bottom.appendleft(old_buffer[-1])
-
-        # update pyte screen cursor
-        # self.te_screen.cursor.y = self.te_screen.cursor.y + int(self.scroll_y)
+        self.follow_cursor = False
 
 
     async def on_mouse_scroll_down(self, event: events.MouseScrollDown):
@@ -190,21 +170,9 @@ class PodTerminal(ScrollView):
         print('len(self.te_screen.buffer):', len(self.te_screen.buffer))
         print('len(self.te_screen.history.bottom):', len(self.te_screen.history.bottom))
 
-        # if 0 <= self.te_screen.cursor.y <= self.te_screen.lines - 1:
-        #     # it means the cursor is currently displayed on the screen.
-        #     return
-        # left_bottom_line = self.te_screen.history.bottom.popleft()
-        # old_buffer = deepcopy(self.te_screen.buffer)
-        # for k in reversed(old_buffer.keys()):
-        #     if k == self.te_screen.lines - 1:
-        #         self.te_screen.buffer[self.te_screen.lines - 1] = left_bottom_line
-        #         break
-        #     self.te_screen.buffer[k] = old_buffer[k + 1]
 
-        # # update pyte screen history top
-        # self.te_screen.history.top.append(old_buffer[0])
-
-        # self.te_screen.cursor.y = self.te_screen.cursor.y - int(self.scroll_y)
+        if self.scroll_y >= self.virtual_size.height - self.size.height:
+            self.follow_cursor = True
     
 
     def feed(self, data: str):
@@ -215,6 +183,8 @@ class PodTerminal(ScrollView):
         self.virtual_size = self.virtual_size.with_height(height=new_virtual_size_height)
 
         self.te_stream.feed(data)
+        if self.follow_cursor:
+            self.scroll_end(animate=False)
         self.refresh()
 
     async def on_resize(self, event: events.Resize):
