@@ -9,7 +9,6 @@ from rich.text import Text
 from rich.style import Style
 from kube.exec import PodExec
 from pyte import Stream, HistoryScreen
-from copy import deepcopy
 
 
 
@@ -92,7 +91,10 @@ class PodTerminal(ScrollView):
         event.stop()
 
     def on_mount(self) -> None:
-        # self.scroll_end()
+        # before connect, reset the cursor position to top
+        self.te_screen.cursor.x = 0
+        self.te_screen.cursor.y = 0
+
         try:
             self.resp = self.exec.connect()
         except Exception as e:
@@ -101,22 +103,6 @@ class PodTerminal(ScrollView):
         self.read_loop()
 
     def render(self) -> RenderableType:
-        # print('self.scroll_y:', self.scroll_y)
-        # if self.scroll_y + self.size.height <= self.te_screen.history.top.__len__():
-        #     # all rows to be displayed on the screen are in the history.
-        #     buffer = list(self.te_screen.history.top)[int(self.scroll_y):int(self.scroll_y + self.size.height)]
-        #     print('buffer is here:1')
-        # elif self.scroll_y < self.te_screen.history.top.__len__() and self.scroll_y + self.size.height >= self.te_screen.history.top.__len__():
-        #     # some rows to be displayed on the screen are in the history and some in the buffer
-        #     buffer = list(self.te_screen.history.top)[int(self.scroll_y):] + list(self.te_screen.buffer)[:int(self.size.height - (self.te_screen.history.top.__len__() - self.scroll_y))]
-        #     print('buffer is here:2')
-        # else: 
-        #     # self.scroll_y >= self.te_screen.history.top.__len__()
-        #     # all rows to be displayed on the screen are in the buffer
-        #     buffer = self.te_screen.buffer
-        #     print('buffer is here:3')
-
-
         
         text = Text()
         
@@ -162,54 +148,6 @@ class PodTerminal(ScrollView):
 
         return text
 
-        text = Text()
-
-        # # 1) 拼接所有行（top + buffer + bottom）
-        # lines_top = list(self.te_screen.history.top)
-        # lines_buf = [self.te_screen.buffer.get(i) for i in range(self.te_screen.lines)]
-        # lines_bottom = list(self.te_screen.history.bottom)
-        # all_rows = lines_top + lines_buf + lines_bottom
-        # total_rows = len(all_rows)
-
-
-        # # 3) 可视行数（以整行计）
-        # visible_rows = max(1, int(self.size.height))
-
-        # # 4) scroll_y(px) -> 行偏移
-        # pixel_offset = self.scroll_y
-        # line_offset = int(pixel_offset)
-
-        # # clamp
-        # max_offset = max(total_rows - visible_rows, 0)
-        # if line_offset < 0:
-        #     line_offset = 0
-        # if line_offset > max_offset:
-        #     line_offset = max_offset
-
-        # # 5) 取出要渲染的行
-        # rows_to_render = all_rows[line_offset : line_offset + visible_rows]
-
-        # # 6) 按列渲染每一行（和你原来渲染逻辑一致）
-        # for row in rows_to_render:
-        #     if not row:
-        #         text.append("\n")
-        #         continue
-        #     for x in range(self.te_screen.columns):
-        #         char = row.get(x)
-        #         if char:
-        #             style = Style(
-        #                 color=char.fg if char.fg != "default" else "white",
-        #                 bgcolor=char.bg if char.bg != "default" else "black",
-        #                 bold=char.bold,
-        #                 reverse=char.reverse,
-        #             )
-        #             text.append(char.data, style=style)
-        #         else:
-        #             text.append(" ")
-        #     text.append("\n")
-
-        # return text
-    
 
     async def on_mouse_scroll_up(self, event: events.MouseScrollUp):
         print('self.te_screen.cursor.y:', self.te_screen.cursor.y)
