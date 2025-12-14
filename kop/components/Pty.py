@@ -151,24 +151,24 @@ class PodTerminal(ScrollView):
 
 
     async def on_mouse_scroll_up(self, event: events.MouseScrollUp):
-        print('self.te_screen.cursor.y:', self.te_screen.cursor.y)
-        print('(scroll_up)self.scroll_y:', self.scroll_y)
-        print('self.te_screen.lines:', self.te_screen.lines)
-        print('self.size.height:', self.size.height)
-        print('len(self.te_screen.history.top):', len(self.te_screen.history.top))
-        print('len(self.te_screen.buffer):', len(self.te_screen.buffer))
-        print('len(self.te_screen.history.bottom):', len(self.te_screen.history.bottom))
+        # print('self.te_screen.cursor.y:', self.te_screen.cursor.y)
+        # print('(scroll_up)self.scroll_y:', self.scroll_y)
+        # print('self.te_screen.lines:', self.te_screen.lines)
+        # print('self.size.height:', self.size.height)
+        # print('len(self.te_screen.history.top):', len(self.te_screen.history.top))
+        # print('len(self.te_screen.buffer):', len(self.te_screen.buffer))
+        # print('len(self.te_screen.history.bottom):', len(self.te_screen.history.bottom))
 
         self.follow_cursor = False
 
 
     async def on_mouse_scroll_down(self, event: events.MouseScrollDown):
-        print('self.te_screen.cursor.y:', self.te_screen.cursor.y)
-        print('(scroll_down)self.scroll_y:', self.scroll_y)
-        print('self.te_screen.lines:', self.te_screen.lines)
-        print('len(self.te_screen.history.top):', len(self.te_screen.history.top))
-        print('len(self.te_screen.buffer):', len(self.te_screen.buffer))
-        print('len(self.te_screen.history.bottom):', len(self.te_screen.history.bottom))
+        # print('self.te_screen.cursor.y:', self.te_screen.cursor.y)
+        # print('(scroll_down)self.scroll_y:', self.scroll_y)
+        # print('self.te_screen.lines:', self.te_screen.lines)
+        # print('len(self.te_screen.history.top):', len(self.te_screen.history.top))
+        # print('len(self.te_screen.buffer):', len(self.te_screen.buffer))
+        # print('len(self.te_screen.history.bottom):', len(self.te_screen.history.bottom))
 
 
         if self.scroll_y >= self.virtual_size.height - self.size.height:
@@ -176,15 +176,21 @@ class PodTerminal(ScrollView):
     
 
     def feed(self, data: str):
+        self.te_stream.feed(data)
+
         # update virtual size, change the right side scrollbar length dinamically.
         # only user type command and exec it will change the virtual size.
         total_history_lines = len(self.te_screen.history.top) + len(self.te_screen.history.bottom) + len(self.te_screen.buffer)
         new_virtual_size_height = total_history_lines if total_history_lines < self.ScrollBackLines else self.ScrollBackLines
         self.virtual_size = self.virtual_size.with_height(height=new_virtual_size_height)
 
-        self.te_stream.feed(data)
         if self.follow_cursor:
-            self.scroll_end(animate=False)
+            # self.scroll_end(animate=False)
+            cursor_abs_y = (
+                len(self.te_screen.history.top)
+                + self.te_screen.cursor.y
+            )
+            self.scroll_y = max(0, cursor_abs_y - self.size.height + 1)
         self.refresh()
 
     async def on_resize(self, event: events.Resize):
