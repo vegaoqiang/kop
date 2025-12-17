@@ -140,8 +140,8 @@ class PodTerminal(ScrollView):
                     
                 elif char:
                     style = Style(
-                        color=char.fg if char.fg != "default" else "white",
-                        bgcolor=char.bg if char.bg != "default" else "black",
+                        color=None if char.fg == "default" else char.fg,
+                        bgcolor=None if char.bg == "default" else char.bg,
                         bold=char.bold,
                         reverse=char.reverse
                     )
