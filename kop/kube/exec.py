@@ -67,14 +67,8 @@ class PodExec:
 
     def resize(self, height: int, width: int):
         if not self.resp:
-            return
-        try:
-            if hasattr(self.resp, "resize_terminal"):
-                self.resp.resize_terminal(height, width)
-                return
-        except Exception:
-            pass
-
+            raise RuntimeError("Not connected")
+        
         try:
             ws = getattr(self.resp, "ws_client", None)
             if ws and hasattr(ws, "sock") and ws.sock:
@@ -82,8 +76,7 @@ class PodExec:
             else:
                 sock = getattr(self.resp, "sock", None)
         except Exception as e:
-            print(f"Resize failed: {e}")
-            return
+            raise RuntimeError(f"Resize failed: {e}")
 
         if sock and hasattr(sock, "send"):
             # channel 4 + JSON payload
