@@ -81,6 +81,8 @@ class PodTerminal(ScrollView):
     def on_key(self, event: events.Key) -> None:
         if not self.resp or not self.resp.is_open():
             return
+        
+        self._follow_cursor()
 
         key = event.key
         if character := event.character:
@@ -90,8 +92,15 @@ class PodTerminal(ScrollView):
 
         event.stop()
 
+
     def on_mount(self) -> None:
         self.call_later(self._connect_with_size)
+
+    
+    def _follow_cursor(self):
+        # move the scroll bar to follow the cursor
+        self.follow_cursor = True
+        self.scroll_y = max(0, self.cursor_abs_y - self.size.height + 1)
 
     def _connect_with_size(self):
         # before connect, reset the cursor position to top
@@ -123,7 +132,7 @@ class PodTerminal(ScrollView):
             else:
                 # the line is in the buffer
                 buffer_y = real_y - history_top_len
-                if buffer_y >= self.te_screen.buffer.__len__():
+                if buffer_y >= len(self.te_screen.buffer):
                     # means the buffer is empty
                     text.append("\n")
                     continue
@@ -133,14 +142,14 @@ class PodTerminal(ScrollView):
                 text.append("\n")
                 continue
 
+            # self.cursor_abs_y = (
+            #         history_top_len
+            #         + self.te_screen.cursor.y
+            #     )
             for x in range(self.te_screen.columns):
                 char = line.get(x)
-                cursor_abs_y = (
-                    history_top_len
-                    + self.te_screen.cursor.y
-                )
                  # ensure the cursor in screen
-                if real_y == cursor_abs_y and x == self.te_screen.cursor.x:
+                if real_y == self.cursor_abs_y and x == self.te_screen.cursor.x:
                     cursor_char = char.data if char else " "
                     text.append(cursor_char, style=Style(reverse=True))
                     
@@ -165,7 +174,9 @@ class PodTerminal(ScrollView):
 
 
     async def on_mouse_scroll_down(self, event: events.MouseScrollDown):
-        if self.scroll_y >= self.virtual_size.height - self.size.height:
+        # todo: only scroll when the cursor is in the bottom
+        # if self.scroll_y >= self.virtual_size.height - self.size.height:
+        if self.te_screen.cursor.y >= self.te_screen.lines - 1:
             self.follow_cursor = True
     
 
@@ -179,11 +190,12 @@ class PodTerminal(ScrollView):
         self.virtual_size = self.virtual_size.with_height(height=new_virtual_size_height)
 
         if self.follow_cursor:
-            cursor_abs_y = (
+            self.cursor_abs_y = (
                 len(self.te_screen.history.top)
                 + self.te_screen.cursor.y
             )
-            self.scroll_y = max(0, cursor_abs_y - self.size.height + 1)
+            self._follow_cursor()
+
         self.refresh()
 
     async def on_resize(self, event: events.Resize):
