@@ -2,7 +2,8 @@ from kubernetes.stream import stream
 from kubernetes.client import CoreV1Api
 from kubernetes.client import ApiClient
 from typing import Optional
-
+from websocket import ABNF
+import json
 
 
 
@@ -75,13 +76,21 @@ class PodExec:
             pass
 
         try:
-            sock = getattr(self.resp, "socket", None)
-            if sock and hasattr(sock, "send"):
-                # 这是极不可靠的 fallback，仅在特定实现上可用
-                # 例如 websocket-client 可能支持按协议发送
-                pass
-        except Exception:
-            pass
+            ws = getattr(self.resp, "ws_client", None)
+            if ws and hasattr(ws, "sock") and ws.sock:
+                sock = ws.sock
+            else:
+                sock = getattr(self.resp, "sock", None)
+        except Exception as e:
+            print(f"Resize failed: {e}")
+            return
+
+        if sock and hasattr(sock, "send"):
+            # channel 4 + JSON payload
+            payload = json.dumps({"Height": height, "Width": width}).encode("utf-8")
+            # byte: 4 (resize channel)
+            frame = bytes([4]) + payload
+            sock.send(frame, opcode=ABNF.OPCODE_BINARY)
 
 
     def close(self):

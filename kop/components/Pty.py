@@ -67,6 +67,7 @@ class PodTerminal(ScrollView):
     can_focus = True
 
     # definde the PodTerminal max history line
+    # todo: load ScrollBackLines value from settings file
     ScrollBackLines: Reactive[int] = Reactive(1000)
 
     def __init__(self, exec: PodExec):
@@ -74,8 +75,6 @@ class PodTerminal(ScrollView):
         # The virtual size (scrollable size) of the Widget. This means how many lines the PodTerminal Widget can scroll.
         self.virtual_size = Size(0, 0)
         self.exec = exec
-        self.te_screen = HistoryScreen(lines=self.size.height, columns=self.size.width, history=self.ScrollBackLines)
-        self.te_stream = Stream(self.te_screen)
         # self.app.scroll_sensitivity_y = 1
         self.follow_cursor: bool = True
 
@@ -92,16 +91,23 @@ class PodTerminal(ScrollView):
         event.stop()
 
     def on_mount(self) -> None:
+        self.call_later(self._connect_with_size)
+
+    def _connect_with_size(self):
         # before connect, reset the cursor position to top
+        self.te_screen = HistoryScreen(lines=self.size.height, columns=self.size.width, history=self.ScrollBackLines)
+        self.te_stream = Stream(self.te_screen)
         self.te_screen.cursor.x = 0
         self.te_screen.cursor.y = 0
 
         try:
             self.resp = self.exec.connect()
+            self.exec.resize(height=self.size.height, width=self.size.width)
         except Exception as e:
             self.notify(f"Connection failed: {e}", severity="error")
             return
         self.read_loop()
+        
 
     def render(self) -> RenderableType:
         
