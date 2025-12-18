@@ -98,9 +98,10 @@ class PodTerminal(ScrollView):
 
     
     def _follow_cursor(self):
-        # move the scroll bar to follow the cursor
-        self.follow_cursor = True
-        self.scroll_y = max(0, self.cursor_abs_y - self.size.height + 1)
+        # move the scroll bar to follow the cursor, follow only if the scroll bar is not at the bottom
+        if (self.scroll_y + self.size.height) < self.virtual_size.height - 1:
+            self.follow_cursor = True
+            self.scroll_y = max(0, self.cursor_abs_y - self.size.height + 1)
 
     def _connect_with_size(self):
         # before connect, reset the cursor position to top
@@ -170,6 +171,7 @@ class PodTerminal(ScrollView):
 
 
     async def on_mouse_scroll_up(self, event: events.MouseScrollUp):
+        print('self.scroll_y:', self.scroll_y)
         self.follow_cursor = False
 
 
