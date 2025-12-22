@@ -80,20 +80,37 @@ class PodTerminal(ScrollView):
 
     def on_key(self, event: events.Key) -> None:
         if not self.resp or not self.resp.is_open():
+            self.notify("Connection closed", severity="error")
             return
         
-        self._follow_cursor()
+        # self._follow_cursor()
 
         key = event.key
+        if event.key == "ctrl+l":
+            for _ in range(len(self.te_screen.buffer)):
+                self.te_screen.index()
+            # 1. 立即手动清除本地 Pyte 屏幕缓冲 (不影响 history 属性)
+            # erase_in_display(2) 表示清除整个屏幕
+            self.te_screen.erase_in_display(2)
+            # 将光标移回左上角 (1, 1)
+            # self.te_screen.cursor_position(0, 0)
+            # self.resp.write_stdin("\x0c")
+            self._reset_screen()
+            # return
+
         if character := event.character:
             self.resp.write_stdin(character)
         else:
             self.resp.write_stdin(ANSI_KEYMAP[key])
+        
+        # if key == "ctrl+l":
+        #     self._reset_screen()
 
         event.stop()
 
 
     def on_mount(self) -> None:
+
         self.call_later(self._connect_with_size)
 
     
@@ -102,6 +119,17 @@ class PodTerminal(ScrollView):
         if (self.scroll_y + self.size.height) < self.virtual_size.height - 1:
             self.follow_cursor = True
             self.scroll_y = max(0, self.cursor_abs_y - self.size.height + 1)
+
+    def _reset_screen(self):
+        # if the screen has just started up, the history length has not yet expanded to fill the screen height.
+        #  when press Ctrl+L at this point, in order to scroll the screen upwards, need to add the
+        #  screen height to the value of self.virtual_size.height.
+        self.virtual_size = self.virtual_size.with_height(
+            height=(len(self.te_screen.history.top) + self.size.height)
+            )
+        # mv scroll_y to the top of the screen
+        self.scroll_y = self.virtual_size.height - self.size.height
+
 
     def _connect_with_size(self):
         # before connect, reset the cursor position to top
@@ -112,10 +140,10 @@ class PodTerminal(ScrollView):
 
         try:
             self.resp = self.exec.connect()
-            self.exec.resize(height=self.size.height, width=self.size.width)
         except Exception as e:
             self.notify(f"Connection failed: {e}", severity="error")
             return
+        self.exec.resize(height=self.size.height, width=self.size.width)
         self.read_loop()
         
 
@@ -176,13 +204,18 @@ class PodTerminal(ScrollView):
 
 
     async def on_mouse_scroll_down(self, event: events.MouseScrollDown):
+        print('self.scroll_y:', self.scroll_y)
         # todo: only scroll when the cursor is in the bottom
-        # if self.scroll_y >= self.virtual_size.height - self.size.height:
+        # why self.te_screen.lines - 1? because the line number start from 0 
         if self.te_screen.cursor.y >= self.te_screen.lines - 1:
             self.follow_cursor = True
     
 
     def feed(self, data: str):
+        # if any(seq in data for seq in ['\x1b[2J', '\x1b[3J']):
+        #     for _ in range(len(self.te_screen.buffer)):
+        #         self.te_screen.index()
+
         self.te_stream.feed(data)
 
         # update virtual size, change the right side scrollbar length dinamically.
@@ -203,7 +236,10 @@ class PodTerminal(ScrollView):
     async def on_resize(self, event: events.Resize):
         w, h = event.size
         self.te_screen.resize(lines=h, columns=w)
-        self.exec.resize(height=h, width=w)
+        try:
+            self.exec.resize(height=h, width=w)
+        except Exception as e:
+            self.notify(f"Resize failed: {e}", severity="error")
         self.refresh()
 
 
@@ -239,6 +275,6 @@ class TerminalApp(App):
 
 if __name__ == '__main__':
     from kube.client import KbsAuthLoader
-    k = KbsAuthLoader(config_file="~/.kube/config")
-    exec = PodExec(k.api_client, "nacos-0", "public")
+    k = KbsAuthLoader(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/196f5cce-07d5-4ac1-b1f8-61b14bc9bb72")
+    exec = PodExec(k.api_client, "nginx-deployment-565cb86996-8g4mk", "default")
     TerminalApp(exec=exec).run()

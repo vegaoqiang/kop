@@ -1,6 +1,7 @@
 from kubernetes.stream import stream
 from kubernetes.client import CoreV1Api
 from kubernetes.client import ApiClient
+from kubernetes.client.exceptions import ApiException
 from typing import Optional
 from websocket import ABNF
 import json
@@ -26,19 +27,21 @@ class PodExec:
     def connect(self):
         if self.resp and self.resp.is_open():
             return self.resp
-
-        self.resp = stream(
-            self.core_api.connect_get_namespaced_pod_exec,
-            self.pod,
-            self.namespace,
-            command=self.command,
-            stderr=True,
-            stdin=True,
-            stdout=True,
-            tty=True,
-            # async_req=True,
-            _preload_content=False,
-        )
+        try:
+            self.resp = stream(
+                self.core_api.connect_get_namespaced_pod_exec,
+                self.pod,
+                self.namespace,
+                command=self.command,
+                stderr=True,
+                stdin=True,
+                stdout=True,
+                tty=True,
+                # async_req=True,
+                _preload_content=False,
+            )
+        except ApiException as e:
+            raise RuntimeError(f"Connection failed: {e}")
         return self.resp
 
 
