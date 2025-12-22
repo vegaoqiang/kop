@@ -83,28 +83,16 @@ class PodTerminal(ScrollView):
             self.notify("Connection closed", severity="error")
             return
         
-        # self._follow_cursor()
-
         key = event.key
         if event.key == "ctrl+l":
-            for _ in range(len(self.te_screen.buffer)):
-                self.te_screen.index()
-            # 1. 立即手动清除本地 Pyte 屏幕缓冲 (不影响 history 属性)
-            # erase_in_display(2) 表示清除整个屏幕
-            self.te_screen.erase_in_display(2)
-            # 将光标移回左上角 (1, 1)
-            # self.te_screen.cursor_position(0, 0)
-            # self.resp.write_stdin("\x0c")
             self._reset_screen()
-            # return
 
         if character := event.character:
             self.resp.write_stdin(character)
         else:
             self.resp.write_stdin(ANSI_KEYMAP[key])
-        
-        # if key == "ctrl+l":
-        #     self._reset_screen()
+
+        self._follow_cursor()
 
         event.stop()
 
@@ -115,12 +103,25 @@ class PodTerminal(ScrollView):
 
     
     def _follow_cursor(self):
+        if self.virtual_size.height <= self.size.height:
+            # screen is not scrollable
+            return
+        if self.scroll_y == (self.virtual_size.height - self.size.height):
+            # screen is at the bottom
+            return
         # move the scroll bar to follow the cursor, follow only if the scroll bar is not at the bottom
         if (self.scroll_y + self.size.height) < self.virtual_size.height - 1:
             self.follow_cursor = True
             self.scroll_y = max(0, self.cursor_abs_y - self.size.height + 1)
 
     def _reset_screen(self):
+        """
+        when user press Ctrl+L, reset the screen
+        """
+        for _ in range(len(self.te_screen.buffer)):
+            # add the buffer to the history
+            self.te_screen.index()
+        self.te_screen.erase_in_display(2)
         # if the screen has just started up, the history length has not yet expanded to fill the screen height.
         #  when press Ctrl+L at this point, in order to scroll the screen upwards, need to add the
         #  screen height to the value of self.virtual_size.height.
