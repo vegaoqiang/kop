@@ -86,6 +86,7 @@ class PodTerminal(ScrollView):
         key = event.key
         if event.key == "ctrl+l":
             self._reset_screen()
+            return
 
         if character := event.character:
             self.resp.write_stdin(character)
@@ -94,7 +95,7 @@ class PodTerminal(ScrollView):
 
         self._follow_cursor()
 
-        event.stop()
+        event.stop().prevent_default()
 
 
     def on_mount(self) -> None:
@@ -112,24 +113,22 @@ class PodTerminal(ScrollView):
         # move the scroll bar to follow the cursor, follow only if the scroll bar is not at the bottom
         if (self.scroll_y + self.size.height) < self.virtual_size.height - 1:
             self.follow_cursor = True
-            self.scroll_y = max(0, self.cursor_abs_y - self.size.height + 1)
+            self.scroll_end(animate=False)
 
     def _reset_screen(self):
         """
         when user press Ctrl+L, reset the screen
         """
-        for _ in range(len(self.te_screen.buffer)):
-            # add the buffer to the history
-            self.te_screen.index()
-        self.te_screen.erase_in_display(2)
         # if the screen has just started up, the history length has not yet expanded to fill the screen height.
         #  when press Ctrl+L at this point, in order to scroll the screen upwards, need to add the
         #  screen height to the value of self.virtual_size.height.
         self.virtual_size = self.virtual_size.with_height(
-            height=(len(self.te_screen.history.top) + self.size.height)
+            height=(len(self.te_screen.history.top) + 
+                    len(self.te_screen.buffer) + 
+                    self.size.height) - 1
             )
         # mv scroll_y to the top of the screen
-        self.scroll_y = self.virtual_size.height - self.size.height
+        self.scroll_end(animate=False)
 
 
     def _connect_with_size(self):
@@ -176,6 +175,7 @@ class PodTerminal(ScrollView):
             #         history_top_len
             #         + self.te_screen.cursor.y
             #     )
+            # print('self.cursor_abs_y in render:', self.cursor_abs_y)
             for x in range(self.te_screen.columns):
                 char = line.get(x)
                  # ensure the cursor in screen
@@ -213,16 +213,13 @@ class PodTerminal(ScrollView):
     
 
     def feed(self, data: str):
-        # if any(seq in data for seq in ['\x1b[2J', '\x1b[3J']):
-        #     for _ in range(len(self.te_screen.buffer)):
-        #         self.te_screen.index()
-
         self.te_stream.feed(data)
 
         # update virtual size, change the right side scrollbar length dinamically.
         # only user type command and exec it will change the virtual size.
         total_history_lines = len(self.te_screen.history.top) + len(self.te_screen.history.bottom) + self.te_screen.lines
-        new_virtual_size_height = total_history_lines if total_history_lines < self.ScrollBackLines else self.ScrollBackLines
+        new_virtual_size_height = min(max(total_history_lines, self.virtual_size.height), self.ScrollBackLines)
+        # new_virtual_size_height = total_history_lines if total_history_lines < self.ScrollBackLines else self.ScrollBackLines
         self.virtual_size = self.virtual_size.with_height(height=new_virtual_size_height)
 
         if self.follow_cursor:
@@ -230,6 +227,7 @@ class PodTerminal(ScrollView):
                 len(self.te_screen.history.top)
                 + self.te_screen.cursor.y
             )
+            # print('self.cursor_abs_y in feed:', self.cursor_abs_y)
             self._follow_cursor()
 
         self.refresh()
