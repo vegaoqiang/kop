@@ -90,11 +90,15 @@ class PodExec:
 
 
     def close(self):
-        if self.resp:
-            try:
-                self.resp.close()
-            except Exception:
-                pass
+        if not self.resp:
+            return
+
+        try:
+            # stdin EOF
+            self.resp.write_stdin("\x04", timeout=0.1)
+            self.resp.close()
+
+        finally:
             self.resp = None
 
 

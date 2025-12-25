@@ -101,6 +101,16 @@ class PodPty(ScrollView):
     def on_mount(self) -> None:
         self.call_later(self._connect_with_size)
 
+    def on_unmount(self) -> None:
+        if self.resp:
+            self.resp.close()
+
+    def _exit_pty(self):
+        try:
+            self.app.pop_screen()
+        except Exception as e:
+            self.app.exit()
+
     
     def _follow_cursor(self):
         if self.virtual_size.height <= self.size.height:
@@ -256,6 +266,7 @@ class PodPty(ScrollView):
             except Exception as e:
                 self.notify(f"Read stdout failed: {e}", severity="error")
                 break
+        self.app.call_from_thread(self._exit_pty)
 
 
 
