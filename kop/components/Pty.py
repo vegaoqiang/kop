@@ -62,7 +62,7 @@ ANSI_KEYMAP = {
 }
 
 
-class PodTerminal(ScrollView):
+class PodPty(ScrollView):
 
     can_focus = True
 
@@ -99,7 +99,6 @@ class PodTerminal(ScrollView):
 
 
     def on_mount(self) -> None:
-
         self.call_later(self._connect_with_size)
 
     
@@ -267,13 +266,15 @@ class TerminalApp(App):
         self.exec = exec
 
     def compose(self) -> ComposeResult:
-        yield PodTerminal(exec=self.exec)
+        yield PodPty(exec=self.exec)
 
 
 
 
 if __name__ == '__main__':
     from kube.client import KbsAuthLoader
-    k = KbsAuthLoader(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/196f5cce-07d5-4ac1-b1f8-61b14bc9bb72")
-    exec = PodExec(k.api_client, "nginx-deployment-565cb86996-8g4mk", "default")
+    # k = KbsAuthLoader(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/196f5cce-07d5-4ac1-b1f8-61b14bc9bb72")
+    # exec = PodExec(k.api_client, "nginx-deployment-565cb86996-8g4mk", "default")
+    k = KbsAuthLoader(config_file="~/.kube/config")
+    exec = PodExec(k.api_client, "nacos-0", "public")
     TerminalApp(exec=exec).run()

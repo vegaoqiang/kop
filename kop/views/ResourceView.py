@@ -7,6 +7,7 @@ from registry import ResourceRegistry
 from factory import *
 from components.Actions import ActionGroup
 from kube.client import KbsEndpoint
+from PodTerminal import PodTerminal
 
 
 class ResourceView(Screen):
@@ -69,6 +70,10 @@ class ResourceView(Screen):
 
     def on_action_group_shell_button(self, event: ActionGroup.ShellButton) -> None:
         print('event: ActionGroup.ShellButton:', event.row_data)
+        if event.row_data.status != "Running":
+            self.notify("Pod is not running", severity="error")
+            return
+        self.app.push_screen(PodTerminal(self.endpoint, event.row_data))
 
     def on_action_group_log_button(self, event: ActionGroup.LogButton) -> None:
         print('event: ActionGroup.LogButton:', event.row_data)
