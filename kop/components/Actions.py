@@ -2,7 +2,8 @@ from textual import on
 from textual.message import Message
 from textual.app import ComposeResult
 from textual.containers import Horizontal
-from textual.widgets import Button
+from textual.widgets import Button, OptionList, Header
+from textual.screen import ModalScreen
 
 
 class ActionGroup(Horizontal):
@@ -58,9 +59,42 @@ class ActionGroup(Horizontal):
 
     @on(Button.Pressed, "#log")
     def handle_log_button_pressed(self, event: Button.Pressed) -> None:
-        self.post_message(self.LogButton(self.row_data))
+        if len(self.row_data.containers) == 1:
+            self.post_message(self.LogButton(self.row_data))
+        else:
+            self.app.push_screen(
+                Option([cs.name for cs in self.row_data.containers])
+                )
+
 
     class LogButton(Message):
         def __init__(self, row_data):
             super().__init__()
             self.row_data = row_data
+
+
+class Option(ModalScreen):
+    DEFAULT_CSS = """
+        Option {
+            align: center middle;
+        }
+        OptionList {
+            height: 50%;
+            width: 50%;
+        }
+    """
+
+    BINDINGS = [
+        ("escape", "close", "Cancel"),
+    ]
+
+    def __init__(self, options: list):
+        super().__init__()
+        self.options = options
+
+    def compose(self) -> ComposeResult:
+        yield OptionList(*self.options)
+
+    @on(Button.Pressed, "#cancel")
+    def action_close(self):
+        self.app.pop_screen()
