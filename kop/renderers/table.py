@@ -13,7 +13,9 @@ class BaseCol(Static):
         }
         """
 
-    def __init__(self, text: str, width: int,  **kwargs) -> None:
+    def __init__(self, text: str|list, width: int,  **kwargs) -> None:
+        if isinstance(text, list):
+            text = str(len(text))
         super().__init__(text, **kwargs)
         self.width = width
 
