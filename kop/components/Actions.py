@@ -1,8 +1,8 @@
 from textual import on
 from textual.message import Message
 from textual.app import ComposeResult
-from textual.containers import Horizontal
-from textual.widgets import Button, OptionList, Header
+from textual.containers import Horizontal, Grid
+from textual.widgets import Button, OptionList, Label
 from textual.screen import ModalScreen
 
 
@@ -78,10 +78,35 @@ class Option(ModalScreen):
         Option {
             align: center middle;
         }
-        OptionList {
-            height: 50%;
-            width: 50%;
+        #option_list {
+            height: 1fr;
+            width: 1fr;
+            column-span: 2;
         }
+        
+        #title {
+            column-span: 2;
+            row-span: 1;
+            width: 1fr;
+            content-align: center top;
+            text-style: bold;
+        }
+        #option_dialog {
+            grid-size: 2 3;
+            grid-gutter: 0 2;
+            grid-rows: 1fr 3fr 1fr;
+            padding: 0 1;
+            height: 25%;
+            width: 50%;
+            border: thick $background 80%;
+            background: $surface;
+        }
+        Button {
+            width: 100%;
+            margin-left: 1;
+            margin-right: 1;
+        }
+
     """
 
     BINDINGS = [
@@ -93,7 +118,13 @@ class Option(ModalScreen):
         self.options = options
 
     def compose(self) -> ComposeResult:
-        yield OptionList(*self.options)
+        yield Grid(
+            Label("Choose a container for log", id="title"),
+            OptionList(*self.options, id="option_list"),
+            Button("Cancel", id="cancel", flat=True),
+            Button("Choose", variant="success", id="choose", flat=True),
+            id="option_dialog"
+        )
 
     @on(Button.Pressed, "#cancel")
     def action_close(self):
