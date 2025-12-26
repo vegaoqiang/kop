@@ -64,10 +64,11 @@ class ActionGroup(Horizontal):
             self.post_message(self.LogButton(row_data=self.row_data, container_name=container_name))
 
         if len(self.row_data.containers) == 1:
-            option_callback(container_name=self.row_data.containers[0].name)
+            container_obj = self.row_data.containers[0].lazy_clean()
+            option_callback(container_name=container_obj.name)
         else:
             self.app.push_screen(
-                Option([cs.name for cs in self.row_data.containers]),
+                Option([cs.lazy_clean().name for cs in self.row_data.containers]),
                 callback=option_callback
                 )
         

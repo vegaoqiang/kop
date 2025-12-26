@@ -172,7 +172,8 @@ class PodViewModel(ViewModel):
             namespace=data.metadata.namespace, # type: ignore
             node=data.spec.node_name, # type: ignore
             status=data.status.phase, # type: ignore
-            containers=str(len(data.spec.containers)), # type: ignore
+            # containers=str(len(data.spec.containers)), # type: ignore
+            containers=[ContainerModel(_raw=cs) for cs in data.spec.containers], # type: ignore
             restarts=str(sum(cs.restart_count for cs in data.status.container_statuses)), # type: ignore
             controlled_by=data.metadata.owner_references[0].kind, # type: ignore
             qos=data.status.qos_class, # type: ignore
