@@ -59,18 +59,23 @@ class ActionGroup(Horizontal):
 
     @on(Button.Pressed, "#log")
     def handle_log_button_pressed(self, event: Button.Pressed) -> None:
+
+        def option_callback(container_name: str|None) -> None:
+            self.post_message(self.LogButton(row_data=self.row_data, container_name=container_name))
+
         if len(self.row_data.containers) == 1:
-            self.post_message(self.LogButton(self.row_data))
+            option_callback(container_name=self.row_data.containers[0].name)
         else:
             self.app.push_screen(
-                Option([cs.name for cs in self.row_data.containers])
+                Option([cs.name for cs in self.row_data.containers]),
+                callback=option_callback
                 )
-
-
+        
     class LogButton(Message):
-        def __init__(self, row_data):
+        def __init__(self, row_data, container_name):
             super().__init__()
             self.row_data = row_data
+            self.container_name = container_name
 
 
 class Option(ModalScreen):
@@ -129,3 +134,9 @@ class Option(ModalScreen):
     @on(Button.Pressed, "#cancel")
     def action_close(self):
         self.app.pop_screen()
+
+    @on(Button.Pressed, "#choose")
+    def action_choose(self):
+        self.dismiss(
+            self.options[self.query_one("#option_list").highlighted]
+        )
