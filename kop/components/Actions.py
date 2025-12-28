@@ -4,6 +4,7 @@ from textual.app import ComposeResult
 from textual.containers import Horizontal, Grid
 from textual.widgets import Button, OptionList, Label
 from textual.screen import ModalScreen
+from textual.binding import Binding
 
 
 class ActionGroup(Horizontal):
@@ -116,7 +117,7 @@ class Option(ModalScreen):
     """
 
     BINDINGS = [
-        ("escape", "close", "Cancel"),
+        Binding("escape", "close", "Cancel", show=False),
     ]
 
     def __init__(self, options: list):
@@ -141,3 +142,7 @@ class Option(ModalScreen):
         self.dismiss(
             self.options[self.query_one("#option_list").highlighted]
         )
+
+    @on(OptionList.OptionSelected)
+    def action_select(self) -> None:
+        self.action_choose()
