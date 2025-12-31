@@ -54,7 +54,7 @@ class LogController:
         # logs queue
         self._queue: queue.Queue[str] = queue.Queue()
         # event queue
-        self._event_queue: queue.Queue = queue.Queue()
+        self._event_queue: queue.Queue[Exception] = queue.Queue()
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
 
@@ -116,7 +116,7 @@ if __name__ == '__main__':
 
     try:
         while True:
-            for line in log_contaller.poll():
+            for line in log_contaller.poll_logs():
                 print(line)
     except KeyboardInterrupt:
         log_contaller.stop()
