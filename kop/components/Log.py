@@ -24,12 +24,14 @@ class Logs(Log):
     @work(exclusive=True)
     async def start_logs(self):
         worker = get_current_worker()
-        try:
-            while not worker.is_cancelled:
-                lines = await asyncio.to_thread(self.log_controller.poll, timeout=0.1)
-                self.write_lines(lines, scroll_end=True)
-        except Exception as e:
-            self.notify(f"Read stdout failed: {e}", severity="error")
+        while not worker.is_cancelled:
+            lines = await asyncio.to_thread(self.log_controller.poll_logs, timeout=0.1)
+            self.write_lines(lines, scroll_end=True)
+
+            # poll_event is non-blocking
+            events = self.log_controller.poll_event()
+            for e in events:
+                self.notify(str(e), severity="error")
 
 
 from textual.app import App

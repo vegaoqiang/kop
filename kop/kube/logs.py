@@ -1,11 +1,9 @@
+import queue
+import threading
+from typing import Optional
 from kubernetes.client.rest import ApiException
 from kubernetes.client import CoreV1Api
 from kubernetes import watch
-from pprint import pprint
-
-import threading
-import queue
-from typing import Optional
 
 
 
@@ -31,13 +29,9 @@ class PodLogs:
         )
 
     def read_logs(self, timestamps: bool = False, tail_lines: int = 100):
-        try:
-            api_response = self.core_api.read_namespaced_pod_log(
+            return self.core_api.read_namespaced_pod_log(
                 **self._log_params(timestamps=timestamps, follow=False,tail_lines=tail_lines)
             )
-            return api_response
-        except ApiException as e:
-            print("Exception when calling CoreV1Api->read_namespaced_pod_log: %s\n" % e)
 
     def watch_logs(self, timestamps: bool = False, tail_lines: int = 100):
         self.w = w = watch.Watch()
@@ -47,8 +41,6 @@ class PodLogs:
                 **self._log_params(timestamps=timestamps, follow=True, tail_lines=tail_lines),
             ):
                 yield line
-        except ApiException as e:
-            print("Exception when calling CoreV1Api->read_namespaced_pod_log: %s\n" % e)
         finally:
             if w:
                 w.stop()
@@ -59,7 +51,10 @@ class LogController:
 
     def __init__(self, pod_logs: PodLogs):
         self.pod_logs = pod_logs
+        # logs queue
         self._queue: queue.Queue[str] = queue.Queue()
+        # event queue
+        self._event_queue: queue.Queue = queue.Queue()
         self._stop_event = threading.Event()
         self._thread: Optional[threading.Thread] = None
 
@@ -87,28 +82,32 @@ class LogController:
                 if line is not None:
                     self._queue.put(line)
         except Exception as e:
-            self._queue.put(f"[error] {e}")
+            self._event_queue.put(e)
 
-    def poll(self, timeout: float = 0) -> list[str]:
+    def poll(self, q: queue.Queue, timeout: float = 0) -> list[str]:
         """wait for new logs and return them"""
         lines: list[str] = []
         try:
-            lines.append(self._queue.get(timeout=timeout))
+            lines.append(q.get(timeout=timeout))
         except queue.Empty:
             return lines
         
         while True:
             try:
-                lines.append(self._queue.get_nowait())
+                lines.append(q.get_nowait())
             except queue.Empty:
                 break
         return lines
-
+    
+    def poll_event(self, timeout: float = 0):
+        return self.poll(q=self._event_queue, timeout=timeout)
+    
+    def poll_logs(self, timeout: float = 0):
+        return self.poll(q=self._queue, timeout=timeout)
+    
 
 if __name__ == '__main__':
     from kube.client import KbsAuthLoader
-    # k = KbsAuthLoader(config_file="~/.kube/config")
-    # logs = PodLogs(k.api_client, "nacos-0", "public")
     k = KbsAuthLoader(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/196f5cce-07d5-4ac1-b1f8-61b14bc9bb72")
     Log = PodLogs(k.api_client, "nginx-deployment-565cb86996-8g4mk", "default")
     log_contaller = LogController(pod_logs=Log)
@@ -121,7 +120,3 @@ if __name__ == '__main__':
                 print(line)
     except KeyboardInterrupt:
         log_contaller.stop()
-
-
-    # for line in Log.watch_logs():
-    #     print(line)
