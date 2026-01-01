@@ -42,7 +42,10 @@ class ActionGroup(Horizontal):
 
     @on(Button.Pressed, "#delete")
     def handle_delete_button_pressed(self, event: Button.Pressed) -> None:
-        self.post_message(self.DeleteButton(self.row_data))
+        def delete_callback(row_data) -> None:
+            self.post_message(self.DeleteButton(row_data))
+
+        self.app.push_screen(Delete(self.row_data), callback=delete_callback)
 
     class DeleteButton(Message):
         def __init__(self, row_data):
@@ -144,6 +147,59 @@ class Option(ModalScreen):
             self.options[self.query_one("#option_list").highlighted]
         )
 
-    # @on(OptionList.OptionSelected)
-    # def action_select(self) -> None:
-    #     self.action_choose()
+
+
+class Delete(ModalScreen):
+
+    DEFAULT_CSS = """
+        Delete {
+            align: center middle;
+        }
+
+        #delete_dialog {
+            grid-size: 2;
+            grid-gutter: 1 2;
+            grid-rows: 1fr 3;
+            padding: 0 1;
+            width: 60;
+            height: 11;
+            border: thick $background 80%;
+            background: $surface;
+        }
+
+        #title {
+            column-span: 2;
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+        }
+
+        Button {
+            width: 100%;
+        }
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+    ]
+
+    def __init__(self, row_data):
+        self.row_data = row_data
+        super().__init__()
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label(f"Delete {self.row_data.name}? Are you sure?", id="title"),
+            Button("Cancel", variant="default", id="cancel", flat=True),
+            Button("Delete", variant="error", id="delete", flat=True),
+            id="delete_dialog"
+        )
+
+    @on(Button.Pressed, "#cancel")
+    def action_close(self):
+        self.app.pop_screen()
+    
+    @on(Button.Pressed, "#delete")
+    def action_delete(self):
+        self.dismiss(self.row_data)
