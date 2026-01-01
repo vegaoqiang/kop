@@ -87,6 +87,14 @@ class ResourceView(Screen):
             self._interval_update_resource, 
             pause=True
             )
+    
+    def on_screen_suspend(self) -> None:
+        if hasattr(self, "timer"):
+            self.timer.pause()
+
+    def on_screen_resume(self) -> None:
+        if hasattr(self, "timer"):
+            self.timer.resume()
 
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
