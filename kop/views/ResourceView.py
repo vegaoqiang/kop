@@ -67,7 +67,12 @@ class ResourceView(Screen):
         self.app.push_screen(renderer)
 
     def on_action_group_delete_button(self, event: ActionGroup.DeleteButton) -> None:
-        print('event: ActionGroup.DeleteButton:', event.row_data)
+        try:
+            self.endpoint.delete_pods(name=event.row_data.name,
+                                    namespace=event.row_data.namespace
+                                    )
+        except Exception as e:
+            self.notify(f"Delete pod failed: {e}", severity="error")
 
     def on_action_group_shell_button(self, event: ActionGroup.ShellButton) -> None:
         if event.row_data.status != "Running":
@@ -76,7 +81,6 @@ class ResourceView(Screen):
         self.app.push_screen(PodTerminal(self.endpoint, event.row_data))
 
     def on_action_group_log_button(self, event: ActionGroup.LogButton) -> None:
-        print('event: ActionGroup.LogButton:', event.row_data, event.container_name)
         if event.row_data.status != "Running":
             self.notify("Pod is not running", severity="error")
             return
