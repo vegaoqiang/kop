@@ -26,7 +26,8 @@ class Logs(Log):
         worker = get_current_worker()
         while not worker.is_cancelled:
             lines = await asyncio.to_thread(self.log_controller.poll_logs, timeout=0.1)
-            self.write_lines(lines, scroll_end=True)
+            if lines:
+                self.write_lines(lines, scroll_end=True)
 
             # poll_event is non-blocking
             events = self.log_controller.poll_event()
