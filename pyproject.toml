@@ -10,4 +10,5 @@ dependencies = [
     "textual[syntax]>=6.11.0",
     "pyte",
     "rich-pixels>=3.0.1",
+    "pytest>=9.0.2",
 ]
