@@ -1,13 +1,14 @@
-from SideMenu import SideMenu
 from textual.screen import Screen
 from textual.app import ComposeResult, App
 from textual.containers import Horizontal
 from textual.widgets import Static, Footer
-from registry import ResourceRegistry
-from factory import *
-from components.Actions import ActionGroup
-from kube.client import KbsEndpoint
-from PodTerminal import PodTerminal
+from kop.views.SideMenu import SideMenu
+from kop.views.PodTerminal import PodTerminal
+from kop.views.PodLog import PodLog
+from kop.registry import ResourceRegistry
+from kop.factory import *
+from kop.components.Actions import ActionGroup
+from kop.kube.client import KbsEndpoint
 
 
 class ResourceView(Screen):
@@ -69,14 +70,17 @@ class ResourceView(Screen):
         print('event: ActionGroup.DeleteButton:', event.row_data)
 
     def on_action_group_shell_button(self, event: ActionGroup.ShellButton) -> None:
-        print('event: ActionGroup.ShellButton:', event.row_data)
         if event.row_data.status != "Running":
             self.notify("Pod is not running", severity="error")
             return
         self.app.push_screen(PodTerminal(self.endpoint, event.row_data))
 
     def on_action_group_log_button(self, event: ActionGroup.LogButton) -> None:
-        print('event: ActionGroup.LogButton:', event.row_data)
+        print('event: ActionGroup.LogButton:', event.row_data, event.container_name)
+        if event.row_data.status != "Running":
+            self.notify("Pod is not running", severity="error")
+            return
+        self.app.push_screen(PodLog(self.endpoint, event.row_data, event.container_name))
 
 
 class ResApp(App):
@@ -90,5 +94,5 @@ class ResApp(App):
 
 
 if __name__ == "__main__":
-    app = ResApp(config_file="~/.kube/config")
+    app = ResApp(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/196f5cce-07d5-4ac1-b1f8-61b14bc9bb72")
     app.run()

@@ -2,7 +2,7 @@ from textual import work
 from textual.worker import get_current_worker, Worker
 from textual.app import ComposeResult
 from textual.widgets import Log
-from kube.logs import PodLogs, LogController
+from kop.kube.logs import PodLogs, LogController
 import asyncio
 
 

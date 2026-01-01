@@ -1,9 +1,8 @@
 import queue
 import threading
 from typing import Optional
-from kubernetes.client.rest import ApiException
-from kubernetes.client import CoreV1Api
 from kubernetes import watch
+from kubernetes.client import CoreV1Api
 
 
 
@@ -79,7 +78,7 @@ class LogController:
             for line in self.pod_logs.watch_logs():
                 if self._stop_event.is_set():
                     break
-                if line is not None:
+                if line:
                     self._queue.put(line)
         except Exception as e:
             self._event_queue.put(e)

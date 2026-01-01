@@ -137,12 +137,13 @@ class Option(ModalScreen):
     def action_close(self):
         self.app.pop_screen()
 
+    @on(OptionList.OptionSelected)
     @on(Button.Pressed, "#choose")
     def action_choose(self):
         self.dismiss(
             self.options[self.query_one("#option_list").highlighted]
         )
 
-    @on(OptionList.OptionSelected)
-    def action_select(self) -> None:
-        self.action_choose()
+    # @on(OptionList.OptionSelected)
+    # def action_select(self) -> None:
+    #     self.action_choose()

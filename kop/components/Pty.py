@@ -7,7 +7,7 @@ from textual.geometry import Size
 from rich.console import RenderableType
 from rich.text import Text
 from rich.style import Style
-from kube.exec import PodExec
+from kop.kube.exec import PodExec
 from pyte import Stream, HistoryScreen
 
 

@@ -95,7 +95,7 @@ class PodExec:
 
         try:
             # stdin EOF
-            self.resp.write_stdin("\x04", timeout=0.1)
+            self.resp.write_stdin("\x04")
             self.resp.close()
 
         finally:

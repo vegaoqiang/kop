@@ -1,8 +1,8 @@
 from textual.app import ComposeResult
 from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal
-from components.Actions import ActionGroup
 from textual.message import Message
+from kop.components.Actions import ActionGroup
 
 
 class BaseCol(Static):

@@ -2,7 +2,7 @@ from textual import on
 from textual.app import ComposeResult
 from textual.containers import Container
 from textual.widgets import Label, Input, TextArea, Button, Footer
-from validations import ClusterNameValidator
+from kop.validations import ClusterNameValidator
 
 
 class AddConfigFormRenderer(Container):

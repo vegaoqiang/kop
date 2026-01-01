@@ -1,9 +1,9 @@
 from textual.screen import Screen
 from textual.app import ComposeResult
-from components.Pty import PodPty
-from kube.client import KbsAuthLoader
-from kube.exec import PodExec
-from models import PodViewModel
+from kop.components.Pty import PodPty
+from kop.kube.client import KbsAuthLoader
+from kop.kube.exec import PodExec
+from kop.models import PodViewModel
 
 
 class PodTerminal(Screen):

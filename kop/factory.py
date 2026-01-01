@@ -1,10 +1,10 @@
-from abc import ABC, abstractmethod
-from registry import ResourceRegistry
-from renderers.table import TableRenderer
-from renderers.details import DetailModalRenderer
-from kube.client import KubeClient, KbsEndpoint
 from typing import List
-from models import (PodViewModel, 
+from abc import ABC, abstractmethod
+from kop.registry import ResourceRegistry
+from kop.renderers.table import TableRenderer
+from kop.renderers.details import DetailModalRenderer
+from kop.kube.client import KubeClient, KbsEndpoint
+from kop.models import (PodViewModel, 
                     DepolymentViewModel, 
                     DaemonSetViewModel, 
                     StatefulSetViewModel,

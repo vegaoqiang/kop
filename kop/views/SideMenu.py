@@ -5,7 +5,7 @@ from textual import on
 from textual.message import Message
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, ListItem, ListView, Label
-from components.Rules import TextRule
+from kop.components.Rules import TextRule
 
 
 WOEKLOADS_MENUS: List[SimpleNamespace] = [

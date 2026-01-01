@@ -2,16 +2,16 @@ from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Grid
 from textual.widgets import Static, Label, Rule
-from components.Detail import (
+from kop.components.Detail import (
     TextDetail, 
     ListDetail, 
     DictDetail,
     TolerationsDetail,
     EnvironmentDetail, 
     ItemListDetail)
-from registry import RendererRegistry
-from models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel
-from components.Rules import LableRule
+from kop.registry import RendererRegistry
+from kop.models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel
+from kop.components.Rules import LableRule
 
 
 @RendererRegistry.register_renderer(str)
