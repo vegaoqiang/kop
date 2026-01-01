@@ -49,7 +49,22 @@ class ResourceView(Screen):
     
     
     def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
-        resource_type = event.menu_id
+        self.resource_type = resource_type = event.menu_id
+        self._render_resource(resource_type)
+        # factory_cls = ResourceRegistry.get_factory(resource_type)
+        # if not factory_cls:
+        #     return
+        # self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
+        # data = factory.fetch()
+        # table = factory.create_renderer(data)
+
+        # right_panel = self.query_one("#right_panel")
+        # right_panel.remove_children()
+        # right_panel.mount(table)
+        if hasattr(self, "timer"):
+            self.timer.resume()
+
+    def _render_resource(self, resource_type: str):
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
             return
@@ -60,6 +75,19 @@ class ResourceView(Screen):
         right_panel = self.query_one("#right_panel")
         right_panel.remove_children()
         right_panel.mount(table)
+    
+    def _interval_update_resource(self) -> None:
+        if not self.resource_type:
+            return
+        self._render_resource(self.resource_type)
+
+    def on_mount(self) -> None:
+        self.timer = self.set_interval(
+            10, 
+            self._interval_update_resource, 
+            pause=True
+            )
+
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
         raw_data = event.raw_data
