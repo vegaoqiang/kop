@@ -35,6 +35,8 @@ class ResourceView(Screen):
 
     FACTORY_CACHE: BaseFactory
 
+    table: TableRenderer | None = None
+
     def __init__(self, config_file: str, **kwargs) -> None:
         super().__init__(**kwargs)
         self.config_file = config_file
@@ -70,11 +72,14 @@ class ResourceView(Screen):
             return
         self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
         data = factory.fetch()
-        table = factory.create_renderer(data)
-
-        right_panel = self.query_one("#right_panel")
-        right_panel.remove_children()
-        right_panel.mount(table)
+        if not self.table:
+            self.table= table = factory.create_renderer(data)
+            right_panel = self.query_one("#right_panel")
+            right_panel.remove_children()
+            right_panel.mount(table)
+        else:
+            self.table.data = factory.clean(data)
+        
     
     def _interval_update_resource(self) -> None:
         if not self.resource_type:

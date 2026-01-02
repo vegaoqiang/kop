@@ -55,7 +55,7 @@ class ViewModel:
         diff = now - start_time
 
         if 0 <= diff.total_seconds() < 60:
-            return f"{diff.total_seconds()}s"
+            return f"{diff.seconds}s"
         if 60 <= diff.total_seconds() < 3600:
             return f"{int(diff.total_seconds()) // 60}m"
         if 3600 <= diff.total_seconds() < 86400:
