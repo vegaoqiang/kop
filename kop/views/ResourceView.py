@@ -53,16 +53,7 @@ class ResourceView(Screen):
     def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
         self.resource_type = resource_type = event.menu_id
         self._render_resource(resource_type)
-        # factory_cls = ResourceRegistry.get_factory(resource_type)
-        # if not factory_cls:
-        #     return
-        # self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
-        # data = factory.fetch()
-        # table = factory.create_renderer(data)
 
-        # right_panel = self.query_one("#right_panel")
-        # right_panel.remove_children()
-        # right_panel.mount(table)
         if hasattr(self, "timer"):
             self.timer.resume()
 
@@ -78,10 +69,11 @@ class ResourceView(Screen):
             right_panel.remove_children()
             right_panel.mount(table)
         else:
+            self.table.raw_data = data.items
             self.table.data = factory.clean(data)
         
     
-    def _interval_update_resource(self) -> None:
+    def _update_resource(self) -> None:
         if not self.resource_type:
             return
         self._render_resource(self.resource_type)
@@ -89,7 +81,7 @@ class ResourceView(Screen):
     def on_mount(self) -> None:
         self.timer = self.set_interval(
             10, 
-            self._interval_update_resource, 
+            self._update_resource, 
             pause=True
             )
     
@@ -112,6 +104,19 @@ class ResourceView(Screen):
             self.endpoint.delete_pods(name=event.row_data.name,
                                     namespace=event.row_data.namespace
                                     )
+            # pause origin timer and resume after 60s 
+            self.timer.pause()
+            self.set_timer(
+                60,
+                self.timer.resume
+            )
+            # start new interval and repeat 60 times
+            self.set_interval(
+                1, 
+                self._update_resource, 
+                repeat=60
+                )
+            self.notify("Delete pod success", severity="information")
         except Exception as e:
             self.notify(f"Delete pod failed: {e}", severity="error")
 
