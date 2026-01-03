@@ -57,6 +57,7 @@ class SideMenu(ListView):
     
     DEFAULT_CSS = """
         Label {
+            padding-left: 1;
             margin-top: 1;
             text-overflow: ellipsis;
             text-style: bold;
