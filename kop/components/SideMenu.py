@@ -54,24 +54,24 @@ DISPLAY: List = [
 
 
 class SideMenu(ListView):
+    
+    DEFAULT_CSS = """
+        Label {
+            margin-top: 1;
+            text-overflow: ellipsis;
+            text-style: bold;
+        }
+        ListItem {
+            border-bottom: tall black;
+        }
+    """
 
     def compose(self) -> ComposeResult:
         for menu in DISPLAY:
            for item in menu:
               yield ListItem(Label(item.name), id=item.id)
-           yield ListItem(TextRule("test"), disabled=True)
+        #    yield ListItem(TextRule("test"), disabled=True)
     
-
-    # def on_list_view_highlighted(self, event: ListView.Highlighted):
-    #     item: ListItem | None = event.item
-    #     self.log(item.id)
-    #     if not item.id:
-    #         return
-    #     menu_id = item.id
-
-    #     # 异步调用 Kubernetes API
-    #     self.run_worker(self.fetch_and_send_data(menu_id))
-        
 
     @on(ListView.Highlighted)
     async def handle_highlighted(self, event: ListView.Highlighted):

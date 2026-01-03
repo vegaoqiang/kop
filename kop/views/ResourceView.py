@@ -2,7 +2,7 @@ from textual.screen import Screen
 from textual.app import ComposeResult, App
 from textual.containers import Horizontal
 from textual.widgets import Static, Footer
-from kop.views.SideMenu import SideMenu
+from kop.components.SideMenu import SideMenu
 from kop.views.PodTerminal import PodTerminal
 from kop.views.PodLog import PodLog
 from kop.registry import ResourceRegistry
