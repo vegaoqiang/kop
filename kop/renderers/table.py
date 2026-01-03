@@ -26,10 +26,10 @@ class BaseCol(Static):
         self.styles.width = f"{self.width}%"
 
     def watch_text(self, old_value: str, new_value: str) -> None:
-        if old_value == new_value:
-            return
         if isinstance(new_value, list):
             new_value = str(len(new_value))
+        if old_value == new_value:
+            return
         self.content = new_value
 
 class BaseHeader(ListItem):
@@ -71,6 +71,8 @@ class BaseRow(ListItem):
             self.query(BaseCol),
             self.columns
         ):
+            if old_value.get(col.field) == new_value.get(col.field):
+                continue
             col_widget.text = new_value.get(col.field)
 
     def update_row_data(self, row_data):
