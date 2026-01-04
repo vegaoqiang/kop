@@ -92,11 +92,20 @@ class DeploymentFactory(BaseFactory):
     def clean(self, raw) -> List[DepolymentViewModel]:
         return [DepolymentViewModel.clean(dep) for dep in raw.items]
     
+    def clean_detail(self, raw) -> DepolymentViewModel:
+        return DepolymentViewModel.clean(raw)
+    
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
             columns=DepolymentViewModel.get_columns(),
             data=self.clean(data),
             raw_data=data.items
+        )
+
+    def create_detail_renderer(self, data) -> DetailModalRenderer:
+        return DetailModalRenderer(
+            columns=DepolymentViewModel.get_columns(),
+            data=self.clean_detail(data),
         )
     
 

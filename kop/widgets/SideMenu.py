@@ -5,8 +5,12 @@ from textual import on
 from textual.message import Message
 from textual.app import App, ComposeResult
 from textual.widgets import Footer, ListItem, ListView, Label
-from kop.components.Rules import TextRule
+from kop.widgets.Rules import TextRule
 
+
+NODE_MENUS: List[SimpleNamespace] = [
+    SimpleNamespace(id='nodes', name="Nodes")
+]
 
 WOEKLOADS_MENUS: List[SimpleNamespace] = [
    SimpleNamespace(id='pods', name="Pods"),
@@ -45,6 +49,7 @@ ACCESS_MENUS: List[SimpleNamespace] = [
 ]
 
 DISPLAY: List = [
+    NODE_MENUS,
     WOEKLOADS_MENUS,
     CONFIG_MENUS,
     NETWORK_MENUS,

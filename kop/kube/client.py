@@ -178,9 +178,3 @@ class KbsEndpoint(KbsAuthLoader):
             return endpoint.list_namespaced_stateful_set(namespace, watch=watch, async_req=async_req)
         return endpoint.list_stateful_set_for_all_namespaces(watch=watch, async_req=async_req)
 
-
-
-if __name__ == "__main__":
-    kclient = KbsEndpoint(config_file="~/.kube/config")
-    pod = kclient.list_pods()
-    print(pod)

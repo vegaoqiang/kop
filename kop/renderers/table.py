@@ -3,7 +3,7 @@ from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal
 from textual.message import Message
 from textual.reactive import reactive
-from kop.components.Actions import ActionGroup
+from kop.widgets.Actions import ActionGroup
 
 
 class BaseCol(Static):

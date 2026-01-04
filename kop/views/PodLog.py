@@ -1,10 +1,10 @@
 from textual.screen import Screen
 from textual.app import ComposeResult
-from kop.components.Log import Logs
+from kop.widgets.Log import Logs
 from kop.kube.logs import PodLogs
 from kop.kube.client import KbsAuthLoader
 from kop.models import PodViewModel
-from kop.components.Log import LogController
+from kop.widgets.Log import LogController
 
 
 

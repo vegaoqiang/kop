@@ -252,6 +252,10 @@ class DepolymentViewModel(ViewModel):
         )
 
 
+class DeploymentDetailModel(DepolymentViewModel):
+    ...
+
+
 @dataclass
 class DaemonSetViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
