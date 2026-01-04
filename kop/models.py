@@ -239,7 +239,8 @@ class DepolymentViewModel(ViewModel):
     pods: str = field(metadata={"title": "Pods", "width": 10})
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5})
-    conditions: str = field(metadata={"title": "Conditions", "width": 20})
+    # conditions: str = field(metadata={"title": "Conditions", "width": 20})
+    conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions", "width": 20})
     actions: List[ActionModel] = field(default_factory=lambda: [
         ActionModel("sc", "Scale", "success", "Scale", "scale"),
         ActionModel("re", "Restart", "success", "Restart", "restart"),
@@ -255,7 +256,8 @@ class DepolymentViewModel(ViewModel):
             pods="/".join([str(data.status.ready_replicas), str(data.status.replicas)]),
             replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
-            conditions=" ".join([c.type for c in data.status.conditions]),
+            # conditions=" ".join([c.type for c in data.status.conditions]),
+            conditions=RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
         )
 
 
