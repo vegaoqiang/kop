@@ -10,7 +10,7 @@ from kop.widgets.Detail import (
     EnvironmentDetail, 
     ItemListDetail)
 from kop.registry import RendererRegistry
-from kop.models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel
+from kop.models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel, RawField
 from kop.widgets.Rules import LableRule
 
 
@@ -25,9 +25,9 @@ def render_dict(title: str, desc: dict) -> ComposeResult:
             
 
 @RendererRegistry.register_renderer('conditions')
-def render_conditions(title: str, desc: list) -> ComposeResult:
+def render_conditions(title: str, desc: RawField) -> ComposeResult:
     conditions: list = []
-    for item in desc:
+    for item in desc.raw:
         if item.status == 'True':
             conditions.append(item.type)
     yield ItemListDetail(title=title, description=conditions)

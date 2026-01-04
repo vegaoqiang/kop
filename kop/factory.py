@@ -6,6 +6,7 @@ from kop.renderers.details import DetailModalRenderer
 from kop.kube.client import KubeClient, KbsEndpoint
 from kop.models import (PodViewModel, 
                     DepolymentViewModel, 
+                    DeploymentDetailModel,
                     DaemonSetViewModel, 
                     StatefulSetViewModel,
                     PodDetailModel)
@@ -93,7 +94,7 @@ class DeploymentFactory(BaseFactory):
         return [DepolymentViewModel.clean(dep) for dep in raw.items]
     
     def clean_detail(self, raw) -> DepolymentViewModel:
-        return DepolymentViewModel.clean(raw)
+        return DeploymentDetailModel.clean(raw)
     
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
@@ -104,7 +105,7 @@ class DeploymentFactory(BaseFactory):
 
     def create_detail_renderer(self, data) -> DetailModalRenderer:
         return DetailModalRenderer(
-            columns=DepolymentViewModel.get_columns(),
+            columns=DeploymentDetailModel.get_columns(),
             data=self.clean_detail(data),
         )
     

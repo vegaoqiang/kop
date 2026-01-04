@@ -10,7 +10,7 @@ from kubernetes.client.models import (
     V1Toleration, 
     V1Condition)
 from datetime import datetime
-from typing import List
+from typing import List, Any
 
 
 @dataclass
@@ -27,6 +27,11 @@ class ActionModel:
     variant: str
     tooltip: str
     action: str
+
+@dataclass
+class RawField:
+    raw: Any
+    string: str
 
 
 @dataclass
@@ -188,7 +193,8 @@ class PodDetailModel(PodViewModel):
     pod_ip: str = field(default="", metadata={"title": "Pod IP"})
     service_account: str = field(default="", metadata={"title": "Service Account"})
     priority: str = field(default="", metadata={"title": "Priority Class"})
-    conditions: list[V1Condition] = field(default_factory=list, metadata={"title": "Conditions"})
+    # conditions: list[V1Condition] = field(default_factory=list, metadata={"title": "Conditions"})
+    conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions"})
     node_selector: list = field(default_factory=list, metadata={"title": "NodeSelector"})
     tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})
@@ -203,7 +209,8 @@ class PodDetailModel(PodViewModel):
             'pod_ip': data.status.pod_ip,
             'service_account': data.spec.service_account_name,
             'priority': data.spec.priority_class_name,
-            'conditions': data.status.conditions,
+            # 'conditions': data.status.conditions,
+            'conditions': RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
             'node_selector': data.spec.node_selector,
             'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
@@ -234,10 +241,10 @@ class DepolymentViewModel(ViewModel):
     age: str = field(metadata={"title": "Age", "width": 5})
     conditions: str = field(metadata={"title": "Conditions", "width": 20})
     actions: List[ActionModel] = field(default_factory=lambda: [
-        ActionModel("sc", "success", "Scale", "Scale"),
-        ActionModel("re", "success", "Restart", "restart"),
-        ActionModel("ed", "success", "Edit", "Edit"),
-        ActionModel("del", "error", "Delete Deployment", "delete")],
+        ActionModel("sc", "Scale", "success", "Scale", "scale"),
+        ActionModel("re", "Restart", "success", "Restart", "restart"),
+        ActionModel("ed", "Edit", "success", "Edit", "edit"),
+        ActionModel("del", "Delete Deployment", "error", "Delete", "delete")],
         metadata={"title": "Actions", "width": 10})
 
     @classmethod
@@ -253,7 +260,33 @@ class DepolymentViewModel(ViewModel):
 
 
 class DeploymentDetailModel(DepolymentViewModel):
-    ...
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    status_replicas: dict = field(default_factory=dict, metadata={"title": "Status Replicas"})
+    selector: list[dict] = field(default_factory=list, metadata={"title": "Selector"})
+    strategy: dict = field(default_factory=dict, metadata={"title": "Strategy"})
+
+    @classmethod
+    def clean(cls, data: V1Deployment) -> "DeploymentDetailModel":
+        base = asdict(super().clean(data))
+        base.update({
+            'annotations': data.metadata.annotations,
+            'labels': data.metadata.labels,
+            'status_replicas': cls.get_status_replicas(data.status),
+            'selector': data.spec.selector,
+            'strategy': data.spec.strategy,
+        })
+        return cls(**base)
+    
+    @classmethod
+    def get_status_replicas(cls, status) -> dict:
+        return dict(
+            available_replicas=status.available_replicas,
+            ready_replicas=status.ready_replicas,
+            terminating_replicas=status.terminating_replicas,
+            unavailable_replicas=status.unavailable_replicas,
+            updated_replicas=status.updated_replicas
+        )
 
 
 @dataclass
