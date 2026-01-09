@@ -39,6 +39,9 @@ class ViewModel:
 
     @classmethod
     def get_columns(cls) -> List[ColumnModel]:
+        """
+        Retrieve the table header from the model to be used as the table in the ResourceView screen.
+        """
         columns: List[ColumnModel] = []
         for item in fields(cls):
             if item.name.startswith("_"):
@@ -47,9 +50,19 @@ class ViewModel:
                                        item.metadata["width"] if item.metadata.get("width") else None, 
                                        item.name))
         return columns
-        # return [ColumnModel(f.metadata["title"], 
-        #                     f.metadata["width"] if f.metadata.get("width") else None, 
-        #                     f.name) for f in fields(cls)]
+
+    def get_detail_columns(self):
+        """
+        Retrieve fields from the model to display in the DetailModalRenderer screen.
+        """
+        columns: List[ColumnModel] = []
+        for item in fields(self):
+            if item.name.startswith("_") or item.metadata.get("detail", False) is False:
+                continue
+            columns.append(ColumnModel(item.metadata["title"], 
+                                       item.metadata["width"] if item.metadata.get("width") else None, 
+                                       item.name))
+        return columns
     
     def get(self, key: str) -> str:
         return getattr(self, key, "")
@@ -72,6 +85,12 @@ class ViewModel:
         if diff.total_seconds() >= 31536000:
             return f"{int(diff.total_seconds()) // 31536000}y"
         return "-"
+
+
+    @staticmethod
+    def get_created_text(start_time: datetime) -> str:
+        return start_time.strftime("%Y-%m-%d %H:%M:%S")
+                                 
     
     @classmethod
     def clean(cls, data):
@@ -160,6 +179,7 @@ class PodViewModel(ViewModel):
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 10})
     qos: str = field(metadata={"title": "QoS", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5})
+    created: str = field(metadata={"title": "Created", "width": 5})
     actions: List[ActionModel] = field(default_factory=lambda: [
         ActionModel("shell", ">_", "success", "Exec shell on pod", "shell"),
         ActionModel("log", "log", "success", "View the pod logs", "log"),
@@ -183,6 +203,7 @@ class PodViewModel(ViewModel):
             controlled_by=data.metadata.owner_references[0].kind, # type: ignore
             qos=data.status.qos_class, # type: ignore
             age=cls.get_age_text(data.status.start_time), # type: ignore
+            created=cls.get_created_text(data.status.start_time), # type: ignore
         )
 
 
@@ -239,6 +260,7 @@ class DepolymentViewModel(ViewModel):
     pods: str = field(metadata={"title": "Pods", "width": 10})
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5})
+    created: str = field(metadata={"title": "Created", "width": 5})
     # conditions: str = field(metadata={"title": "Conditions", "width": 20})
     conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions", "width": 20})
     actions: List[ActionModel] = field(default_factory=lambda: [
@@ -256,11 +278,13 @@ class DepolymentViewModel(ViewModel):
             pods="/".join([str(data.status.ready_replicas), str(data.status.replicas)]),
             replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
+            created=cls.get_created_text(data.metadata.creation_timestamp),
             # conditions=" ".join([c.type for c in data.status.conditions]),
             conditions=RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
         )
 
 
+@dataclass
 class DeploymentDetailModel(DepolymentViewModel):
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
@@ -270,7 +294,7 @@ class DeploymentDetailModel(DepolymentViewModel):
 
     @classmethod
     def clean(cls, data: V1Deployment) -> "DeploymentDetailModel":
-        base = asdict(super().clean(data))
+        base = super().clean(data).__dict__
         base.update({
             'annotations': data.metadata.annotations,
             'labels': data.metadata.labels,
