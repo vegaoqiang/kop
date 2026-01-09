@@ -10,6 +10,12 @@ from typing import Any, Callable
 
 class Title(Static):
 
+    DEFAULT_CSS = """
+        Title {
+            padding-left: 1;
+        }
+    """
+
     def __init__(self, 
                  text: str, 
                  expand: bool = False, 
