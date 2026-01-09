@@ -1,6 +1,9 @@
 
 from textual.app import ComposeResult
 from textual.widgets import Static, ListItem, ListView, Label
+from rich.rule import Rule
+from rich.style import Style
+
 
 
 class TextRule(Static):
@@ -46,3 +49,16 @@ class LableRule(Static):
         yield ListView(
             ListItem(Label(self.text)),
         )
+
+    
+class DetailRule(Static):
+    """
+    default color dark gray: ＃2F4F4F = rgb(47,79,79)
+    """
+
+    def __init__(self, color: str = "rgb(47,79,79)"):
+        super().__init__()
+        self.color = color
+
+    def render(self):
+        return Rule(style=Style(color=self.color))
