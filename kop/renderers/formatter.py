@@ -1,4 +1,5 @@
-from rich.table import Table, Column
+from rich.table import Table
+
 
 def tolerations_formatter(desc):
     table = Table()
