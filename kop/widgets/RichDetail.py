@@ -65,7 +65,7 @@ class DescView(Static):
         return text
 
     def desc_to_text(self) -> Text:
-        text = Text()
+        text = Text(justify="right")
         if isinstance(self.desc, dict):
             for k, v in self.desc.items():
                 text.append(f"{k}={v}\n")
@@ -73,7 +73,7 @@ class DescView(Static):
 
         if isinstance(self.desc, (list, tuple)):
             for item in self.desc:
-                text.append(f"{item}", style=Style(reverse=True, bold=True))
+                text.append(f"{item}", style=Style(reverse=True, bold=True, underline=True))
                 text.append(" ", style=Style(bgcolor=None))
             return text
             # cols = Columns(
@@ -82,7 +82,7 @@ class DescView(Static):
             #     expand=False,
             # )
             # return cols
-        return Text(str(self.desc), overflow="fold")
+        return Text(str(self.desc), overflow="fold", justify="right")
 
 
 class Row(Grid):
@@ -92,6 +92,14 @@ class Row(Grid):
     functions will each occupy a separate line; otherwise, they will appear 
     on the same line.
     """
+
+    DEFAULT_CSS = """
+        Row {
+            height: auto;
+            min-height: 1;
+        }
+    """
+
     def __init__(self, title: Title, desc: DescView) -> None:
         super().__init__()
         self.title = title
@@ -104,9 +112,13 @@ class Row(Grid):
         else:
             self.styles.grid_size_columns = 2
             self.styles.grid_size_rows = 1
+            self.styles.grid_columns = "1fr 2fr"
 
     
     def compose(self) -> ComposeResult:
         yield self.title
         yield self.desc
         
+
+class RawDetail(Static):
+    ...
