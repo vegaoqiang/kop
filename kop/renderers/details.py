@@ -12,6 +12,8 @@ from kop.widgets.Detail import (
 from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel, RawField
 from kop.widgets.Rules import LableRule
+from kop.renderers import formatter
+from widgets.RichDetail import Row, Title,  DescView
 
 
 @RendererRegistry.register_renderer(str)
@@ -24,13 +26,14 @@ def render_dict(title: str, desc: dict) -> ComposeResult:
     yield DictDetail(title=title, description=desc)
             
 
-@RendererRegistry.register_renderer('conditions')
-def render_conditions(title: str, desc: RawField) -> ComposeResult:
-    conditions: list = []
-    for item in desc.raw:
-        if item.status == 'True':
-            conditions.append(item.type)
-    yield ItemListDetail(title=title, description=conditions)
+# @RendererRegistry.register_renderer('conditions')
+# def render_conditions(title: str, desc: RawField) -> ComposeResult:
+#     conditions: list = []
+#     for item in desc.raw:
+#         if item.status == 'True':
+#             conditions.append(item.type)
+#     yield ItemListDetail(title=title, description=conditions)
+
 
 
 @RendererRegistry.register_renderer('environmnet')
@@ -42,11 +45,11 @@ def render_environment(title: str, desc: list) -> ComposeResult:
     yield ListDetail(title=title, description=env)
 
 
-@RendererRegistry.register_renderer('tolerations')
-def render_tolerations(title: str, desc: list) -> ComposeResult:
-    header: tuple = ('key', 'value', 'operator', 'effect', 'toleration_seconds')
-    row: list[tuple]  = [tuple([item.to_dict().get(key, '') for key in header]) for item in desc]
-    yield TolerationsDetail(title=title, description=row, header=header)
+# @RendererRegistry.register_renderer('tolerations')
+# def render_tolerations(title: str, desc: list) -> ComposeResult:
+#     header: tuple = ('key', 'value', 'operator', 'effect', 'toleration_seconds')
+#     row: list[tuple]  = [tuple([item.to_dict().get(key, '') for key in header]) for item in desc]
+#     yield TolerationsDetail(title=title, description=row, header=header)
 
 
 @RendererRegistry.register_renderer('containers')
@@ -85,9 +88,9 @@ def container_status(desc: ContainerStatusModel) -> ComposeResult:
         yield from renderer(title=col.title, desc=field_value)
 
 
-@RendererRegistry.register_renderer('labels')
-def render_labels(title: str, desc: dict) -> ComposeResult:
-    yield DictDetail(title=title, description=desc)
+# @RendererRegistry.register_renderer('labels')
+# def render_labels(title: str, desc: dict) -> ComposeResult:
+#     yield DictDetail(title=title, description=desc)
 
 
 @RendererRegistry.register_renderer('annotations')
@@ -100,15 +103,37 @@ def render_node_selector(title: str, desc: dict) -> ComposeResult:
     yield DictDetail(title=title, description=desc)
 
 
-@RendererRegistry.register_renderer('default')
-def render_default(title: str, desc) -> ComposeResult:
-    if isinstance(desc, str):
-        yield TextDetail(title=title, description=desc)
-    if isinstance(desc, dict):
-        yield DictDetail(title=title, description=desc)
-    if isinstance(desc, list):
-        yield ListDetail(title=title, description=desc)
+# @RendererRegistry.register_renderer('default')
+# def render_default(title: str, desc) -> ComposeResult:
+#     if isinstance(desc, str):
+#         yield TextDetail(title=title, description=desc)
+#     if isinstance(desc, dict):
+#         yield DictDetail(title=title, description=desc)
+#     if isinstance(desc, list):
+#         yield ListDetail(title=title, description=desc)
 
+####
+
+
+
+def render_default(title: str, desc) -> ComposeResult:
+    yield Row(title=Title(title), desc=DescView(desc=desc))
+
+
+@RendererRegistry.register_renderer('conditions')
+def render_conditions(title: str, desc: RawField) -> ComposeResult:
+    conditions: list = []
+    for item in desc.raw:
+        if item.status == 'True':
+            conditions.append(item.type)
+    yield Row(title=Title(title), desc=DescView(desc=conditions))
+
+
+@RendererRegistry.register_renderer('tolerations')
+def render_tolerations(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=DescView(desc=desc, formatter=formatter.tolerations_formatter))
+
+####
 
 class DetailModalRenderer(ModalScreen):
 
@@ -116,6 +141,7 @@ class DetailModalRenderer(ModalScreen):
         #detail {
             width: 40%;
             dock: right;
+            height: 1fr;
         }
     """
 
@@ -137,11 +163,9 @@ class DetailModalRenderer(ModalScreen):
                 field_value = self.data.get(item.field)
                 if not field_value:
                     continue
-
-                # renderer = RendererRegistry.get_renderer(field_value.__class__)
                 renderer = RendererRegistry.get_renderer(item.field, render_default)
                 yield from renderer(title=item.title, desc=field_value)
-                yield Rule()
+                # yield Rule()
 
 
     def action_close(self):
