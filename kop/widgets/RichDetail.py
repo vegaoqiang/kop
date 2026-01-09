@@ -1,19 +1,8 @@
-from textual.events import Mount
 from textual.widgets import Static
-from textual.widget import Widget
-from textual.app import RenderResult, ComposeResult
-from rich.console import RenderableType, Console, ConsoleOptions, RenderResult
+from textual.app import ComposeResult
+from rich.console import RenderableType
 from rich.text import Text
-from rich.layout import Layout
-from rich.panel import Panel
-from rich.columns import Columns
-from rich.console import Group
-from rich.table import Table
-from rich.pretty import Pretty
-from rich.segment import Segment
 from rich.style import Style
-from rich.padding import Padding
-from dataclasses import dataclass
 from textual.containers import Grid
 from typing import Any, Callable
 
