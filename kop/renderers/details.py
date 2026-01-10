@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Grid
-from textual.widgets import Static, Label, Rule
+from textual.widgets import Static, Label#, Rule
 from kop.widgets.Detail import (
     TextDetail, 
     ListDetail, 
@@ -14,16 +14,17 @@ from kop.models import ContainerModel, ContainerStatusModel, ContainerEnvironmen
 from kop.widgets.Rules import LableRule
 from kop.renderers import formatter
 from widgets.RichDetail import Row, Title,  DescView
+from widgets.Rules import DetailRule
 
 
-@RendererRegistry.register_renderer(str)
-def render_simple(title: str, desc: str) -> ComposeResult:
-    yield TextDetail(title=title, description=desc)
+# @RendererRegistry.register_renderer(str)
+# def render_simple(title: str, desc: str) -> ComposeResult:
+#     yield TextDetail(title=title, description=desc)
 
 
-@RendererRegistry.register_renderer(dict)
-def render_dict(title: str, desc: dict) -> ComposeResult:
-    yield DictDetail(title=title, description=desc)
+# @RendererRegistry.register_renderer(dict)
+# def render_dict(title: str, desc: dict) -> ComposeResult:
+#     yield DictDetail(title=title, description=desc)
             
 
 # @RendererRegistry.register_renderer('conditions')
@@ -52,11 +53,11 @@ def render_environment(title: str, desc: list) -> ComposeResult:
 #     yield TolerationsDetail(title=title, description=row, header=header)
 
 
-@RendererRegistry.register_renderer('containers')
-def render_containers(title: str, desc: list[ContainerModel]) -> ComposeResult:
-    yield LableRule(text=title)
-    for item in desc:
-        yield from render_container(desc=item)
+# @RendererRegistry.register_renderer('containers')
+# def render_containers(title: str, desc: list[ContainerModel]) -> ComposeResult:
+#     yield LableRule(text=title)
+#     for item in desc:
+#         yield from render_container(desc=item)
 
 
 def render_container(desc: ContainerModel) -> ComposeResult:
@@ -131,7 +132,12 @@ def render_conditions(title: str, desc: RawField) -> ComposeResult:
 
 @RendererRegistry.register_renderer('tolerations')
 def render_tolerations(title: str, desc: list) -> ComposeResult:
-    yield Row(title=Title(title, expand=True), desc=DescView(desc=desc, formatter=formatter.tolerations_formatter))
+    yield Row(title=Title(title, expand=True), 
+              desc=DescView(desc=desc, formatter=formatter.tolerations_formatter))
+
+
+def render_containers(desc: list[ContainerModel]) -> ComposeResult:
+    ...
 
 ####
 
@@ -142,6 +148,10 @@ class DetailModalRenderer(ModalScreen):
             width: 40%;
             dock: right;
             height: 1fr;
+        }
+        DetailRule {
+            padding-left: 1;
+            padding-right: 1;
         }
     """
 
@@ -165,7 +175,7 @@ class DetailModalRenderer(ModalScreen):
                     continue
                 renderer = RendererRegistry.get_renderer(item.field, render_default)
                 yield from renderer(title=item.title, desc=field_value)
-                # yield Rule()
+                yield DetailRule()
 
 
     def action_close(self):

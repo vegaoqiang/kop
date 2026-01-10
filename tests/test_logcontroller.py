@@ -1,5 +1,5 @@
 import time
-from kop.kube.logs import LogController
+from kop.provider.logs import LogController
 
 
 

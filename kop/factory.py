@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from kop.registry import ResourceRegistry
 from kop.renderers.table import TableRenderer
 from kop.renderers.details import DetailModalRenderer
-from kop.kube.client import KubeClient, KbsEndpoint
+from kop.provider.client import KubeClient, KbsEndpoint
 from kop.models import (PodViewModel, 
                     DepolymentViewModel, 
                     DeploymentDetailModel,
@@ -93,7 +93,7 @@ class DeploymentFactory(BaseFactory):
     def clean(self, raw) -> List[DepolymentViewModel]:
         return [DepolymentViewModel.clean(dep) for dep in raw.items]
     
-    def clean_detail(self, raw) -> DepolymentViewModel:
+    def clean_detail(self, raw) -> DeploymentDetailModel:
         return DeploymentDetailModel.clean(raw)
     
     def create_renderer(self, data) -> TableRenderer:

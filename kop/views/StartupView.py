@@ -7,7 +7,7 @@ from textual.containers import VerticalScroll, Horizontal, Grid
 from textual.widgets import Header, Footer, TextArea, Input, Label, Button
 from kop.validations import ClusterNameValidator, ClusterContentValidator
 from kop.widgets.Focusable import ConfigItem
-from kop.kube.config import Config, ConfigModel
+from kop.provider.config import Config, ConfigModel
 from kop.views.ResourceView import ResourceView
 
 

@@ -8,7 +8,7 @@ from kop.views.PodLog import PodLog
 from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.widgets.Actions import ActionGroup
-from kop.kube.client import KbsEndpoint
+from kop.provider.client import KbsEndpoint
 
 
 class ResourceView(Screen):

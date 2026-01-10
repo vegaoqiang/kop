@@ -68,7 +68,6 @@ class ListDetail(Drawer):
 
 
     def compose(self) -> ComposeResult:
-        print('description in ListDetail', self.description)
         yield Grid(
             Title(self.title),
             ItemGrid(*[Label(f"{item}") for item in self.description])

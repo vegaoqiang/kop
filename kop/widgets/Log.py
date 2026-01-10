@@ -2,7 +2,7 @@ from textual import work
 from textual.worker import get_current_worker, Worker
 from textual.app import ComposeResult
 from textual.widgets import Log
-from kop.kube.logs import PodLogs, LogController
+from kop.provider.logs import PodLogs, LogController
 import asyncio
 
 
@@ -48,7 +48,7 @@ class LogApp(App):
 
 
 if __name__ == '__main__':
-    from kube.client import KbsAuthLoader
+    from provider.client import KbsAuthLoader
     k = KbsAuthLoader(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/196f5cce-07d5-4ac1-b1f8-61b14bc9bb72")
     Log = PodLogs(k.api_client, "nginx-deployment-565cb86996-8g4mk", "default")
 

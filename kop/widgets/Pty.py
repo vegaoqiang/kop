@@ -7,7 +7,7 @@ from textual.geometry import Size
 from rich.console import RenderableType
 from rich.text import Text
 from rich.style import Style
-from kop.kube.exec import PodExec
+from kop.provider.exec import PodExec
 from pyte import Stream, HistoryScreen
 
 
@@ -283,7 +283,7 @@ class TerminalApp(App):
 
 
 if __name__ == '__main__':
-    from kube.client import KbsAuthLoader
+    from provider.client import KbsAuthLoader
     # k = KbsAuthLoader(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/196f5cce-07d5-4ac1-b1f8-61b14bc9bb72")
     # exec = PodExec(k.api_client, "nginx-deployment-565cb86996-8g4mk", "default")
     k = KbsAuthLoader(config_file="~/.kube/config")
