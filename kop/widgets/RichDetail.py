@@ -117,3 +117,7 @@ class Row(Grid):
 
 class RawDetail(Static):
     ...
+
+
+class ContainersDetail(Static):
+    ...

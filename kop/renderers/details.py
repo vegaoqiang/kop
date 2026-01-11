@@ -1,6 +1,6 @@
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
-from textual.containers import VerticalScroll, Grid
+from textual.containers import VerticalScroll, Grid, Vertical, Container
 from textual.widgets import Static, Label#, Rule
 from kop.widgets.Detail import (
     TextDetail, 
@@ -60,16 +60,16 @@ def render_environment(title: str, desc: list) -> ComposeResult:
 #         yield from render_container(desc=item)
 
 
-def render_container(desc: ContainerModel) -> ComposeResult:
-    desc = desc.lazy_clean()
-    columns = desc.get_columns()
-    for col in columns:
-        field_value = desc.get(col.field)
-        if not field_value:
-            continue
-        # renderer = RendererRegistry.get_renderer(field_value.__class__)
-        renderer = RendererRegistry.get_renderer(col.field, render_default)
-        yield from renderer(title=col.title, desc=field_value)
+# def render_container(desc: ContainerModel) -> ComposeResult:
+#     desc = desc.lazy_clean()
+#     columns = desc.get_columns()
+#     for col in columns:
+#         field_value = desc.get(col.field)
+#         if not field_value:
+#             continue
+#         # renderer = RendererRegistry.get_renderer(field_value.__class__)
+#         renderer = RendererRegistry.get_renderer(col.field, render_default)
+#         yield from renderer(title=col.title, desc=field_value)
     
 
 @RendererRegistry.register_renderer('container_statuses')
@@ -136,8 +136,24 @@ def render_tolerations(title: str, desc: list) -> ComposeResult:
               desc=DescView(desc=desc, formatter=formatter.tolerations_formatter))
 
 
-def render_containers(desc: list[ContainerModel]) -> ComposeResult:
-    ...
+@RendererRegistry.register_renderer('containers')
+def render_containers(title: str, desc: list[ContainerModel]) -> ComposeResult:
+    box = Container()
+    box.styles.border = ("heavy", "green")
+    box.border_title = title
+    box.styles.border_title_align = "left"
+    with box:
+        for container in desc:
+            container = container.lazy_clean()
+            columns = container.get_detail_columns()
+            for col in columns:
+                field_value = container.get(col.field)
+                if not field_value:
+                    continue
+                renderer = RendererRegistry.get_renderer(col.field, render_default)
+                yield from renderer(title=col.title, desc=field_value)
+    yield box
+    
 
 ####
 

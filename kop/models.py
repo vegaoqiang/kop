@@ -57,7 +57,9 @@ class ViewModel:
         """
         columns: List[ColumnModel] = []
         for item in fields(self):
-            if item.name.startswith("_") or item.metadata.get("detail", False) is False:
+            # if some field is not to be displayed in detail screen, set detail=False in metadata
+            # all filed is displayed by default
+            if item.name.startswith("_") or item.metadata.get("detail", True) is False:
                 continue
             columns.append(ColumnModel(item.metadata["title"], 
                                        item.metadata["width"] if item.metadata.get("width") else None, 
