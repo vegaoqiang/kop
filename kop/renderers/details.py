@@ -139,8 +139,9 @@ def render_tolerations(title: str, desc: list) -> ComposeResult:
 @RendererRegistry.register_renderer('containers')
 def render_containers(title: str, desc: list[ContainerModel]) -> ComposeResult:
     box = Container()
-    box.styles.border = ("heavy", "green")
     box.border_title = title
+    box.styles.height = "auto"
+    box.styles.border = ("heavy", "green")
     box.styles.border_title_align = "left"
     with box:
         for container in desc:
