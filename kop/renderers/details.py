@@ -37,13 +37,13 @@ from widgets.Rules import DetailRule
 
 
 
-@RendererRegistry.register_renderer('environmnet')
-def render_environment(title: str, desc: list) -> ComposeResult:
-    env: list[str] = []
-    for item in desc:
-        # item = item.lazy_clean()
-        env.append(f"{item.name}={item.value}")
-    yield ListDetail(title=title, description=env)
+# @RendererRegistry.register_renderer('environmnet')
+# def render_environment(title: str, desc: list) -> ComposeResult:
+#     env: list[str] = []
+#     for item in desc:
+#         # item = item.lazy_clean()
+#         env.append(f"{item.name}={item.value}")
+#     yield ListDetail(title=title, description=env)
 
 
 # @RendererRegistry.register_renderer('tolerations')
@@ -144,7 +144,7 @@ def render_containers(title: str, desc: list[ContainerModel]) -> ComposeResult:
     box.styles.border = ("heavy", "green")
     box.styles.border_title_align = "left"
     with box:
-        for container in desc:
+        for index, container in enumerate(desc):
             container = container.lazy_clean()
             columns = container.get_detail_columns()
             for col in columns:
@@ -153,8 +153,17 @@ def render_containers(title: str, desc: list[ContainerModel]) -> ComposeResult:
                     continue
                 renderer = RendererRegistry.get_renderer(col.field, render_default)
                 yield from renderer(title=col.title, desc=field_value)
+            if index < len(desc) - 1:
+                yield DetailRule()
     yield box
     
+
+@RendererRegistry.register_renderer('environmnet')
+def render_environment(title: str, desc: list) -> ComposeResult:
+    env: list[str] = []
+    for item in desc:
+        env.append(f"{item.name}={item.value}")
+    yield Row(title=Title(title), desc=DescView(env, formatter=formatter.environmnet_formatter))
 
 ####
 

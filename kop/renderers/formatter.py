@@ -1,4 +1,5 @@
 from rich.table import Table
+from rich.text import Text
 
 
 def tolerations_formatter(desc):
@@ -17,3 +18,10 @@ def tolerations_formatter(desc):
             cols.append(col)
         table.add_row(*cols)
     return table
+
+
+
+def environmnet_formatter(desc):
+    text = Text(justify="right")
+    text.append('\n'.join(desc))
+    return text
