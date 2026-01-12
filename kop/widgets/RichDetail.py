@@ -61,10 +61,11 @@ class DescView(Static):
 
     def desc_to_text(self) -> Text:
         text = Text(justify="right")
+        lines: list = []
         if isinstance(self.desc, dict):
             for k, v in self.desc.items():
-                text.append(f"{k}={v}\n")
-            return text
+                lines.append(f"{k}={v}")
+            return text.append('\n'.join(lines))
 
         if isinstance(self.desc, (list, tuple)):
             for item in self.desc:
@@ -116,8 +117,4 @@ class Row(Grid):
         
 
 class RawDetail(Static):
-    ...
-
-
-class ContainersDetail(Static):
     ...
