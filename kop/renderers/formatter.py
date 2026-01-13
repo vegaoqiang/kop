@@ -1,6 +1,5 @@
 from rich.table import Table
 from rich.text import Text
-from copy import deepcopy
 
 
 def tolerations_formatter(desc):
@@ -44,7 +43,7 @@ def probe_formatter(desc):
             for col in row[1:]:
                 if col is None:
                     continue
-                uri.append(f"{col['scheme'].lower()}://{col['host'] if col['host'] is not None else ''}:{col['port']}{col['path']}")
+                uri.append(f"{col['scheme'].lower()}://{col.get('host', '')}:{col['port']}{col['path']}")
             row = [row[0], *uri]
         table.add_row(*[str(item) for item in row if item is not None])
 
