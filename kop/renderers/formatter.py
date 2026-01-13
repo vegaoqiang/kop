@@ -21,6 +21,14 @@ def tolerations_formatter(desc):
 
 
 def probe_formatter(desc):
+    """
+    Make a table for probe like:
+    Type                |  liveness    |   readiness | startup
+    failureThreshold    |        3     |        3    | xx
+    httpGet             | http://xxx   | http://xxx  | xx
+    initialDelaySeconds | xx           | xx          | xx
+      ...
+    """
     table = Table()
     table.add_column("Type", justify="right", overflow="ellipsis")
 
