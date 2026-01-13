@@ -165,6 +165,11 @@ def render_environment(title: str, desc: list) -> ComposeResult:
         env.append(f"{item.name}={item.value}")
     yield Row(title=Title(title), desc=DescView(env, formatter=formatter.environmnet_formatter))
 
+
+@RendererRegistry.register_renderer('probe')
+def render_probe(title: str, desc: RawField) -> ComposeResult:
+    yield Row(title=Title(title, expand=False), desc=DescView(desc=desc, formatter=formatter.probe_formatter))
+
 ####
 
 class DetailModalRenderer(ModalScreen):

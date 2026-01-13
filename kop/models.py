@@ -8,6 +8,10 @@ from kubernetes.client.models import (
     V1ContainerStatus, 
     V1EnvVar, 
     V1Toleration, 
+    V1Probe,
+    V1ContainerPort,
+    V1VolumeMount,
+    V1ResourceRequirements,
     V1Condition)
 from datetime import datetime
 from typing import List, Any
@@ -142,13 +146,21 @@ class ContainerStatusModel(ViewModel):
 
 @dataclass
 class ContainerModel(ViewModel):
-    name: str = field(default="", metadata={"title": "Name"})
+    name: str | None = field(default="", metadata={"title": "Name"})
     image: str = field(default="", metadata={"title": "Image"})
     environmnet: List[V1EnvVar] | str = field(default="", metadata={"title": "Environment"})
-    mount: str = field(default="", metadata={"title": "Mount"})
+    # mount: str = field(default="", metadata={"title": "Mount"})
     arguments: str = field(default="", metadata={"title": "Arguments"})
     command: str = field(default="", metadata={"title": "Command"})
     container_statuses: ContainerStatusModel | None = field(default=None, metadata={"title": "Status"})
+    # liveness_probe: V1Probe | None = field(default=None, metadata={"title": "Liveness Probe"})
+    # readiness_probe: V1Probe | None = field(default=None, metadata={"title": "Readiness Probe"})
+    # startup_probe: V1Probe | None = field(default=None, metadata={"title": "Startup Probe"})
+    port: V1ContainerPort | None = field(default=None, metadata={"title": "Port"})
+    volume_mounts: List[V1VolumeMount] | None = field(default=None, metadata={"title": "Volume Mount"})
+    resources: V1ResourceRequirements | None = field(default=None, metadata={"title": "Resources"})
+    probe: dict[str, V1Probe|None] | None = field(default=None, metadata={"title": "Probe"})
+
 
     # _raw is used to cache the raw container data
     _raw: V1Container | None = field(default=None, repr=False)
@@ -159,9 +171,18 @@ class ContainerModel(ViewModel):
             name=data.name,
             image=data.image, # type: ignore
             environmnet=data.env, # type: ignore
-            mount=data.volume_mounts, # type: ignore
+            # mount=data.volume_mounts, # type: ignore
             arguments=data.args, # type: ignore
             command=data.command, # type: ignore
+            # liveness_probe=data.liveness_probe,
+            # readiness_probe=data.readiness_probe,
+            # startup_probe=data.startup_probe,
+            probe={'liveness': data.liveness_probe, 
+                   'readiness': data.readiness_probe, 
+                   'startup': data.startup_probe},
+            port=data.ports,
+            volume_mounts=data.volume_mounts,
+            resources=data.resources
         )
     
     def lazy_clean(self):

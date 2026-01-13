@@ -1,5 +1,6 @@
 from rich.table import Table
 from rich.text import Text
+from copy import deepcopy
 
 
 def tolerations_formatter(desc):
@@ -19,6 +20,35 @@ def tolerations_formatter(desc):
         table.add_row(*cols)
     return table
 
+
+def probe_formatter(desc):
+    table = Table()
+    table.add_column("Type", justify="right", overflow="ellipsis")
+
+    first_ava_probe = next(item for item in desc.values() if item is not None)
+    if first_ava_probe is None:
+        return
+    raw_data = [first_ava_probe.attribute_map.values()]
+    for probe_type, probe_item in desc.items():
+        if probe_item is None:
+            continue
+        table.add_column(probe_type, justify="center", overflow="fold")
+        raw_data.append(probe_item.to_dict().values())
+    
+    rows = zip(*raw_data)
+    for row in rows:
+        if row[1:] in [(None, None), (None, None, None)]:
+            continue
+        if row[0] == "httpGet":
+            uri: list[str] = []
+            for col in row[1:]:
+                if col is None:
+                    continue
+                uri.append(f"{col['scheme'].lower()}://{col['host'] if col['host'] is not None else ''}:{col['port']}{col['path']}")
+            row = [row[0], *uri]
+        table.add_row(*[str(item) for item in row if item is not None])
+
+    return table
 
 
 def environmnet_formatter(desc):

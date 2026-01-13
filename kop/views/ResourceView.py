@@ -144,5 +144,5 @@ class ResApp(App):
 
 
 if __name__ == "__main__":
-    app = ResApp(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/196f5cce-07d5-4ac1-b1f8-61b14bc9bb72")
+    app = ResApp(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/34f789a7-2458-412d-8416-2a74ff26ae2c")
     app.run()
