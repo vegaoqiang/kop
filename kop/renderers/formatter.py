@@ -1,5 +1,9 @@
 from rich.table import Table
 from rich.text import Text
+from rich.padding import Padding
+from rich.panel import Panel
+from rich.columns import Columns
+
 
 
 def tolerations_formatter(desc):
@@ -51,7 +55,7 @@ def probe_formatter(desc):
             for col in row[1:]:
                 if col is None:
                     continue
-                uri.append(f"{col['scheme'].lower()}://{col.get('host', '')}:{col['port']}{col['path']}")
+                uri.append(f"{col['scheme'].lower()}://{col['host'] if col['host'] is not None else ''}:{col['port']}{col['path']}")
             row = [row[0], *uri]
         table.add_row(*[str(item) for item in row if item is not None])
 
@@ -62,3 +66,48 @@ def environmnet_formatter(desc):
     text = Text(justify="right")
     text.append('\n'.join(desc))
     return text
+
+
+def resources_formatter(desc):
+    """
+    Make a table for resources like:
+    Memory          |   CPU         |  Claims
+    Limit   100Mi     Limit   100m      Name    xx
+    Request 200Mi     Request 200m      Request xx
+    """
+
+    def create_panel(title: str, request: str | None, limit: str | None) -> Panel:
+        table = Table.grid(padding=(0, 1))
+        table.add_column(justify="left")
+        table.add_column(justify="left")
+
+        table.add_row("Limit", limit or "—")
+        table.add_row("Request", request or "—")
+
+        return Panel(
+            table,
+            title=title
+        )
+
+
+    limits_obj, requests_obj, claims_obj = desc.limits, desc.requests, desc.claims
+    if not limits_obj and not requests_obj and not claims_obj:
+        return '-'
+    keys = set(limits_obj.keys()) | set(requests_obj.keys())
+    panels: list[Panel] = []
+    for key in keys:
+        panels.append(
+            create_panel(title=key, 
+                         request=requests_obj.get(key, '-'), 
+                         limit=limits_obj.get(key, '-')
+                         ))
+    
+    if claims_obj:
+        table = Table.grid(padding=(0, 1))
+        table.add_column(justify="left")
+        table.add_column(justify="left")
+        table.add_row("Name", claims_obj.name or "—")
+        table.add_row("Request", claims_obj.request or "—")
+        panels.append(Panel(table, title="Claims"))
+
+    return Columns(panels)

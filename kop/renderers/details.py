@@ -170,6 +170,11 @@ def render_environment(title: str, desc: list) -> ComposeResult:
 def render_probe(title: str, desc: RawField) -> ComposeResult:
     yield Row(title=Title(title, expand=False), desc=DescView(desc=desc, formatter=formatter.probe_formatter))
 
+
+@RendererRegistry.register_renderer('resources')
+def render_resources(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title), desc=DescView(desc=desc, formatter=formatter.resources_formatter))
+
 ####
 
 class DetailModalRenderer(ModalScreen):
