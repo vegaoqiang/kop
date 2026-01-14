@@ -36,9 +36,9 @@ def probe_formatter(desc):
     table = Table()
     table.add_column("Type", justify="right", overflow="ellipsis")
 
-    first_ava_probe = next(item for item in desc.values() if item is not None)
+    first_ava_probe = next((item for item in desc.values() if item is not None), None)
     if first_ava_probe is None:
-        return
+        return '-'
     raw_data = [first_ava_probe.attribute_map.values()]
     for probe_type, probe_item in desc.items():
         if probe_item is None:
