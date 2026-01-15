@@ -130,7 +130,7 @@ def volume_mounts_formatter(desc):
             lock = "🔒ReadOnly"
         else:
             lock = "🔓ReadWrite"
-        table.add_row(name, f"{mount_path} {lock}")
+        table.add_row(f"[bold]{name}", f"{mount_path} {lock}")
     return table
             
         
