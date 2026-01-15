@@ -55,12 +55,13 @@ class ViewModel:
                                        item.name))
         return columns
 
-    def get_detail_columns(self):
+    @classmethod
+    def get_detail_columns(cls) -> List[ColumnModel]:
         """
         Retrieve fields from the model to display in the DetailModalRenderer screen.
         """
         columns: List[ColumnModel] = []
-        for item in fields(self):
+        for item in fields(cls):
             # if some field is not to be displayed in detail screen, set detail=False in metadata
             # all filed is displayed by default
             if item.name.startswith("_") or item.metadata.get("detail", True) is False:
@@ -207,7 +208,7 @@ class PodViewModel(ViewModel):
         ActionModel("shell", ">_", "success", "Exec shell on pod", "shell"),
         ActionModel("log", "log", "success", "View the pod logs", "log"),
         ActionModel("delete", "del", "error", "Delete the Pod", "delete")],
-        metadata={"title": "Actions", "width": 10})
+        metadata={"title": "Actions", "width": 10, "detail": False})
 
 
     @classmethod

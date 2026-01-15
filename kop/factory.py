@@ -77,7 +77,7 @@ class PodFacotry(BaseFactory):
 
     def create_detail_renderer(self, data) -> DetailModalRenderer:
         return DetailModalRenderer(
-            columns=PodDetailModel.get_columns(),
+            columns=PodDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
         )
     
