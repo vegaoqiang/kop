@@ -69,7 +69,7 @@ class DescView(Static):
 
         if isinstance(self.desc, (list, tuple)):
             for item in self.desc:
-                text.append(f"{item}", style=Style(bold=True, underline=True))
+                text.append(f"{item}", style=Style(underline=True))
                 text.append(" ", style=Style(bgcolor=None))
             return text
             # cols = Columns(
