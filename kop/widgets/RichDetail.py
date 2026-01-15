@@ -122,6 +122,9 @@ class RawDetail(Static):
 
 
 class DescPortsView(Static):
+    """
+    Specifically designed for rendering Container Port layouts
+    """
 
     DEFAULT_CSS = """
         ListView {
