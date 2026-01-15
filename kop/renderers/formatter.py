@@ -1,6 +1,5 @@
 from rich.table import Table
 from rich.text import Text
-from rich.padding import Padding
 from rich.panel import Panel
 from rich.columns import Columns
 
@@ -111,3 +110,26 @@ def resources_formatter(desc):
         panels.append(Panel(table, title="Claims"))
 
     return Columns(panels)
+
+
+def volume_mounts_formatter(desc):
+    """
+    Make a table for volume mounts like:
+    config-volume         /etc/coredns 🔒ReadOnly
+    """
+    table = Table.grid(padding=(0, 1))
+    table.add_column(justify="left")
+    table.add_column(justify="left")
+
+    for item in desc:
+        name = item.name
+        mount_path = item.mount_path
+        read_only = item.read_only
+        if read_only:
+            lock = "🔒ReadOnly"
+        else:
+            lock = "🔓ReadWrite"
+        table.add_row(name, f"{mount_path} {lock}")
+    return table
+            
+        
