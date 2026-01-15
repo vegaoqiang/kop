@@ -1,9 +1,9 @@
-from textual.widgets import Static
+from textual.widgets import Static, ListView, ListItem, Link, Button
 from textual.app import ComposeResult
 from rich.console import RenderableType
 from rich.text import Text
 from rich.style import Style
-from textual.containers import Grid
+from textual.containers import Grid, Horizontal
 from typing import Any, Callable
 
 
@@ -96,7 +96,7 @@ class Row(Grid):
         }
     """
 
-    def __init__(self, title: Title, desc: DescView) -> None:
+    def __init__(self, title: Title, desc: Static) -> None:
         super().__init__()
         self.title = title
         self.desc = desc
@@ -118,3 +118,34 @@ class Row(Grid):
 
 class RawDetail(Static):
     ...
+
+
+
+class DescPortsView(Static):
+
+    DEFAULT_CSS = """
+        ListView {
+            height: auto;
+        }
+        Horizontal {
+            height: auto;
+        }
+        Button {
+            dock: right;
+        }
+    """
+
+    def __init__(self, desc: Any):
+        super().__init__()
+        self.desc = desc
+
+    def compose(self) -> ComposeResult:
+        with ListView():
+            for item in self.desc:
+                yield ListItem(
+                    Horizontal(
+                        Link(
+                            text=f"{item.name}: {item.container_port}/{item.protocol}", tooltip="Enter to forward or click right side Forward button to"), 
+                            Button(label="Forward", compact=True)
+                    )    
+                )

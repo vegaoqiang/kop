@@ -156,7 +156,7 @@ class ContainerModel(ViewModel):
     # liveness_probe: V1Probe | None = field(default=None, metadata={"title": "Liveness Probe"})
     # readiness_probe: V1Probe | None = field(default=None, metadata={"title": "Readiness Probe"})
     # startup_probe: V1Probe | None = field(default=None, metadata={"title": "Startup Probe"})
-    port: List[V1ContainerPort] | None = field(default=None, metadata={"title": "Port"})
+    ports: List[V1ContainerPort] | None = field(default=None, metadata={"title": "Port"})
     volume_mounts: List[V1VolumeMount] | None = field(default=None, metadata={"title": "Volume Mount"})
     resources: V1ResourceRequirements | None = field(default=None, metadata={"title": "Resources"})
     probe: dict[str, V1Probe|None] | None = field(default=None, metadata={"title": "Probe"})
@@ -180,7 +180,7 @@ class ContainerModel(ViewModel):
             probe={'liveness': data.liveness_probe, 
                    'readiness': data.readiness_probe, 
                    'startup': data.startup_probe},
-            port=data.ports,
+            ports=data.ports,
             volume_mounts=data.volume_mounts,
             resources=data.resources
         )

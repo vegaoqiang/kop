@@ -2,6 +2,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.panel import Panel
 from rich.columns import Columns
+from textual.widgets import Button, Link
 
 
 
@@ -133,3 +134,6 @@ def volume_mounts_formatter(desc):
     return table
             
         
+def ports_formatter(desc):
+    for item in desc:
+        return f"{item.container_port}/{item.protocol}"

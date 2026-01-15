@@ -13,7 +13,7 @@ from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel, RawField
 from kop.widgets.Rules import LableRule
 from kop.renderers import formatter
-from widgets.RichDetail import Row, Title,  DescView
+from widgets.RichDetail import Row, Title,  DescView, DescPortsView
 from widgets.Rules import DetailRule
 
 
@@ -179,6 +179,11 @@ def render_resources(title: str, desc: list) -> ComposeResult:
 @RendererRegistry.register_renderer('volume_mounts')
 def render_volume_mounts(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title), desc=DescView(desc=desc, formatter=formatter.volume_mounts_formatter))
+
+
+@RendererRegistry.register_renderer('ports')
+def render_ports(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title), desc=DescPortsView(desc=desc))
 
 ####
 
