@@ -185,6 +185,9 @@ def render_volume_mounts(title: str, desc: list) -> ComposeResult:
 def render_ports(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title), desc=DescPortsView(desc=desc))
 
+
+
+
 ####
 
 class DetailModalRenderer(ModalScreen):

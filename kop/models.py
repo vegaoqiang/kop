@@ -48,7 +48,9 @@ class ViewModel:
         """
         columns: List[ColumnModel] = []
         for item in fields(cls):
-            if item.name.startswith("_"):
+            # if some field is not to be displayed in ResourceView screen, set column=False in metadata
+            # all filed is displayed by default
+            if item.name.startswith("_") or item.metadata.get("column", True) is False:
                 continue
             columns.append(ColumnModel(item.metadata["title"], 
                                        item.metadata["width"] if item.metadata.get("width") else None, 
@@ -235,12 +237,12 @@ class PodViewModel(ViewModel):
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     node: str = field(metadata={"title": "Node", "width": 10})
     status: str = field(metadata={"title": "Status", "width": 5})
+    created: str = field(metadata={"title": "Created", "width": 5, "column": False})
     containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 10, "after": "tolerations"})
     restarts: str = field(metadata={"title": "Restarts", "width": 10})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 10})
     qos: str = field(metadata={"title": "QoS", "width": 10})
-    age: str = field(metadata={"title": "Age", "width": 5})
-    created: str = field(metadata={"title": "Created", "width": 5})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     actions: List[ActionModel] = field(default_factory=lambda: [
         ActionModel("shell", ">_", "success", "Exec shell on pod", "shell"),
         ActionModel("log", "log", "success", "View the pod logs", "log"),
@@ -264,7 +266,7 @@ class PodViewModel(ViewModel):
             controlled_by=data.metadata.owner_references[0].kind, # type: ignore
             qos=data.status.qos_class, # type: ignore
             age=cls.get_age_text(data.status.start_time), # type: ignore
-            created=cls.get_created_text(data.status.start_time), # type: ignore
+            created=f"{cls.get_created_text(data.status.start_time)}  Age: {cls.get_age_text(data.status.start_time)} Days", # type: ignore
         )
 
 
