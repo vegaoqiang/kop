@@ -331,7 +331,7 @@ class DepolymentViewModel(ViewModel):
         ActionModel("re", "Restart", "success", "Restart", "restart"),
         ActionModel("ed", "Edit", "success", "Edit", "edit"),
         ActionModel("del", "Delete Deployment", "error", "Delete", "delete")],
-        metadata={"title": "Actions", "width": 10})
+        metadata={"title": "Actions", "width": 10, "detail": False})
 
     @classmethod
     def clean(cls, data: V1Deployment) -> "DepolymentViewModel":
