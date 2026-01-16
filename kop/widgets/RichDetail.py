@@ -5,6 +5,8 @@ from rich.text import Text
 from rich.style import Style
 from textual.containers import Grid, Horizontal
 from typing import Any, Callable
+from kop.widgets.Expandable import ExpandableText
+
 
 
 
@@ -152,3 +154,14 @@ class DescPorts(Static):
                             Button(label="Forward", compact=True)
                     )    
                 )
+
+
+class DescAnnotations(Static):
+    def __init__(self, desc: Any):
+        super().__init__()
+        self.desc = desc
+    
+    def compose(self) -> ComposeResult:
+        for k, v in self.desc.items():
+            print('DescAnnotations:', k, v)
+            yield ExpandableText(text=f"{k}={v}")

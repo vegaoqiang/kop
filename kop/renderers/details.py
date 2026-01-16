@@ -13,7 +13,7 @@ from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel, RawField
 from kop.widgets.Rules import LableRule
 from kop.renderers import formatter
-from widgets.RichDetail import Row, Title,  Desc, DescPorts
+from widgets.RichDetail import Row, Title,  Desc, DescPorts, DescAnnotations
 from widgets.Rules import DetailRule
 
 
@@ -188,7 +188,7 @@ def render_ports(title: str, desc: list) -> ComposeResult:
 
 @RendererRegistry.register_renderer('annotations')
 def renderer_annotations(title: str, desc: dict) -> ComposeResult:
-    yield Row(title=Title(title), desc=Desc(desc=desc))
+    yield Row(title=Title(title), desc=DescAnnotations(desc=desc))
 
 ####
 

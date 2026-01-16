@@ -105,7 +105,7 @@ class DeploymentFactory(BaseFactory):
 
     def create_detail_renderer(self, data) -> DetailModalRenderer:
         return DetailModalRenderer(
-            columns=DeploymentDetailModel.get_columns(),
+            columns=DeploymentDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
         )
     
