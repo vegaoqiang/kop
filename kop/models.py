@@ -266,7 +266,7 @@ class PodViewModel(ViewModel):
             controlled_by=data.metadata.owner_references[0].kind, # type: ignore
             qos=data.status.qos_class, # type: ignore
             age=cls.get_age_text(data.status.start_time), # type: ignore
-            created=f"{cls.get_created_text(data.status.start_time)}  Age: {cls.get_age_text(data.status.start_time)} Days", # type: ignore
+            created=f"{cls.get_created_text(data.status.start_time)}  Age: {cls.get_age_text(data.status.start_time)}", # type: ignore
         )
 
 
