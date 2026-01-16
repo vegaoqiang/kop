@@ -79,13 +79,18 @@ class ViewModel:
         Sort all fields based on the 'after' and 'before' values in the field metadata.
         """
         names = fields.keys()
+        unexplain_names: list[str] = [] # fields that no `after` or `before` keyword specified to be sorted
         graph = {name: set() for name in names}
         for field_name, metadata in fields.items():
             after, before = metadata.get("after", None), metadata.get("before", None)
             if after is not None and after in names:
                 graph[after].add(field_name)
+                continue
             if before is not None and before in names:
                 graph[field_name].add(before)
+                continue
+            unexplain_names.append(field_name)
+
         def visit(n):
             if n in visited:
                 return
@@ -97,7 +102,7 @@ class ViewModel:
         visited: set[str] = set()
         result: list[str] = []
 
-        for n in names:
+        for n in unexplain_names:
             visit(n)
 
         return [columns[name] for name in result]
@@ -230,7 +235,7 @@ class PodViewModel(ViewModel):
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     node: str = field(metadata={"title": "Node", "width": 10})
     status: str = field(metadata={"title": "Status", "width": 5})
-    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 10})
+    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 10, "after": "tolerations"})
     restarts: str = field(metadata={"title": "Restarts", "width": 10})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 10})
     qos: str = field(metadata={"title": "QoS", "width": 10})
