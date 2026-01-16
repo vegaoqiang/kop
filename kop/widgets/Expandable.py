@@ -34,6 +34,3 @@ class ExpandableText(Static):
             self.text.stylize("yellow")
             self.update(self.text)
             self.tooltip = "Click to show full content"
-        else:
-            self.styles.color = None
-            self.tooltip = None
