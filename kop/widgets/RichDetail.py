@@ -36,7 +36,7 @@ class Title(Static):
         return Text(self.text, style=self.style, overflow="ellipsis")
 
 
-class DescView(Static):
+class Desc(Static):
 
     def __init__(self, 
                  desc: Any,
@@ -121,7 +121,7 @@ class RawDetail(Static):
 
 
 
-class DescPortsView(Static):
+class DescPorts(Static):
     """
     Specifically designed for rendering Container Port layouts
     """

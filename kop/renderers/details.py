@@ -13,7 +13,7 @@ from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel, ContainerEnvironmentModel, RawField
 from kop.widgets.Rules import LableRule
 from kop.renderers import formatter
-from widgets.RichDetail import Row, Title,  DescView, DescPortsView
+from widgets.RichDetail import Row, Title,  Desc, DescPorts
 from widgets.Rules import DetailRule
 
 
@@ -118,7 +118,7 @@ def container_status(desc: ContainerStatusModel) -> ComposeResult:
 
 
 def render_default(title: str, desc) -> ComposeResult:
-    yield Row(title=Title(title), desc=DescView(desc=desc))
+    yield Row(title=Title(title), desc=Desc(desc=desc))
 
 
 @RendererRegistry.register_renderer('conditions')
@@ -127,13 +127,13 @@ def render_conditions(title: str, desc: RawField) -> ComposeResult:
     for item in desc.raw:
         if item.status == 'True':
             conditions.append(item.type)
-    yield Row(title=Title(title), desc=DescView(desc=conditions))
+    yield Row(title=Title(title), desc=Desc(desc=conditions))
 
 
 @RendererRegistry.register_renderer('tolerations')
 def render_tolerations(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title, expand=True), 
-              desc=DescView(desc=desc, formatter=formatter.tolerations_formatter))
+              desc=Desc(desc=desc, formatter=formatter.tolerations_formatter))
 
 
 @RendererRegistry.register_renderer('containers')
@@ -163,30 +163,32 @@ def render_environment(title: str, desc: list) -> ComposeResult:
     env: list[str] = []
     for item in desc:
         env.append(f"{item.name}={item.value}")
-    yield Row(title=Title(title), desc=DescView(env, formatter=formatter.environmnet_formatter))
+    yield Row(title=Title(title), desc=Desc(env, formatter=formatter.environmnet_formatter))
 
 
 @RendererRegistry.register_renderer('probe')
 def render_probe(title: str, desc: RawField) -> ComposeResult:
-    yield Row(title=Title(title, expand=False), desc=DescView(desc=desc, formatter=formatter.probe_formatter))
+    yield Row(title=Title(title, expand=False), desc=Desc(desc=desc, formatter=formatter.probe_formatter))
 
 
 @RendererRegistry.register_renderer('resources')
 def render_resources(title: str, desc: list) -> ComposeResult:
-    yield Row(title=Title(title), desc=DescView(desc=desc, formatter=formatter.resources_formatter))
+    yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.resources_formatter))
 
 
 @RendererRegistry.register_renderer('volume_mounts')
 def render_volume_mounts(title: str, desc: list) -> ComposeResult:
-    yield Row(title=Title(title), desc=DescView(desc=desc, formatter=formatter.volume_mounts_formatter))
+    yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.volume_mounts_formatter))
 
 
 @RendererRegistry.register_renderer('ports')
 def render_ports(title: str, desc: list) -> ComposeResult:
-    yield Row(title=Title(title), desc=DescPortsView(desc=desc))
+    yield Row(title=Title(title), desc=DescPorts(desc=desc))
 
 
-
+@RendererRegistry.register_renderer('annotations')
+def renderer_annotations(title: str, desc: dict) -> ComposeResult:
+    yield Row(title=Title(title), desc=Desc(desc=desc))
 
 ####
 
