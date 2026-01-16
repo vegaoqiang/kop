@@ -5,6 +5,8 @@ from rich.columns import Columns
 from textual.widgets import Button, Link
 
 
+DEFAULT_CHAR = '-'
+
 
 def tolerations_formatter(desc):
     table = Table()
@@ -14,7 +16,7 @@ def tolerations_formatter(desc):
         cols: list = []
         for col in item.to_dict().values():
             if col is None:
-                cols.append('-')
+                cols.append(DEFAULT_CHAR)
                 continue
             if isinstance(col, int):
                 cols.append(str(col))
@@ -38,7 +40,7 @@ def probe_formatter(desc):
 
     first_ava_probe = next((item for item in desc.values() if item is not None), None)
     if first_ava_probe is None:
-        return '-'
+        return DEFAULT_CHAR
     raw_data = [first_ava_probe.attribute_map.values()]
     for probe_type, probe_item in desc.items():
         if probe_item is None:
@@ -81,8 +83,8 @@ def resources_formatter(desc):
         table.add_column(justify="left")
         table.add_column(justify="left")
 
-        table.add_row("Limit", limit or "—")
-        table.add_row("Request", request or "—")
+        table.add_row("Limit", limit or DEFAULT_CHAR)
+        table.add_row("Request", request or DEFAULT_CHAR)
 
         return Panel(
             table,
@@ -92,22 +94,26 @@ def resources_formatter(desc):
 
     limits_obj, requests_obj, claims_obj = desc.limits, desc.requests, desc.claims
     if not limits_obj and not requests_obj and not claims_obj:
-        return '-'
+        return DEFAULT_CHAR
+    if limits_obj is None:
+        limits_obj = {} 
+    if requests_obj is None:
+        requests_obj = {} 
     keys = set(limits_obj.keys()) | set(requests_obj.keys())
     panels: list[Panel] = []
     for key in keys:
         panels.append(
             create_panel(title=key, 
-                         request=requests_obj.get(key, '-'), 
-                         limit=limits_obj.get(key, '-')
+                         request=requests_obj.get(key, DEFAULT_CHAR), 
+                         limit=limits_obj.get(key, DEFAULT_CHAR)
                          ))
     
     if claims_obj:
         table = Table.grid(padding=(0, 1))
         table.add_column(justify="left")
         table.add_column(justify="left")
-        table.add_row("Name", claims_obj.name or "—")
-        table.add_row("Request", claims_obj.request or "—")
+        table.add_row("Name", claims_obj.name or DEFAULT_CHAR)
+        table.add_row("Request", claims_obj.request or DEFAULT_CHAR)
         panels.append(Panel(table, title="Claims"))
 
     return Columns(panels)
