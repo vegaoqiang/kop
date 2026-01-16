@@ -94,14 +94,14 @@ def container_status(desc: ContainerStatusModel) -> ComposeResult:
 #     yield DictDetail(title=title, description=desc)
 
 
-@RendererRegistry.register_renderer('annotations')
-def render_annotations(title: str, desc: list) -> ComposeResult:
-    yield ListDetail(title=title, description=desc)
+# @RendererRegistry.register_renderer('annotations')
+# def render_annotations(title: str, desc: list) -> ComposeResult:
+#     yield ListDetail(title=title, description=desc)
 
 
-@RendererRegistry.register_renderer('node_selector')
-def render_node_selector(title: str, desc: dict) -> ComposeResult:
-    yield DictDetail(title=title, description=desc)
+# @RendererRegistry.register_renderer('node_selector')
+# def render_node_selector(title: str, desc: dict) -> ComposeResult:
+#     yield DictDetail(title=title, description=desc)
 
 
 # @RendererRegistry.register_renderer('default')

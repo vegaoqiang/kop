@@ -60,17 +60,49 @@ class ViewModel:
         """
         Retrieve fields from the model to display in the DetailModalRenderer screen.
         """
-        columns: List[ColumnModel] = []
+        columns: dict[str, ColumnModel] = {}
+        field_metadata: dict[str, Any] = {}
         for item in fields(cls):
             # if some field is not to be displayed in detail screen, set detail=False in metadata
             # all filed is displayed by default
             if item.name.startswith("_") or item.metadata.get("detail", True) is False:
                 continue
-            columns.append(ColumnModel(item.metadata["title"], 
+            columns[item.name] = ColumnModel(item.metadata["title"], 
                                        item.metadata["width"] if item.metadata.get("width") else None, 
-                                       item.name))
-        return columns
+                                       item.name)
+            field_metadata[item.name] = item.metadata
+        return cls._resorted_columns(columns, field_metadata)
     
+    @classmethod
+    def _resorted_columns(cls, columns: dict[str, ColumnModel], fields: dict[str, Any]) -> List[ColumnModel]:
+        """
+        Sort all fields based on the 'after' and 'before' values in the field metadata.
+        """
+        names = fields.keys()
+        graph = {name: set() for name in names}
+        for field_name, metadata in fields.items():
+            after, before = metadata.get("after", None), metadata.get("before", None)
+            if after is not None and after in names:
+                graph[after].add(field_name)
+            if before is not None and before in names:
+                graph[field_name].add(before)
+        def visit(n):
+            if n in visited:
+                return
+            visited.add(n)
+            result.append(n)
+            for m in graph[n]:
+                visit(m)
+
+        visited: set[str] = set()
+        result: list[str] = []
+
+        for n in names:
+            visit(n)
+
+        return [columns[name] for name in result]
+    
+
     def get(self, key: str) -> str:
         return getattr(self, key, "")
     
@@ -233,14 +265,14 @@ class PodViewModel(ViewModel):
 
 @dataclass
 class PodDetailModel(PodViewModel):
-    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels", "after": "namespace"})
     annotations: list = field(default_factory=list, metadata={"title": "Annotations"})
     pod_ip: str = field(default="", metadata={"title": "Pod IP"})
     service_account: str = field(default="", metadata={"title": "Service Account"})
     priority: str = field(default="", metadata={"title": "Priority Class"})
     # conditions: list[V1Condition] = field(default_factory=list, metadata={"title": "Conditions"})
     conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions"})
-    node_selector: list = field(default_factory=list, metadata={"title": "NodeSelector"})
+    node_selector: list = field(default_factory=list, metadata={"title": "Node Selector"})
     tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})
 
