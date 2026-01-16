@@ -57,26 +57,26 @@ class ResourceView(Screen):
         if hasattr(self, "timer"):
             self.timer.resume()
 
-    def _render_resource(self, resource_type: str):
+    def _render_resource(self, resource_type: str, renderered: TableRenderer | None = None) -> None:
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
             return
         self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
         data = factory.fetch()
-        if not self.table:
+        if not renderered:
             self.table= table = factory.create_renderer(data)
             right_panel = self.query_one("#right_panel")
             right_panel.remove_children()
             right_panel.mount(table)
         else:
-            self.table.raw_data = data.items
-            self.table.data = factory.clean(data)
+            renderered.raw_data = data.items
+            renderered.data = factory.clean(data)
         
     
     def _update_resource(self) -> None:
         if not self.resource_type:
             return
-        self._render_resource(self.resource_type)
+        self._render_resource(self.resource_type, self.table)
 
     def on_mount(self) -> None:
         self.timer = self.set_interval(
