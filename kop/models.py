@@ -188,6 +188,7 @@ class ContainerStatusModel(ViewModel):
 class ContainerModel(ViewModel):
     name: str | None = field(default="", metadata={"title": "Name"})
     image: str = field(default="", metadata={"title": "Image"})
+    image_pull_policy: str = field(default="", metadata={"title": "Pull Policy"})
     environmnet: List[V1EnvVar] | str = field(default="", metadata={"title": "Environment"})
     # mount: str = field(default="", metadata={"title": "Mount"})
     arguments: str = field(default="", metadata={"title": "Arguments"})
@@ -210,6 +211,7 @@ class ContainerModel(ViewModel):
         return cls(
             name=data.name,
             image=data.image, # type: ignore
+            image_pull_policy=data.image_pull_policy, # type: ignore
             environmnet=data.env, # type: ignore
             # mount=data.volume_mounts, # type: ignore
             arguments=data.args, # type: ignore
@@ -353,6 +355,7 @@ class DeploymentDetailModel(DepolymentViewModel):
     labels: dict = field(default_factory=dict, metadata={"title": "Labels", "after": "created"})
     status_replicas: dict = field(default_factory=dict, metadata={"title": "Status Replicas"})
     selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
+    node_selector: list = field(default_factory=list, metadata={"title": "Node Selector"})
     strategy: dict = field(default_factory=dict, metadata={"title": "Strategy"})
     tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
 
