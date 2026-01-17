@@ -164,6 +164,6 @@ def strategy_formatter(desc):
     value_key = strategy_maps[strategy_type]
     value = getattr(desc, value_key, None)
     if not value:
-        return f"{strategy_type} {value_key} {DEFAULT_CHAR}"
+        return f"{strategy_type} {DEFAULT_CHAR}"
     text = " ".join(f"{k or DEFAULT_CHAR}: {v or DEFAULT_CHAR}" for k, v in value.to_dict().items())
     return f"{strategy_type} {text}"
