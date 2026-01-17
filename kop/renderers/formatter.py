@@ -162,5 +162,8 @@ def strategy_formatter(desc):
         "Recreate":  "recreate"
     }
     value_key = strategy_maps[strategy_type]
-    value = desc.get(value_key, {})
-    return f"{strategy_type} {value.get('max_surge', DEFAULT_CHAR)} {value.get('max_unavailable', DEFAULT_CHAR)}"
+    value = getattr(desc, value_key, None)
+    if not value:
+        return f"{strategy_type} {value_key} {DEFAULT_CHAR}"
+    text = " ".join(f"{k or DEFAULT_CHAR}: {v or DEFAULT_CHAR}" for k, v in value.to_dict().items())
+    return f"{strategy_type} {text}"

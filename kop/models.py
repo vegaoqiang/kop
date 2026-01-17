@@ -354,6 +354,7 @@ class DeploymentDetailModel(DepolymentViewModel):
     status_replicas: dict = field(default_factory=dict, metadata={"title": "Status Replicas"})
     selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
     strategy: dict = field(default_factory=dict, metadata={"title": "Strategy"})
+    tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
 
     @classmethod
     def clean(cls, data: V1Deployment) -> "DeploymentDetailModel":
@@ -364,6 +365,7 @@ class DeploymentDetailModel(DepolymentViewModel):
             'status_replicas': cls.get_status_replicas(data.status),
             'selector': data.spec.selector,
             'strategy': data.spec.strategy,
+            'tolerations': data.spec.template.spec.tolerations
         })
         return cls(**base)
     
