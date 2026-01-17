@@ -30,7 +30,6 @@ class ExpandableText(Static):
 
     async def on_resize(self, envet: Resize) -> None:
         if not self.expanded and self.size.width > 0 and self.text.cell_len > self.size.width:
-            # self.styles.color = "yellow"
             self.text.stylize("yellow")
             self.update(self.text)
             self.tooltip = "Click to show full content"

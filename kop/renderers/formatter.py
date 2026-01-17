@@ -143,3 +143,24 @@ def volume_mounts_formatter(desc):
 def ports_formatter(desc):
     for item in desc:
         return f"{item.container_port}/{item.protocol}"
+    
+
+def selector_formatter(desc):
+    match_labels = desc.match_labels
+    if not match_labels:
+        return DEFAULT_CHAR
+    key, value = next(iter(match_labels.items()))
+    return f"{key}={value}"
+
+
+def strategy_formatter(desc):
+    strategy_type = desc.type
+    if not strategy_type:
+        return DEFAULT_CHAR
+    strategy_maps = {
+        "RollingUpdate": "rolling_update",
+        "Recreate":  "recreate"
+    }
+    value_key = strategy_maps[strategy_type]
+    value = desc.get(value_key, {})
+    return f"{strategy_type} {value.get('max_surge', DEFAULT_CHAR)} {value.get('max_unavailable', DEFAULT_CHAR)}"

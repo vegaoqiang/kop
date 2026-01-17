@@ -190,6 +190,17 @@ def render_ports(title: str, desc: list) -> ComposeResult:
 def renderer_annotations(title: str, desc: dict) -> ComposeResult:
     yield Row(title=Title(title), desc=DescAnnotations(desc=desc))
 
+
+@RendererRegistry.register_renderer('selector')
+def render_selector(title: str, desc: dict) -> ComposeResult:
+    yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.selector_formatter))
+
+
+@RendererRegistry.register_renderer('strategy')
+def render_strategy(title: str, desc: dict) -> ComposeResult:
+    yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.strategy_formatter))
+
+
 ####
 
 class DetailModalRenderer(ModalScreen):

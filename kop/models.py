@@ -322,8 +322,8 @@ class DepolymentViewModel(ViewModel):
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     pods: str = field(metadata={"title": "Pods", "width": 10})
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
-    age: str = field(metadata={"title": "Age", "width": 5})
-    created: str = field(metadata={"title": "Created", "width": 5})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+    created: str = field(metadata={"title": "Created", "width": 5, "column": False})
     # conditions: str = field(metadata={"title": "Conditions", "width": 20})
     conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions", "width": 20})
     actions: List[ActionModel] = field(default_factory=lambda: [
@@ -341,7 +341,7 @@ class DepolymentViewModel(ViewModel):
             pods="/".join([str(data.status.ready_replicas), str(data.status.replicas)]),
             replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
-            created=cls.get_created_text(data.metadata.creation_timestamp),
+            created=f"{cls.get_created_text(data.metadata.creation_timestamp)}  Age: {cls.get_age_text(data.metadata.creation_timestamp)}",
             # conditions=" ".join([c.type for c in data.status.conditions]),
             conditions=RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
         )
@@ -350,9 +350,9 @@ class DepolymentViewModel(ViewModel):
 @dataclass
 class DeploymentDetailModel(DepolymentViewModel):
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
-    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels", "after": "created"})
     status_replicas: dict = field(default_factory=dict, metadata={"title": "Status Replicas"})
-    selector: list[dict] = field(default_factory=list, metadata={"title": "Selector"})
+    selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
     strategy: dict = field(default_factory=dict, metadata={"title": "Strategy"})
 
     @classmethod
