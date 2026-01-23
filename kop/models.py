@@ -319,7 +319,7 @@ class PodDetailModel(PodViewModel):
 
 
 @dataclass
-class DepolymentViewModel(ViewModel):
+class DeploymentViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     pods: str = field(metadata={"title": "Pods", "width": 10})
@@ -350,7 +350,7 @@ class DepolymentViewModel(ViewModel):
 
 
 @dataclass
-class DeploymentDetailModel(DepolymentViewModel):
+class DeploymentDetailModel(DeploymentViewModel):
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     labels: dict = field(default_factory=dict, metadata={"title": "Labels", "after": "created"})
     status_replicas: dict = field(default_factory=dict, metadata={"title": "Status Replicas"})
