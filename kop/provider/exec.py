@@ -10,7 +10,7 @@ import json
 
 class PodExec:
 
-    def __init__(self, api_client: ApiClient, pod_name: str, namespace: str = "default", command=None):
+    def __init__(self, api_client: ApiClient, pod_name: str, namespace: str = "default", command=None, container_name: str|None = None):
         self.core_api = CoreV1Api(api_client=api_client)
         self.pod = pod_name
         self.namespace = namespace
@@ -20,6 +20,7 @@ class PodExec:
             "-c",
             "(bash || sh || ash || zsh || csh)"
         ]
+        self.container_name = container_name
 
         self.resp = None
 
@@ -37,6 +38,7 @@ class PodExec:
                 stdin=True,
                 stdout=True,
                 tty=True,
+                container=self.container_name,
                 # async_req=True,
                 _preload_content=False,
             )

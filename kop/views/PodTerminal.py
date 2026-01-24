@@ -8,12 +8,13 @@ from kop.models import PodViewModel
 
 class PodTerminal(Screen):
     
-    def __init__(self, client: KbsAuthLoader, data: PodViewModel) -> None:
+    def __init__(self, client: KbsAuthLoader, data: PodViewModel, container_name: str|None = None) -> None:
         super().__init__()
         self.exec = PodExec(
             api_client=client.api_client, 
             pod_name=data.name, 
-            namespace=data.namespace
+            namespace=data.namespace,
+            container_name=container_name
             )
 
     def compose(self) -> ComposeResult:
