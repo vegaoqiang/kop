@@ -8,6 +8,7 @@ from kop.views.PodLog import PodLog
 from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.widgets.Actions import ActionGroup
+from kop.widgets.Modals import Delete
 from kop.provider.client import KbsEndpoint
 
 
@@ -99,10 +100,32 @@ class ResourceView(Screen):
         renderer = self.FACTORY_CACHE.create_detail_renderer(raw_data)
         self.app.push_screen(renderer)
 
-    def on_action_group_delete_button(self, event: ActionGroup.DeleteButton) -> None:
+    # def on_delete_confirm(self, event: Delete.Confirm) -> None:
+    #     print('on_delete_confirm:', event.row_data)
+    #     try:
+    #         self.endpoint.delete_pods(name=event.row_data.name,
+    #                                 namespace=event.row_data.namespace
+    #                                 )
+    #         # pause origin timer and resume after 60s 
+    #         self.timer.pause()
+    #         self.set_timer(
+    #             60,
+    #             self.timer.resume
+    #         )
+    #         # start new interval and repeat 60 times
+    #         self.set_interval(
+    #             1, 
+    #             self._update_resource, 
+    #             repeat=60
+    #             )
+    #         self.notify("Delete pod success", severity="information")
+    #     except Exception as e:
+    #         self.notify(f"Delete pod failed: {e}", severity="error")
+
+    def delete_resource(self, row_data: PodViewModel) -> None:
         try:
-            self.endpoint.delete_pods(name=event.row_data.name,
-                                    namespace=event.row_data.namespace
+            self.endpoint.delete_pods(name=row_data.name,
+                                    namespace=row_data.namespace
                                     )
             # pause origin timer and resume after 60s 
             self.timer.pause()
@@ -120,17 +143,17 @@ class ResourceView(Screen):
         except Exception as e:
             self.notify(f"Delete pod failed: {e}", severity="error")
 
-    def on_action_group_shell_button(self, event: ActionGroup.ShellButton) -> None:
-        if event.row_data.status != "Running":
-            self.notify("Pod is not running", severity="error")
-            return
-        self.app.push_screen(PodTerminal(self.endpoint, event.row_data))
+    # def on_action_group_shell_button(self, event: ActionGroup.ShellButton) -> None:
+    #     if event.row_data.status != "Running":
+    #         self.notify("Pod is not running", severity="error")
+    #         return
+    #     self.app.push_screen(PodTerminal(self.endpoint, event.row_data))
 
-    def on_action_group_log_button(self, event: ActionGroup.LogButton) -> None:
-        if event.row_data.status != "Running":
-            self.notify("Pod is not running", severity="error")
-            return
-        self.app.push_screen(PodLog(self.endpoint, event.row_data, event.container_name))
+    # def on_action_group_log_button(self, event: ActionGroup.LogButton) -> None:
+    #     if event.row_data.status != "Running":
+    #         self.notify("Pod is not running", severity="error")
+    #         return
+    #     self.app.push_screen(PodLog(self.endpoint, event.row_data, event.container_name))
 
 
 class ResApp(App):
@@ -138,9 +161,14 @@ class ResApp(App):
   def __init__(self, config_file: str, **kwargs):
       super().__init__(**kwargs)
       self.config_file = config_file
+      self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file)
 
   def on_mount(self) -> None:
-      self.push_screen(ResourceView(config_file=self.config_file))
+      """
+      cache the view instance, call after on handler
+      """
+      self.view = view = ResourceView(config_file=self.config_file)
+      self.push_screen(view)
 
 
 if __name__ == "__main__":

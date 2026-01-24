@@ -6,6 +6,10 @@ from textual.reactive import reactive
 from kop.widgets.Actions import ActionGroup
 from kop.models import RawField
 
+from kop.widgets.ActionsNew import ActionsView, ActionTriggered
+from kop.registry import ActionRegistry
+
+
 
 class BaseCol(Static):
     DEFAULT_CSS = """
@@ -65,9 +69,10 @@ class BaseRow(ListItem):
                 if col.title != "Actions":
                     yield BaseCol(text=self.row_data.get(col.field), width=col.width)
                 else:
-                    action_group = ActionGroup(self.row_data.actions)
-                    action_group.row_data = self.row_data
-                    yield action_group
+                    # action_group = ActionGroup(self.row_data.actions)
+                    # action_group.row_data = self.row_data
+                    # yield action_group
+                    yield ActionsView(actions=self.row_data.get(col.field), context=self.row_data)
 
     def watch_row_data(self, old_value: dict, new_value: dict) -> None:
         if old_value == new_value:
@@ -165,6 +170,17 @@ class TableRenderer(ListView):
         item = self.children[index]
         if item:
             self.post_message(self.RowSelectedEvent(raw_data=self.raw_data[index]))
+        
+    
+    def on_action_triggered(self, event: ActionTriggered):
+        # print('on_action_triggered:', event.action, event.context)
+        # print('self.context:', event.context.__class__.__name__)
+        ActionRegistry.dispatch(
+            event.action,
+            event.context,
+            self.app
+        )
+        
 
 
     class RowSelectedEvent(Message):

@@ -1,5 +1,8 @@
 from typing import Any, Type, Callable, Union
 
+
+
+
 class ResourceRegistry:
     """registry for resource factories"""
 
@@ -39,3 +42,25 @@ class RendererRegistry:
     def get_renderer(cls, data_type: Union[str, Type[Any]], default: Callable = str) -> Callable:
         """Get renderer, set default to str if not found"""
         return cls._renderers.get(data_type, default)
+    
+
+
+class ActionRegistry:
+    """Registry for action handlers (Strategy Registry)"""
+
+    _handlers: dict[type, type[Any]] = {}
+
+    @classmethod
+    def register(cls, handler: type[Any]):
+        if handler.resource_type is None:
+            raise ValueError("ActionHandler must define resource_type")
+        cls._handlers[handler.resource_type] = handler
+
+    @classmethod
+    def dispatch(cls, action, resource, app):
+        handler = cls._handlers.get(type(resource))
+        if not handler:
+            raise RuntimeError(
+                f"No ActionHandler registered for {type(resource).__name__}"
+            )
+        handler.handle(action, resource, app)
