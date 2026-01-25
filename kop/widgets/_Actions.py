@@ -1,0 +1,205 @@
+from textual import on
+from textual.message import Message
+from textual.app import ComposeResult
+from textual.containers import Horizontal, Grid
+from textual.widgets import Button, OptionList, Label
+from textual.screen import ModalScreen
+from textual.binding import Binding
+
+
+class ActionGroup(Horizontal):
+    """render action buttons in a row"""
+
+    DEFAULT_CSS = """
+        ActionGroup {
+            align-horizontal: right;
+
+            & > Button {
+                width: 4;
+                min-width: 4;
+                margin: 0 1;
+            }
+        }
+        
+    """
+    # save the button group correspond row data
+    row_data: dict = {}
+
+    def __init__(self, actions, **kwargs):
+        super().__init__(**kwargs)
+        self.actions = actions
+
+
+    def compose(self) -> ComposeResult:
+        for action in self.actions:
+            yield Button(
+                label=action.label,
+                compact=True,
+                variant=action.variant,
+                tooltip=action.tooltip,
+                id=action.name
+            )
+
+    @on(Button.Pressed, "#delete")
+    def handle_delete_button_pressed(self, event: Button.Pressed) -> None:
+        def delete_callback(row_data) -> None:
+            self.post_message(self.DeleteButton(row_data))
+
+        self.app.push_screen(Delete(self.row_data), callback=delete_callback)
+
+    class DeleteButton(Message):
+        def __init__(self, row_data):
+            super().__init__()
+            self.row_data = row_data
+
+    @on(Button.Pressed, "#shell")
+    def handle_shell_button_pressed(self, envent: Button.Pressed) -> None:
+        self.post_message(self.ShellButton(self.row_data))
+
+    class ShellButton(Message):
+        def __init__(self, row_data):
+            super().__init__()
+            self.row_data = row_data
+
+    @on(Button.Pressed, "#log")
+    def handle_log_button_pressed(self, event: Button.Pressed) -> None:
+
+        def option_callback(container_name: str|None) -> None:
+            self.post_message(self.LogButton(row_data=self.row_data, container_name=container_name))
+
+        if len(self.row_data.containers) == 1:
+            container_obj = self.row_data.containers[0].lazy_clean()
+            option_callback(container_name=container_obj.name)
+        else:
+            self.app.push_screen(
+                Option([cs.lazy_clean().name for cs in self.row_data.containers]),
+                callback=option_callback
+                )
+        
+    class LogButton(Message):
+        def __init__(self, row_data, container_name):
+            super().__init__()
+            self.row_data = row_data
+            self.container_name = container_name
+
+
+class Option(ModalScreen):
+    DEFAULT_CSS = """
+        Option {
+            align: center middle;
+        }
+        #option_list {
+            height: 1fr;
+            width: 1fr;
+            column-span: 2;
+        }
+        
+        #title {
+            column-span: 2;
+            row-span: 1;
+            width: 1fr;
+            content-align: center top;
+            text-style: bold;
+        }
+        #option_dialog {
+            grid-size: 2 3;
+            grid-gutter: 0 2;
+            grid-rows: 1fr 3fr 1fr;
+            padding: 0 1;
+            height: 25%;
+            width: 50%;
+            border: thick $background 80%;
+            background: $surface;
+        }
+        Button {
+            width: 100%;
+            margin-left: 1;
+            margin-right: 1;
+        }
+
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+    ]
+
+    def __init__(self, options: list):
+        super().__init__()
+        self.options = options
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label("Choose a container for log", id="title"),
+            OptionList(*self.options, id="option_list"),
+            Button("Cancel", id="cancel", flat=True),
+            Button("Choose", variant="success", id="choose", flat=True),
+            id="option_dialog"
+        )
+
+    @on(Button.Pressed, "#cancel")
+    def action_close(self):
+        self.app.pop_screen()
+
+    @on(OptionList.OptionSelected)
+    @on(Button.Pressed, "#choose")
+    def action_choose(self):
+        self.dismiss(
+            self.options[self.query_one("#option_list").highlighted]
+        )
+
+
+
+class Delete(ModalScreen):
+
+    DEFAULT_CSS = """
+        Delete {
+            align: center middle;
+        }
+
+        #delete_dialog {
+            grid-size: 2;
+            grid-gutter: 1 2;
+            grid-rows: 1fr 3;
+            padding: 0 1;
+            width: 60;
+            height: 11;
+            border: thick $background 80%;
+            background: $surface;
+        }
+
+        #title {
+            column-span: 2;
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+        }
+
+        Button {
+            width: 100%;
+        }
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+    ]
+
+    def __init__(self, row_data):
+        self.row_data = row_data
+        super().__init__()
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label(f"Delete {self.row_data.name}? Are you sure?", id="title"),
+            Button("Cancel", variant="default", id="cancel", flat=True),
+            Button("Delete", variant="error", id="delete", flat=True),
+            id="delete_dialog"
+        )
+
+    @on(Button.Pressed, "#cancel")
+    def action_close(self):
+        self.app.pop_screen()
+    
+    @on(Button.Pressed, "#delete")
+    def action_delete(self):
+        self.dismiss(self.row_data)

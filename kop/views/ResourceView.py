@@ -3,12 +3,12 @@ from textual.app import ComposeResult, App
 from textual.containers import Horizontal
 from textual.widgets import Static, Footer
 from kop.widgets.SideMenu import SideMenu
-from kop.views.PodTerminal import PodTerminal
-from kop.views.PodLog import PodLog
+# from kop.views.PodTerminal import PodTerminal
+# from kop.views.PodLog import PodLog
 from kop.registry import ResourceRegistry
 from kop.factory import *
-from kop.widgets.Actions import ActionGroup
-from kop.widgets.Modals import Delete
+# from kop.widgets._Actions import ActionGroup
+# from kop.widgets.Modals import Delete
 from kop.provider.client import KbsEndpoint
 
 
@@ -124,9 +124,7 @@ class ResourceView(Screen):
 
     def delete_resource(self, row_data: PodViewModel) -> None:
         try:
-            self.endpoint.delete_pods(name=row_data.name,
-                                    namespace=row_data.namespace
-                                    )
+            self.FACTORY_CACHE.delete(name=row_data.name, namespace=row_data.namespace)
             # pause origin timer and resume after 60s 
             self.timer.pause()
             self.set_timer(
@@ -139,9 +137,9 @@ class ResourceView(Screen):
                 self._update_resource, 
                 repeat=60
                 )
-            self.notify("Delete pod success", severity="information")
+            self.notify(f"Delete {self.resource_type} {row_data.name} success", severity="information")
         except Exception as e:
-            self.notify(f"Delete pod failed: {e}", severity="error")
+            self.notify(f"Delete {self.resource_type} {row_data.name} failed: {e}", severity="error")
 
     # def on_action_group_shell_button(self, event: ActionGroup.ShellButton) -> None:
     #     if event.row_data.status != "Running":

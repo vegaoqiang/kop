@@ -3,10 +3,10 @@ from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal
 from textual.message import Message
 from textual.reactive import reactive
-from kop.widgets.Actions import ActionGroup
+from kop.widgets._Actions import ActionGroup
 from kop.models import RawField
 
-from kop.widgets.ActionsNew import ActionsView, ActionTriggered
+from kop.widgets.Actions import ActionsView, ActionTriggered
 from kop.registry import ActionRegistry
 
 

@@ -32,6 +32,10 @@ class BaseFactory(ABC):
     def fetch(self):
         """fetch raw data from kube api"""
         raise NotImplementedError
+    
+    @abstractmethod
+    def delete(self, name, namespace: str = "default"):
+        raise NotImplementedError
 
     @abstractmethod
     def clean(self, raw):
@@ -61,6 +65,9 @@ class PodFacotry(BaseFactory):
     def fetch(self):
         # client = self._client.core_v1()
         return self.endpoint.list_pods()
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_pods(name=name, namespace=namespace)
         
     def clean(self, raw) -> List[PodViewModel]:
         return [PodViewModel.clean(pod) for pod in raw.items]
