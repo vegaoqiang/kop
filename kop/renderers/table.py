@@ -1,3 +1,4 @@
+from textual import on
 from textual.app import ComposeResult
 from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal
@@ -116,11 +117,12 @@ class TableRenderer(ListView):
         }
     """
 
-    BINDINGS = [
-        ("enter", "selected", "Seleted Item")
-    ]
+    # BINDINGS = [
+    #     ("enter", "selected", "Seleted Item")
+    # ]
 
     data = reactive(list)
+    raw_data = reactive(list)
     
     def __init__(self, columns: list, data: list, raw_data: list, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -128,7 +130,11 @@ class TableRenderer(ListView):
         # self.data = data
         self.set_reactive(TableRenderer.data, data)
         self.row_map: dict[str, BaseRow] = {}
-        self.raw_data = raw_data # cache raw data
+        # self.raw_data = raw_data # cache raw data
+        self.set_reactive(TableRenderer.raw_data, raw_data)
+
+        if self.raw_data:
+            self.raw_data_map: dict[str, dict] = {row.metadata.name: row for row in self.raw_data}
         
     def compose(self) -> ComposeResult:
         yield BaseHeader(self.columns)
@@ -157,24 +163,23 @@ class TableRenderer(ListView):
                 row = BaseRow(new_row_data, self.columns)
                 self.row_map[name] = row
                 self.append(row)
-
-
-    def action_selected(self) -> None:
-        """
-        when user press enter key, then this function will be called
-        """
-        if not self.index:
+    
+    def watch_raw_data(self, old_value: list, new_value: list) -> None:
+        if old_value == new_value:
             return
-        # why -1? because header hold first row, so we need to minus 1
-        index = self.index - 1
-        item = self.children[index]
-        if item:
-            self.post_message(self.RowSelectedEvent(raw_data=self.raw_data[index]))
+        self.raw_data_map = {row.metadata.name: row for row in new_value}
+
+    @on(ListView.Selected)
+    def handle_selected(self, event: ListView.Selected):
+        """
+        get selected item raw data to post
+        """
+        item: BaseRow = event.item
+        selected  = item.row_data.name
+        self.post_message(self.RowSelectedEvent(raw_data=self.raw_data_map[selected]))
         
     
     def on_action_triggered(self, event: ActionTriggered):
-        # print('on_action_triggered:', event.action, event.context)
-        # print('self.context:', event.context.__class__.__name__)
         ActionRegistry.dispatch(
             event.action,
             event.context,
