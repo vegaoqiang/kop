@@ -12,7 +12,7 @@ from kubernetes.client.models import (
     V1ContainerPort,
     V1VolumeMount,
     V1ResourceRequirements,
-    V1Condition)
+    )
 from datetime import datetime
 from typing import List, Any
 

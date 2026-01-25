@@ -4,9 +4,7 @@ from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal
 from textual.message import Message
 from textual.reactive import reactive
-from kop.widgets._Actions import ActionGroup
 from kop.models import RawField
-
 from kop.widgets.Actions import ActionsView, ActionTriggered
 from kop.registry import ActionRegistry
 
@@ -70,9 +68,6 @@ class BaseRow(ListItem):
                 if col.title != "Actions":
                     yield BaseCol(text=self.row_data.get(col.field), width=col.width)
                 else:
-                    # action_group = ActionGroup(self.row_data.actions)
-                    # action_group.row_data = self.row_data
-                    # yield action_group
                     yield ActionsView(actions=self.row_data.get(col.field), context=self.row_data)
 
     def watch_row_data(self, old_value: dict, new_value: dict) -> None:
