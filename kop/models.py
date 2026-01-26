@@ -19,6 +19,11 @@ from typing import List, Any
 
 @dataclass
 class ColumnModel:
+    """    
+    title: the title of the column to show
+    width: the width of the column
+    field: the field name in the model
+    """
     title: str
     width: int | None
     field: str
@@ -26,11 +31,20 @@ class ColumnModel:
 
 @dataclass
 class ActionModel:
+    """
+    name: 
+    label: 
+    variant:
+    tooltip:
+    action: the field define the action to be performed, it's value will be the same as the handler class attribute.
+    icon: the icon text to be displayed
+    """
     name: str
     label: str
     variant: str
     tooltip: str
     action: str
+    icon: str | None = None
 
 @dataclass
 class RawField:
@@ -244,10 +258,12 @@ class PodViewModel(ViewModel):
     restarts: str = field(metadata={"title": "Restarts", "width": 8})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 10})
     qos: str = field(metadata={"title": "QoS", "width": 8})
-    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+    age: str = field(metadata={"title": "Age", "width": 4, "detail": False})
     actions: List[ActionModel] = field(default_factory=lambda: [
         ActionModel("shell", ">_", "success", "Exec shell on pod", "shell"),
+        ActionModel("attach", "at", "success", "Attach to the pod", "attach"),
         ActionModel("log", "log", "success", "View the pod logs", "log"),
+        ActionModel("edit", "ed", "success", "Edit the Pod", "edit"),
         ActionModel("delete", "del", "error", "Delete the Pod", "delete")],
         metadata={"title": "Actions", "width": 10, "detail": False})
 
