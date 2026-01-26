@@ -54,7 +54,11 @@ class ActionRegistry:
     def register(cls, handler: type[Any]):
         if handler.resource_type is None:
             raise ValueError("ActionHandler must define resource_type")
-        cls._handlers[handler.resource_type] = handler
+        if isinstance(handler.resource_type, list):
+            for resource_type in handler.resource_type:
+                cls._handlers[resource_type] = handler
+        else:
+            cls._handlers[handler.resource_type] = handler
 
     @classmethod
     def dispatch(cls, action, resource, app):

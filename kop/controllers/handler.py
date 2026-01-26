@@ -1,6 +1,6 @@
 from abc import ABC
 from kop.registry import ActionRegistry
-from kop.models import PodViewModel
+from kop.models import PodViewModel, PodDetailModel
 from kop.views.PodTerminal import PodTerminal
 from kop.views.PodLog import PodLog
 from kop.widgets.Modals import Option, Delete
@@ -23,7 +23,7 @@ class BaseActionHandlerMixin(ABC):
 class PodActionHandler(BaseActionHandlerMixin):
     """Action handler for Pod resources"""
 
-    resource_type = PodViewModel
+    resource_type = [PodViewModel, PodDetailModel]
 
     @classmethod
     def handle(cls, action, resource: PodViewModel, app):
