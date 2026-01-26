@@ -238,12 +238,12 @@ class PodViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     node: str = field(metadata={"title": "Node", "width": 10})
-    status: str = field(metadata={"title": "Status", "width": 5})
+    status: str = field(metadata={"title": "Status", "width": 8})
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
-    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 10, "after": "tolerations"})
-    restarts: str = field(metadata={"title": "Restarts", "width": 10})
+    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 8, "after": "tolerations"})
+    restarts: str = field(metadata={"title": "Restarts", "width": 8})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 10})
-    qos: str = field(metadata={"title": "QoS", "width": 10})
+    qos: str = field(metadata={"title": "QoS", "width": 8})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     actions: List[ActionModel] = field(default_factory=lambda: [
         ActionModel("shell", ">_", "success", "Exec shell on pod", "shell"),
