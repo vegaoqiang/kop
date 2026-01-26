@@ -288,7 +288,7 @@ class PodDetailModel(PodViewModel):
 
     @classmethod
     def clean(cls, data: V1Pod) -> "PodDetailModel":
-        base = asdict(super().clean(data))
+        base = super().clean(data).__dict__
         base.update({
             'labels': data.metadata.labels,
             'annotations': data.metadata.annotations,
