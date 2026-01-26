@@ -1,7 +1,7 @@
 from textual import on
 from textual.app import ComposeResult
 from textual.widgets import ListItem, ListView, Static
-from textual.containers import Horizontal
+from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.reactive import reactive
 from kop.models import RawField
@@ -85,30 +85,21 @@ class BaseRow(ListItem):
         self.row_data = row_data
 
 
-class TableRenderer(ListView):
+class TableRenderer(Vertical):
     DEFAULT_CSS = """
         TableRenderer {
           height: 1fr;
-          & > BaseRow {
-              height: 1;
-              overflow: hidden hidden;
-              width: 1fr;
-              
-              &.-hovered {
-                    background: $block-hover-background;
-                }
-                
-              &.-highlight {
-                  color: $block-cursor-blurred-foreground;
-                  background: $block-cursor-blurred-background;
-                  text-style: $block-cursor-blurred-text-style;
-              }
-          }
           & > BaseHeader {
               height: 1;
               overflow: hidden hidden;
               width: 1fr;
+              content-align: center middle;
+              text-style: bold;
+              background: $surface;
           }
+          BaseRow {
+                height: 1;
+            }
         }
     """
 
@@ -133,10 +124,11 @@ class TableRenderer(ListView):
         
     def compose(self) -> ComposeResult:
         yield BaseHeader(self.columns)
-        for row in self.data:
-            base_row = BaseRow(row_data=row, columns=self.columns)
-            self.row_map[row.name] = base_row
-            yield base_row
+        with ListView():
+            for row in self.data:
+                base_row = BaseRow(row_data=row, columns=self.columns)
+                self.row_map[row.name] = base_row
+                yield base_row
 
     def watch_data(self, old_value: list, new_value: list) -> None:
         if old_value == new_value:
@@ -180,7 +172,6 @@ class TableRenderer(ListView):
             event.context,
             self.app
         )
-        
 
 
     class RowSelectedEvent(Message):
