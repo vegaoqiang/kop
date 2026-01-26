@@ -18,7 +18,8 @@ class PodExec:
         self.command = command or [
             "sh",
             "-c",
-            "(bash || sh || ash || zsh || csh)"
+            # "(bash || sh || ash || zsh || csh)"
+            "command -v bash >/dev/null && exec bash || command -v zsh >/dev/null && exec zsh || command -v ash >/dev/null && exec ash || exec sh"
         ]
         self.container_name = container_name
 
