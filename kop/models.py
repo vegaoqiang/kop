@@ -260,11 +260,11 @@ class PodViewModel(ViewModel):
     qos: str = field(metadata={"title": "QoS", "width": 8})
     age: str = field(metadata={"title": "Age", "width": 4, "detail": False})
     actions: List[ActionModel] = field(default_factory=lambda: [
-        ActionModel("shell", ">_", "success", "Exec shell on pod", "shell"),
-        ActionModel("attach", "at", "success", "Attach to the pod", "attach"),
-        ActionModel("log", "log", "success", "View the pod logs", "log"),
-        ActionModel("edit", "ed", "success", "Edit the Pod", "edit"),
-        ActionModel("delete", "del", "error", "Delete the Pod", "delete")],
+        ActionModel("shell", "Shell", "default", "Exec shell on pod", "shell"),
+        ActionModel("attach", "Attach", "default", "Attach to the pod", "attach"),
+        ActionModel("log", "Logs", "default", "View the pod logs", "log"),
+        ActionModel("edit", "Edit", "default", "Edit the Pod", "edit"),
+        ActionModel("delete", "Delete", "default", "Delete the Pod", "delete")],
         metadata={"title": "Actions", "width": 10, "detail": False})
 
 

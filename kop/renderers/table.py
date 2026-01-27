@@ -1,11 +1,11 @@
 from textual import on
 from textual.app import ComposeResult
-from textual.widgets import ListItem, ListView, Static
+from textual.widgets import ListItem, ListView, Static, Button
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.reactive import reactive
 from kop.models import RawField
-from kop.widgets.Actions import ActionsView, ActionTriggered
+from kop.widgets.Actions import ActionTriggered, SelectActionButton
 from kop.registry import ActionRegistry
 
 
@@ -68,7 +68,9 @@ class BaseRow(ListItem):
                 if col.title != "Actions":
                     yield BaseCol(text=self.row_data.get(col.field), width=col.width)
                 else:
-                    yield ActionsView(actions=self.row_data.get(col.field), context=self.row_data)
+                    select_action = SelectActionButton(label="💡", variant="default", id="actions", compact=True)
+                    select_action.row_data = self.row_data
+                    yield select_action
 
     def watch_row_data(self, old_value: dict, new_value: dict) -> None:
         if old_value == new_value:

@@ -4,7 +4,6 @@ from textual.screen import ModalScreen
 from textual.app import ComposeResult
 from textual.containers import Grid
 from textual.widgets import Button, OptionList, Label
-# from textual.message import Message
 
 
 
@@ -135,13 +134,3 @@ class Delete(ModalScreen):
     @on(Button.Pressed, "#delete")
     def action_delete(self):
         self.dismiss(self.row_data)
-        # self.post_message(self.Confirm(self.row_data))
-        # self.app.pop_screen()
-
-    # class Confirm(Message):
-    #     """
-    #     Delete Confirm
-    #     """
-    #     def __init__(self, row_data):
-    #         super().__init__()
-    #         self.row_data = row_data
