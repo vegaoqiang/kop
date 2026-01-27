@@ -5,6 +5,7 @@ from textual.containers import Horizontal, Vertical
 from textual.widget import Widget
 from textual.widgets import Button, ListView, ListItem, Label
 from textual.screen import ModalScreen
+from textual.binding import Binding
 from kop.controllers.handler import *
 
 
@@ -135,9 +136,19 @@ class DetailActionsView(ActionsViewMixin):
         self.trigger_action(action)
 
 
-class ModelActionsView(ActionsViewMixin):
+class ModalActionsView(ActionsViewMixin):
     """
     Renderer as a list view replaced by a list of buttons
+    """
+    DEFAULT_CSS = """
+    ListView {
+        width: 30;
+        height: auto;
+    }
+
+    Label {
+        padding: 1 2;
+    }
     """
 
     def compose(self) -> ComposeResult:
@@ -176,14 +187,26 @@ class ActionsViewModal(ModalScreen):
     ActionsViewModal {
         align: center middle;
     }
+    ModalActionsView {
+        height: auto;
+        width: auto;
+    }
     """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+    ]
 
     def __init__(self, row_data, **kwargs):
         super().__init__(**kwargs)
         self.row_data = row_data
     
     def compose(self) -> ComposeResult:
-        yield ModelActionsView(self.row_data.actions, self.row_data)
+        yield ModalActionsView(self.row_data.actions, self.row_data)
 
     def on_mount(self):
         self.query_one(ListView).focus()
+
+    @on(Button.Pressed, "#cancel")
+    def action_close(self):
+        self.app.pop_screen()
