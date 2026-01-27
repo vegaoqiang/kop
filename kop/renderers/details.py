@@ -6,6 +6,8 @@ from widgets.Rules import DetailRule
 from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel, RawField
 from kop.renderers import formatter
+from kop.widgets.Actions import ActionTriggered, DetailActionsView
+from kop.controllers.handler import ActionRegistry
 
 
 
@@ -123,6 +125,10 @@ class DetailModalRenderer(ModalScreen):
             padding-left: 1;
             padding-right: 1;
         }
+        DetailActionsView {
+            dock: top;
+            height: 3;
+        }
     """
 
     BINDINGS = [
@@ -138,7 +144,9 @@ class DetailModalRenderer(ModalScreen):
         self.data = data
 
     def compose(self) -> ComposeResult:
+        actions = self.data.get('actions')
         with VerticalScroll(id="detail"):
+            yield DetailActionsView(actions=actions, context=self.data)
             for item in self.columns:
                 field_value = self.data.get(item.field)
                 if not field_value:
@@ -153,3 +161,10 @@ class DetailModalRenderer(ModalScreen):
         hander esc key event and close this screen
         """
         self.app.pop_screen()
+
+    def on_action_triggered(self, event: ActionTriggered):
+        ActionRegistry.dispatch(
+            event.action,
+            event.context,
+            self.app
+        )
