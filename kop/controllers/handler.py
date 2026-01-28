@@ -30,9 +30,7 @@ class PodActionHandler(BaseActionHandlerMixin):
         try:
             getattr(cls, action.action)(resource, app)
         except AttributeError:
-            raise NotImplementedError(
-                    f"Action '{action.action}' not supported for Pod"
-                )
+            app.notify(f"Action '{action.action}' not supported for Pod", severity="error")
                 
     @staticmethod
     def log(resource: PodViewModel, app):
