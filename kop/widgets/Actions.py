@@ -1,7 +1,7 @@
 from textual import on
 from textual.message import Message
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.containers import Horizontal
 from textual.widget import Widget
 from textual.widgets import Button, ListView, ListItem, Label
 from textual.screen import ModalScreen
@@ -19,70 +19,6 @@ class ActionTriggered(Message):
         self.action = action        # ActionModel
         self.context = context      # PodViewModel / DeploymentViewModel / ...
 
-
-
-# class ActionsView(Widget):
-#     """
-#     Generic action buttons view.
-#     Style/layout should be controlled by CSS or subclass.
-#     """
-
-#     DEFAULT_CSS = """
-#     ActionsView {
-#         align-horizontal: right;
-#     }
-
-#     ActionsView > Button {
-#         width: 1fr;
-#         # min-width: 4;
-#         # margin: 0 1;
-#     }
-#     Button {
-#         width: 1fr;
-#     }
-#     """
-
-#     def __init__(self, actions, context, *, compact=True, **kwargs):
-#         """
-#         actions: List[ActionModel]
-#         context: Resource ViewModel (Pod / Deployment / Service ...)
-#         """
-#         super().__init__(**kwargs)
-#         self.actions = actions
-#         self.context = context
-#         self.compact = compact
-
-#     def compose(self) -> ComposeResult:
-#         if self.compact:
-#             with Horizontal():
-#                 for action in self.actions:
-#                     yield Button(
-#                         label=action.label,
-#                         id=action.name,
-#                         variant=action.variant,
-#                         tooltip=action.tooltip,
-#                         compact=self.compact,
-#                     )
-#         else:
-#             with ListView():
-#                 for action in self.actions:
-#                     yield ListItem(
-#                         Button(
-#                             label=action.label,
-#                             id=action.name,
-#                             variant=action.variant,
-#                             tooltip=action.tooltip,
-#                             compact=self.compact,
-#                         )
-#                     )
-
-#     @on(Button.Pressed)
-#     def on_action_pressed(self, event: Button.Pressed) -> None:
-#         """Unified event exit point, all actions are handled here"""
-#         action = next(
-#             a for a in self.actions if a.name == event.button.id
-#         )
-#         self.post_message(ActionTriggered(action, self.context))
 
 
 class ActionsViewMixin(Widget):
@@ -160,7 +96,10 @@ class ModalActionsView(ActionsViewMixin):
                 )
 
     @on(ListView.Selected)
-    def on_selected(self, event: ListView.Selected):
+    def on_list_view_selected(self, event: ListView.Selected):
+        """
+        selected action use by cursur or enter key
+        """
         action = next(
             a for a in self.actions if a.name == event.item.id
         )
@@ -188,6 +127,10 @@ class SelectActionButton(Button):
 
 
 class ActionsViewModal(ModalScreen):
+    """
+    Show a list of actions, triggered by SelectActionButton
+    """
+
     DEFAULT_CSS = """
     ActionsViewModal {
         align: center middle;
@@ -215,3 +158,14 @@ class ActionsViewModal(ModalScreen):
     @on(Button.Pressed, "#cancel")
     def action_close(self):
         self.app.pop_screen()
+
+
+    def on_action_triggered(self, event: ActionTriggered):
+        """
+        receive message when an action is selected
+        """
+        ActionRegistry.dispatch(
+            event.action,
+            event.context,
+            self.app
+        )
