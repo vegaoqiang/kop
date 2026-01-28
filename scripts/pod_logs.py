@@ -3,6 +3,8 @@ from textual.app import ComposeResult
 from kop.provider.logs import PodLogs
 from kop.provider.logs import LogController
 from kop.provider.client import KbsAuthLoader
+from kop.views.PodLog import Logs
+
 
 
 
