@@ -151,6 +151,20 @@ class KbsEndpoint(KbsAuthLoader):
                     async_req: bool = False):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.delete_namespaced_pod(name=name, namespace=namespace, async_req=async_req)
+    
+    def delete_deployments(self, name: str,
+                          namespace: str = 'default', 
+                          watch: bool = False, 
+                          async_req: bool = False):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.delete_namespaced_deployment(name=name, namespace=namespace, async_req=async_req)
+
+    def delete_daemon_sets(self, name: str,
+                          namespace: str = 'default', 
+                          watch: bool = False, 
+                          async_req: bool = False):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.delete_namespaced_daemon_set(name=name, namespace=namespace, async_req=async_req)
 
 
     def list_deployments(self, namespace: str | None = None, 

@@ -96,6 +96,9 @@ class DeploymentFactory(BaseFactory):
     def fetch(self):
         # client = self._client.apps_v1()
         return self.endpoint.list_deployments()
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_deployments(name=name, namespace=namespace)
 
     def clean(self, raw) -> List[DeploymentViewModel]:
         return [DeploymentViewModel.clean(dep) for dep in raw.items]
@@ -124,6 +127,9 @@ class DaemonSetFactory(BaseFactory):
     def fetch(self):
         # client = self._client.apps_v1()
         return self.endpoint.list_daemon_sets()
+
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_daemon_sets(name=name, namespace=namespace)
 
     def clean(self, raw) -> List[DaemonSetViewModel]:
         return [DaemonSetViewModel.clean(dep) for dep in raw.items]
