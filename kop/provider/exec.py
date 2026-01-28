@@ -105,8 +105,8 @@ class PodExec:
             self.resp = None
 
 
-    def __del__(self):
-        self.close()
+    # def __del__(self):
+    #     self.close()
 
 
     # support with PodExec() as exec:
