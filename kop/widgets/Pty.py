@@ -104,6 +104,7 @@ class PodPty(ScrollView):
     def on_unmount(self) -> None:
         if self.resp:
             self.resp.close()
+            self.resp = None
 
     def _exit_pty(self):
         try:
