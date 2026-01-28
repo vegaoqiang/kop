@@ -3,6 +3,7 @@ from kop.registry import ActionRegistry
 from kop.models import PodViewModel, PodDetailModel
 from kop.views.PodTerminal import PodTerminal
 from kop.views.PodLog import PodLog
+from kop.views.PodAttach import Attach
 from kop.widgets.Modals import Option, Delete
 
 
@@ -58,6 +59,24 @@ class PodActionHandler(BaseActionHandlerMixin):
         
         def option_callback(container_name: str) -> None:
             app.push_screen(PodTerminal(client=app.endpoint, data=resource, container_name=container_name))
+
+        if len(resource.containers) == 1:
+            container_obj = resource.containers[0].lazy_clean()
+            option_callback(container_name=container_obj.name)
+        else:
+            app.push_screen(
+                Option([cs.lazy_clean().name for cs in resource.containers]),
+                callback=option_callback
+                )
+            
+    @staticmethod        
+    def attach(resource: PodViewModel, app):
+        if resource.status != "Running":
+            app.notify("Pod is not running", severity="error")
+            return
+
+        def option_callback(container_name: str) -> None:
+            app.push_screen(Attach(client=app.endpoint, data=resource, container_name=container_name))
 
         if len(resource.containers) == 1:
             container_obj = resource.containers[0].lazy_clean()
