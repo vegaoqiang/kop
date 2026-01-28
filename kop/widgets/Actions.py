@@ -108,6 +108,10 @@ class ModalActionsView(ActionsViewMixin):
 
 
 class SelectActionButton(Button):
+    """
+    Only show the ActionsViewModal screen, used in table
+    """
+
     DEFAULT_CSS = """
     SelectActionButton {
         width: 4;
