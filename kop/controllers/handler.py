@@ -29,12 +29,12 @@ class PodActionHandler(BaseActionHandlerMixin):
     @classmethod
     def handle(cls, action, resource: PodViewModel, app):
         try:
-            getattr(cls, action.action)(resource, app)
+            getattr(cls, action.action)(resource, app, action)
         except AttributeError:
             app.notify(f"Action '{action.action}' not supported for Pod", severity="error")
                 
     @staticmethod
-    def log(resource: PodViewModel, app):
+    def log(action, resource: PodViewModel, app):
         if resource.status != "Running":
             app.notify("Pod is not running", severity="error")
             return
@@ -47,12 +47,12 @@ class PodActionHandler(BaseActionHandlerMixin):
             option_callback(container_name=container_obj.name)
         else:
             app.push_screen(
-                Option([cs.lazy_clean().name for cs in resource.containers]),
+                Option([cs.lazy_clean().name for cs in resource.containers], action=action.name),
                 callback=option_callback
                 )
 
     @staticmethod
-    def shell(resource: PodViewModel, app):
+    def shell(action, resource: PodViewModel, app):
         if resource.status != "Running":
             app.notify("Pod is not running", severity="error")
             return
@@ -65,12 +65,12 @@ class PodActionHandler(BaseActionHandlerMixin):
             option_callback(container_name=container_obj.name)
         else:
             app.push_screen(
-                Option([cs.lazy_clean().name for cs in resource.containers]),
+                Option([cs.lazy_clean().name for cs in resource.containers], action=action.name),
                 callback=option_callback
                 )
             
     @staticmethod        
-    def attach(resource: PodViewModel, app):
+    def attach(action, resource: PodViewModel, app):
         if resource.status != "Running":
             app.notify("Pod is not running", severity="error")
             return
@@ -83,12 +83,12 @@ class PodActionHandler(BaseActionHandlerMixin):
             option_callback(container_name=container_obj.name)
         else:
             app.push_screen(
-                Option([cs.lazy_clean().name for cs in resource.containers]),
+                Option([cs.lazy_clean().name for cs in resource.containers], action=action.name),
                 callback=option_callback
                 )
 
     @staticmethod
-    def delete(resource: PodViewModel, app):
+    def delete(action, resource: PodViewModel, app):
         def delete_callback(resource) -> None:
             view = app.view
             view.delete_resource(resource)

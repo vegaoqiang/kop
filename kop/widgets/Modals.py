@@ -51,13 +51,14 @@ class Option(ModalScreen):
         Binding("escape", "close", "Cancel", show=False),
     ]
 
-    def __init__(self, options: list):
+    def __init__(self, options: list, action: str = ""):
         super().__init__()
         self.options = options
+        self.action = action
 
     def compose(self) -> ComposeResult:
         yield Grid(
-            Label("Choose a container for log", id="title"),
+            Label(f"Choose a container for {self.action}", id="title"),
             OptionList(*self.options, id="option_list"),
             Button("Cancel", id="cancel", flat=True),
             Button("Choose", variant="success", id="choose", flat=True),
