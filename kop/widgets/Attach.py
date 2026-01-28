@@ -62,7 +62,7 @@ class PodAttachView(ScrollView):
         if not data:
             return
 
-        # 保留换行符，避免行粘连
+        # keep break line
         parts = data.splitlines(keepends=True)
         self.lines.extend(parts)
 
@@ -106,7 +106,7 @@ class PodAttachView(ScrollView):
             self.app.exit()
 
     def on_key(self, event: events.Key) -> None:
-        # attach not support keyboard except q key to exit
-        if event.key == "q":
+        # attach not support keyboard except escape key to exit
+        if event.key == "escape":
             self._exit()
         event.stop()

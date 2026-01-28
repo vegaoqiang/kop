@@ -8,7 +8,7 @@ from kop.models import PodViewModel
 
 
 class Attach(Screen):
-    
+
     def __init__(self, client: KbsAuthLoader, data: PodViewModel, container_name: str|None = None) -> None:
         super().__init__()
         self.attach = PodAttach(
