@@ -169,12 +169,17 @@ class ModalActionsView(ActionsViewMixin):
 
 
 class SelectActionButton(Button):
+    DEFAULT_CSS = """
+    SelectActionButton {
+        width: 4;
+        min-width: 4;
+    }
+    """
 
     row_data: dict = {}
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
 
     @on(Button.Pressed, "#actions")
     def on_button_pressed(self, event: Button.Pressed) -> None:

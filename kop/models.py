@@ -249,23 +249,23 @@ class ContainerModel(ViewModel):
 
 @dataclass
 class PodViewModel(ViewModel):
-    name: str = field(metadata={"title": "Name", "width": 20})
+    name: str = field(metadata={"title": "Name", "width": 22})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     node: str = field(metadata={"title": "Node", "width": 10})
     status: str = field(metadata={"title": "Status", "width": 8})
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
-    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 8, "after": "tolerations"})
+    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 9, "after": "tolerations"})
     restarts: str = field(metadata={"title": "Restarts", "width": 8})
-    controlled_by: str = field(metadata={"title": "ControlledBy", "width": 10})
-    qos: str = field(metadata={"title": "QoS", "width": 8})
-    age: str = field(metadata={"title": "Age", "width": 4, "detail": False})
+    controlled_by: str = field(metadata={"title": "ControlledBy", "width": 9})
+    qos: str = field(metadata={"title": "QoS", "width": 9})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     actions: List[ActionModel] = field(default_factory=lambda: [
         ActionModel("shell", "Shell", "default", "Exec shell on pod", "shell"),
         ActionModel("attach", "Attach", "default", "Attach to the pod", "attach"),
         ActionModel("log", "Logs", "default", "View the pod logs", "log"),
         ActionModel("edit", "Edit", "default", "Edit the Pod", "edit"),
         ActionModel("delete", "Delete", "default", "Delete the Pod", "delete")],
-        metadata={"title": "Actions", "width": 10, "detail": False})
+        metadata={"title": "Actions", "width": 5, "detail": False})
 
 
     @classmethod

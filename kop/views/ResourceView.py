@@ -14,11 +14,11 @@ class ResourceView(Screen):
         SideMenu {
             dock: left;
             height: 100%;
-            width: 15%;
+            width: 20%;
         } 
         #right_panel {
             dock: right;
-            width: 85%;
+            width: 80%;
             height: 100%;
         }
         Footer {

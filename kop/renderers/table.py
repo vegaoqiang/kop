@@ -1,6 +1,6 @@
 from textual import on
 from textual.app import ComposeResult
-from textual.widgets import ListItem, ListView, Static, Button
+from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.reactive import reactive
@@ -13,7 +13,7 @@ from kop.registry import ActionRegistry
 class BaseCol(Static):
     DEFAULT_CSS = """
         BaseCol {
-            padding: 0 3 0 0;
+            padding: 0 1 0 0;
             text-overflow: ellipsis;
         }
         """
@@ -29,7 +29,7 @@ class BaseCol(Static):
         self.width = width
 
     def on_mount(self) -> None:
-        self.styles.width = f"{self.width}%"
+        self.styles.width = f"{self.width}fr"
 
     def watch_text(self, old_value: str, new_value: str) -> None:
         if isinstance(new_value, list):
@@ -40,7 +40,13 @@ class BaseCol(Static):
             return
         self.content = new_value
 
+
 class BaseHeader(ListItem):
+    DEFAULT_CSS = """
+        Horizontal {
+            width: 100%;
+        }
+    """
 
     def __init__(self, columns, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -53,6 +59,12 @@ class BaseHeader(ListItem):
 
 
 class BaseRow(ListItem):
+
+    DEFAULT_CSS = """
+        Horizontal {
+            width: 100%;
+        }
+    """
 
     row_data = reactive(dict)
     
@@ -68,7 +80,8 @@ class BaseRow(ListItem):
                 if col.title != "Actions":
                     yield BaseCol(text=self.row_data.get(col.field), width=col.width)
                 else:
-                    select_action = SelectActionButton(label="💡", variant="default", id="actions", compact=True)
+                    select_action = SelectActionButton(label="💡", variant="default", id="actions", compact=True, tooltip="More actions")
+                    select_action.styles.width = f"{col.width}fr"
                     select_action.row_data = self.row_data
                     yield select_action
 
@@ -90,6 +103,7 @@ class BaseRow(ListItem):
 class TableRenderer(Vertical):
     DEFAULT_CSS = """
         TableRenderer {
+          width: 1fr;
           height: 1fr;
           & > BaseHeader {
               height: 1;
@@ -101,6 +115,7 @@ class TableRenderer(Vertical):
           }
           BaseRow {
                 height: 1;
+                width: 1fr;
             }
         }
     """
@@ -174,7 +189,6 @@ class TableRenderer(Vertical):
             event.context,
             self.app
         )
-
 
     class RowSelectedEvent(Message):
         def __init__(self, raw_data):
