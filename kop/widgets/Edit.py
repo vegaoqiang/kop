@@ -18,6 +18,10 @@ class ResourceEdit(Static):
         Horizontal {
             height: auto;
             width: 1fr;
+            padding-left: 1;
+        }
+        Button {
+            margin-right: 1;
         }
     """
 
