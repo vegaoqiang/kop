@@ -4,7 +4,7 @@ from kop.models import PodViewModel, PodDetailModel
 from kop.views.PodTerminal import PodTerminal
 from kop.views.PodLog import PodLog
 from kop.views.PodAttach import Attach
-from kop.views.PodEdit import ResourceEditScreen
+from kop.views.EditView import ResourceEditScreen
 from kop.widgets.Modals import Option, Delete
 
 
@@ -32,8 +32,8 @@ class PodActionHandler(BaseActionHandlerMixin):
     def handle(cls, action, resource: PodViewModel, app):
         try:
             getattr(cls, action.action)(action, resource, app)
-        except AttributeError:
-            app.notify(f"Action '{action.action}' not supported for Pod", severity="error")
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for Pod, {e}", severity="error")
                 
     @staticmethod
     def log(action, resource: PodViewModel, app):
@@ -99,15 +99,18 @@ class PodActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def edit(action, resource: PodViewModel, app):
-        try:
-            pod = app.endpoint.get_pod(
-                name=resource.name,
-                namespace=resource.namespace)
-        except Exception as e:
-            app.notify(f"Get pod {resource.name} failed: {e}", severity="error")
-            return
-        pod=app.endpoint.api_client.sanitize_for_serialization(pod)
-        app.push_screen(ResourceEditScreen(resource=pod))
+        def fetcher():
+            try:
+                pod = app.endpoint.get_pod(
+                    name=resource.name,
+                    namespace=resource.namespace)
+            except Exception as e:
+                # app.notify(f"Get pod {resource.name} failed: {e}", severity="error")
+                return
+            # serialize pod object to dict
+            pod=app.endpoint.api_client.sanitize_for_serialization(pod)
+            return pod
+        app.push_screen(ResourceEditScreen(fetcher=fetcher))
 
 
         
