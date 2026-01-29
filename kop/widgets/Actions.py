@@ -168,6 +168,8 @@ class ActionsViewModal(ModalScreen):
         """
         receive message when an action is selected
         """
+        # hide ActionsViewModel first
+        self.app.pop_screen()
         ActionRegistry.dispatch(
             event.action,
             event.context,
