@@ -4,7 +4,9 @@ from kop.models import PodViewModel, PodDetailModel
 from kop.views.PodTerminal import PodTerminal
 from kop.views.PodLog import PodLog
 from kop.views.PodAttach import Attach
+from kop.views.PodEdit import ResourceEditScreen
 from kop.widgets.Modals import Option, Delete
+
 
 
 
@@ -92,8 +94,19 @@ class PodActionHandler(BaseActionHandlerMixin):
         def delete_callback(resource) -> None:
             view = app.view
             view.delete_resource(resource)
-
         app.push_screen(Delete(resource), callback=delete_callback)
+
+
+    @staticmethod
+    def edit(action, resource: PodViewModel, app):
+        try:
+            pod = app.endpoint.get_pod(
+                name=resource.name,
+                namespace=resource.namespace)
+        except Exception as e:
+            app.notify(f"Get pod {resource.name} failed: {e}", severity="error")
+            return
+        app.push_screen(ResourceEditScreen(resource=pod.to_dict()))
 
 
         
