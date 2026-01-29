@@ -160,13 +160,14 @@ class TableRenderer(Vertical):
         
         # add new row if it is not in self.row_map
         # update row if it is in self.row_map
+        list_view = self.query_one(ListView)
         for name, new_row_data in new_value_map.items():
             if name in self.row_map:
                 self.row_map[name].update_row_data(new_row_data)
             else:
                 row = BaseRow(new_row_data, self.columns)
                 self.row_map[name] = row
-                self.append(row)
+                list_view.append(row)
     
     def watch_raw_data(self, old_value: list, new_value: list) -> None:
         if old_value == new_value:
