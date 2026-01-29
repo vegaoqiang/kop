@@ -44,7 +44,7 @@ class ResourceEdit(Static):
 
     def on_mount(self) -> None:
         try:
-            resource_yml = safe_dump(self.resource)
+            resource_yml = safe_dump(self.resource, allow_unicode=True, sort_keys=False, default_flow_style=False)
         except Exception as e:
             self.notify(f"Dump resource failed: {e}", severity="error")
             return

@@ -106,7 +106,8 @@ class PodActionHandler(BaseActionHandlerMixin):
         except Exception as e:
             app.notify(f"Get pod {resource.name} failed: {e}", severity="error")
             return
-        app.push_screen(ResourceEditScreen(resource=pod.to_dict()))
+        pod=app.endpoint.api_client.sanitize_for_serialization(pod)
+        app.push_screen(ResourceEditScreen(resource=pod))
 
 
         
