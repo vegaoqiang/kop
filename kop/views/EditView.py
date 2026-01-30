@@ -1,5 +1,5 @@
 from textual import work
-from textual.worker import Worker, get_current_worker
+from textual.worker import Worker, WorkerState, get_current_worker
 from textual.screen import Screen
 from textual.app import ComposeResult
 from textual.widgets import LoadingIndicator
@@ -9,7 +9,7 @@ from typing import Callable
 
 
 
-class AsyncYamlEditScreen(Screen):
+class AsyncEditScreen(Screen):
     """
     Base screen for asynchronously loading a Kubernetes resource
     and editing it as YAML.
@@ -27,6 +27,8 @@ class AsyncYamlEditScreen(Screen):
         self.call_after_refresh(self.load_resource)
 
     def update_editor(self, resource: dict) -> None:
+        if not resource:
+            return
         loading = self.query_one(LoadingIndicator)
         loading.remove()
         if self.editor is None:
@@ -42,6 +44,12 @@ class AsyncYamlEditScreen(Screen):
         if not worker.is_cancelled:
             self.app.call_from_thread(self.update_editor, resource)
 
+    def on_worker_state_changed(self, event: Worker.StateChanged) -> None:
+        """Called when the worker state changes."""
+        if event.state == WorkerState.ERROR:
+            self.notify(f"Get resource failed, fetcher: {self.fetcher}", severity="error")
+            return
+
     def fetch_resource(self) -> dict:
         """
         Subclasses must override this method and
@@ -50,7 +58,7 @@ class AsyncYamlEditScreen(Screen):
         raise NotImplementedError
 
 
-class ResourceEditScreen(AsyncYamlEditScreen):
+class ResourceEditScreen(AsyncEditScreen):
     """
     Generic resource edit screen that accepts a callable fetcher for flexibility
     """
@@ -73,27 +81,3 @@ class ResourceEditScreen(AsyncYamlEditScreen):
     def fetch_resource(self) -> dict:
         return self.fetcher()
 
-
-
-
-
-# class ResourceEditScreen(Screen):
-
-#     DEFAULT_CSS = """
-#         ResourceEditScreen {
-#             height: 1fr;
-#             width: 1fr;
-#         }
-#         ResourceEdit {
-#             height: 1fr;
-#             width: 1fr;
-#         }
-#     """
-
-#     def __init__(self, language: str = "yaml", resource: dict = {}, **kwargs):
-#         super().__init__(**kwargs)
-#         self.language = language
-#         self.resource = resource
-
-#     def compose(self) -> ComposeResult:
-#         yield ResourceEdit(resource=self.resource)
