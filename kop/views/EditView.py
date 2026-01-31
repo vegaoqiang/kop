@@ -3,7 +3,7 @@ from textual.worker import Worker, WorkerState, get_current_worker
 from textual.screen import Screen
 from textual.app import ComposeResult
 from textual.widgets import LoadingIndicator
-from kop.widgets.Edit import ResourceEdit
+from kop.widgets.Edit import ResourceEdit, PlayLoad
 from typing import Callable
 
 
@@ -56,6 +56,20 @@ class AsyncEditScreen(Screen):
         return a sanitized dict ready for YAML dump.
         """
         raise NotImplementedError
+    
+    def update_resource(self, playload: PlayLoad) -> None:
+        """
+        Subclasses must override this method
+        """
+        raise NotImplementedError
+    
+    def on_resource_edit_resource_update(self, event: ResourceEdit.ResourceUpdate) -> None:
+        try:
+            res = self.update_resource(event.playload)
+            print('on_resource_edit_resource_update:', res)
+        except Exception as e:
+            self.notify(f"Update resource failed: {e}", severity="error")
+            return
 
 
 class ResourceEditScreen(AsyncEditScreen):
@@ -74,10 +88,21 @@ class ResourceEditScreen(AsyncEditScreen):
         }
     """
 
-    def __init__(self, fetcher: Callable, **kwargs):
+    def __init__(self, fetcher: Callable, updater: Callable, **kwargs):
         super().__init__(**kwargs)
         self.fetcher = fetcher
+        self.updater = updater
 
     def fetch_resource(self) -> dict:
         return self.fetcher()
 
+    def update_resource(self, playload: PlayLoad) -> None:
+        return self.updater(
+            name=playload.resource['metadata']['name'], 
+            namespace=playload.resource['metadata']['namespace'], 
+            body=playload.resource,
+            field_manager="kop",
+            # dry_run='All' if playload.dry_run else '',
+            # force=False,
+            # _content_type="application/apply-patch+yaml",
+        )

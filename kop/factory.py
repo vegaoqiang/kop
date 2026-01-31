@@ -68,6 +68,9 @@ class PodFacotry(BaseFactory):
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_pods(name=name, namespace=namespace)
+    
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_pod(name=name, namespace=namespace, **kwargs)
         
     def clean(self, raw) -> List[PodViewModel]:
         return [PodViewModel.clean(pod) for pod in raw.items]

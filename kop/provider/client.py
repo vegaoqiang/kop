@@ -140,6 +140,10 @@ class KbsEndpoint(KbsAuthLoader):
     def get_pod(self, name: str, namespace: str):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.read_namespaced_pod(name=name, namespace=namespace)
+    
+    def patch_pod(self, name: str, namespace: str, body: dict, **kwargs):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.patch_namespaced_pod(name=name, namespace=namespace, body=body, **kwargs)
 
     def list_pods(self, namespace: str | None = None, 
                   watch: bool = False, 

@@ -110,7 +110,7 @@ class PodActionHandler(BaseActionHandlerMixin):
             # serialize pod object to dict
             pod=app.endpoint.api_client.sanitize_for_serialization(pod)
             return pod
-        app.push_screen(ResourceEditScreen(fetcher=fetcher))
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=app.view.FACTORY_CACHE.update))
 
 
         
