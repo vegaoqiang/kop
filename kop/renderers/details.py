@@ -1,8 +1,8 @@
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Container
-from widgets.RichDetail import Row, Title,  Desc, DescPorts, DescAnnotations
-from widgets.Rules import DetailRule
+from kop.widgets.RichDetail import Row, Title,  Desc, DescPorts, DescAnnotations
+from kop.widgets.Rules import DetailRule
 from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel, RawField
 from kop.renderers import formatter

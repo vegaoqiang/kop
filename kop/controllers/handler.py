@@ -92,8 +92,11 @@ class PodActionHandler(BaseActionHandlerMixin):
     @staticmethod
     def delete(action, resource: PodViewModel, app):
         def delete_callback(resource) -> None:
+            print('delete_callback:', resource)
             view = app.view
             view.delete_resource(resource)
+            # pop ActionsViewModal screen
+            app.pop_screen()
         app.push_screen(Delete(resource), callback=delete_callback)
 
 
