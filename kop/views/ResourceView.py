@@ -106,7 +106,7 @@ class ResourceView(Screen):
             self.FACTORY_CACHE.delete(name=row_data.name, namespace=row_data.namespace)
             # pause origin timer and resume after 60s 
             self.timer.pause()
-            if self.resume_timer:
+            if self.resume_timer and not self.resume_timer._task.done():
                 self.resume_timer.reset()
             else:
                 self.resume_timer = self.set_timer(
@@ -114,7 +114,7 @@ class ResourceView(Screen):
                     self.timer.resume
                 )
             # start new interval and repeat 60 times
-            if self.fast_timer:
+            if self.fast_timer and not self.fast_timer._task.done():
                 # reset fast_timer
                 self.fast_timer.reset()
             else:
