@@ -34,6 +34,9 @@ class ResourceView(Screen):
 
     table: TableRenderer | None = None
 
+    fast_timer = None
+    resume_timer = None
+
     def __init__(self, config_file: str, **kwargs) -> None:
         super().__init__(**kwargs)
         self.config_file = config_file
@@ -67,7 +70,9 @@ class ResourceView(Screen):
             right_panel.mount(table)
         else:
             renderered.raw_data = data.items
-            renderered.data = factory.clean(data)
+            cleaned = factory.clean(data)
+            cleaned.sort(key=lambda vm: vm.name)
+            renderered.data = cleaned
         
     
     def _update_resource(self) -> None:
@@ -82,13 +87,13 @@ class ResourceView(Screen):
             pause=True
             )
     
-    def on_screen_suspend(self) -> None:
-        if hasattr(self, "timer"):
-            self.timer.pause()
+    # def on_screen_suspend(self) -> None:
+    #     if hasattr(self, "timer"):
+    #         self.timer.pause()
 
-    def on_screen_resume(self) -> None:
-        if hasattr(self, "timer"):
-            self.timer.resume()
+    # def on_screen_resume(self) -> None:
+    #     if hasattr(self, "timer"):
+    #         self.timer.resume()
 
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
@@ -101,16 +106,23 @@ class ResourceView(Screen):
             self.FACTORY_CACHE.delete(name=row_data.name, namespace=row_data.namespace)
             # pause origin timer and resume after 60s 
             self.timer.pause()
-            self.set_timer(
-                60,
-                self.timer.resume
-            )
-            # start new interval and repeat 60 times
-            self.set_interval(
-                1, 
-                self._update_resource, 
-                repeat=60
+            if self.resume_timer:
+                self.resume_timer.reset()
+            else:
+                self.resume_timer = self.set_timer(
+                    60,
+                    self.timer.resume
                 )
+            # start new interval and repeat 60 times
+            if self.fast_timer:
+                # reset fast_timer
+                self.fast_timer.reset()
+            else:
+                self.fast_timer = self.set_interval(
+                    1, 
+                    self._update_resource, 
+                    repeat=60
+                    )
             self.notify(f"Delete {self.resource_type} {row_data.name} success", severity="information")
         except Exception as e:
             self.notify(f"Delete {self.resource_type} {row_data.name} failed: {e}", severity="error")

@@ -57,6 +57,7 @@ class BaseFactory(ABC):
         """create renderer from detail models"""
         raise NotImplementedError
     
+    
 
 class PodFacotry(BaseFactory):
     """factory for pods"""
@@ -80,7 +81,7 @@ class PodFacotry(BaseFactory):
     
     def create_renderer(self, data) -> TableRenderer:
         cleaned = self.clean(data)
-        cleaned.sort(key=lambda p: p.name)
+        cleaned.sort(key=lambda vm: vm.name)
         return TableRenderer(
             columns=PodViewModel.get_columns(),
             data=cleaned,

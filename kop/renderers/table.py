@@ -147,27 +147,33 @@ class TableRenderer(Vertical):
                 self.row_map[row.name] = base_row
                 yield base_row
 
-    def watch_data(self, old_value: list, new_value: list) -> None:
-        if old_value == new_value:
-            return
-        
+    async def watch_data(self, old_value: list, new_value: list) -> None:
         new_value_map: dict[str, dict] = {row.name: row for row in new_value}
         # remove a row if it is not in new_value
         for name in list(self.row_map):
             if name not in new_value_map:
-                self.row_map[name].remove()
+                await self.row_map[name].remove()
                 del self.row_map[name]
         
         # add new row if it is not in self.row_map
         # update row if it is in self.row_map
         list_view = self.query_one(ListView)
         for name, new_row_data in new_value_map.items():
+            new_index = self.data.index(new_row_data)
             if name in self.row_map:
-                self.row_map[name].update_row_data(new_row_data)
+                row = self.row_map[name]
+                row.update_row_data(new_row_data)
+                # determine if the position of an existing row in the table has changed.
+                current_index = list_view.children.index(row)
+                if current_index != new_index:
+                    list_view.pop(current_index)
+                    list_view.insert(new_index, [row])
             else:
                 row = BaseRow(new_row_data, self.columns)
                 self.row_map[name] = row
-                list_view.append(row)
+                # new row is inserted into the table based on its list position.
+                list_view.insert(new_index, [row])
+
     
     def watch_raw_data(self, old_value: list, new_value: list) -> None:
         if old_value == new_value:
