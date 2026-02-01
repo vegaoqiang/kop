@@ -79,9 +79,11 @@ class PodFacotry(BaseFactory):
         return PodDetailModel.clean(raw)
     
     def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda p: p.name)
         return TableRenderer(
             columns=PodViewModel.get_columns(),
-            data=self.clean(data),
+            data=cleaned,
             raw_data=data.items
         )
 
