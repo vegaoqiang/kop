@@ -204,13 +204,9 @@ class ContainerModel(ViewModel):
     image: str = field(default="", metadata={"title": "Image"})
     image_pull_policy: str = field(default="", metadata={"title": "Pull Policy"})
     environmnet: List[V1EnvVar] | str = field(default="", metadata={"title": "Environment"})
-    # mount: str = field(default="", metadata={"title": "Mount"})
     arguments: str = field(default="", metadata={"title": "Arguments"})
     command: str = field(default="", metadata={"title": "Command"})
     container_statuses: ContainerStatusModel | None = field(default=None, metadata={"title": "Status"})
-    # liveness_probe: V1Probe | None = field(default=None, metadata={"title": "Liveness Probe"})
-    # readiness_probe: V1Probe | None = field(default=None, metadata={"title": "Readiness Probe"})
-    # startup_probe: V1Probe | None = field(default=None, metadata={"title": "Startup Probe"})
     ports: List[V1ContainerPort] | None = field(default=None, metadata={"title": "Port"})
     volume_mounts: List[V1VolumeMount] | None = field(default=None, metadata={"title": "Volume Mount"})
     resources: V1ResourceRequirements | None = field(default=None, metadata={"title": "Resources"})
@@ -227,12 +223,8 @@ class ContainerModel(ViewModel):
             image=data.image, # type: ignore
             image_pull_policy=data.image_pull_policy, # type: ignore
             environmnet=data.env, # type: ignore
-            # mount=data.volume_mounts, # type: ignore
             arguments=data.args, # type: ignore
             command=data.command, # type: ignore
-            # liveness_probe=data.liveness_probe,
-            # readiness_probe=data.readiness_probe,
-            # startup_probe=data.startup_probe,
             probe={'liveness': data.liveness_probe, 
                    'readiness': data.readiness_probe, 
                    'startup': data.startup_probe},
@@ -277,8 +269,7 @@ class PodViewModel(ViewModel):
             name=data.metadata.name, # type: ignore
             namespace=data.metadata.namespace, # type: ignore
             node=data.spec.node_name, # type: ignore
-            status=data.status.phase, # type: ignore
-            # containers=str(len(data.spec.containers)), # type: ignore
+            status=cls.get_pod_status(data), # type: ignore
             containers=[ContainerModel(_raw=cs) for cs in data.spec.containers], # type: ignore
             restarts=str(sum(cs.restart_count for cs in data.status.container_statuses)), # type: ignore
             controlled_by=data.metadata.owner_references[0].kind if data.metadata.owner_references else "", # type: ignore
@@ -286,6 +277,47 @@ class PodViewModel(ViewModel):
             age=cls.get_age_text(data.status.start_time), # type: ignore
             created=f"{cls.get_created_text(data.status.start_time)}  Age: {cls.get_age_text(data.status.start_time)}", # type: ignore
         )
+    
+    @staticmethod
+    def get_pod_status(pod: V1Pod) -> str:
+        metadata = pod.metadata
+        status = pod.status
+
+        if metadata and metadata.deletion_timestamp:
+            return "Terminating"
+
+        # phase=Failed + reason=Evicted
+        if status and status.phase == "Failed" and status.reason == "Evicted":
+            return "Evicted"
+
+        # container level status
+        container_statuses = (
+            status.container_statuses or []
+        ) + (
+            status.init_container_statuses or []
+        )
+
+        for cs in container_statuses:
+            state = cs.state
+            if not state:
+                continue
+
+            # Waiting 
+            if state.waiting:
+                reason = state.waiting.reason
+                if reason:
+                    return reason  # CrashLoopBackOff / ImagePullBackOff / ErrImagePull
+
+            # Terminated but abnormal
+            if state.terminated:
+                if state.terminated.exit_code != 0:
+                    return state.terminated.reason or "Error"
+
+        # default get pod phase
+        if status and status.phase:
+            return status.phase
+
+        return "Unknown"
 
 
 @dataclass

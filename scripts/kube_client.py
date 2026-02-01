@@ -6,7 +6,12 @@ k = KbsEndpoint(config_file="/Users/gaoxiang/Library/Application Support/OpenLen
 #     if d.metadata.name == "coredns":
 #         print(d)
 
+# pods = k.list_pods()
+# for p in pods.items:
+#     if p.metadata.name == "nginx-deployment-8c47f7c45-jmgwf":
+#         print(p)
+
 pods = k.list_pods()
 for p in pods.items:
-    if p.metadata.name == "nginx-deployment-8c47f7c45-jmgwf":
+    if "nginx-deployment" in p.metadata.name:# == "nginx-deployment":
         print(p)
