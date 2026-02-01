@@ -271,7 +271,7 @@ class PodViewModel(ViewModel):
             node=data.spec.node_name, # type: ignore
             status=cls.get_pod_status(data), # type: ignore
             containers=[ContainerModel(_raw=cs) for cs in data.spec.containers], # type: ignore
-            restarts=str(sum(cs.restart_count for cs in data.status.container_statuses)), # type: ignore
+            restarts=str(sum(cs.restart_count for cs in data.status.container_statuses)) if data.status.container_statuses else "", # type: ignore
             controlled_by=data.metadata.owner_references[0].kind if data.metadata.owner_references else "", # type: ignore
             qos=data.status.qos_class, # type: ignore
             age=cls.get_age_text(data.status.start_time), # type: ignore
