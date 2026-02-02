@@ -136,7 +136,8 @@ class TableRenderer(Vertical):
 
     data = reactive(list)
     raw_data = reactive(list)
-    selected_item = None
+    # save Selected or Highlighted row object
+    picked_row = None
     
     def __init__(self, columns: list, data: list, raw_data: list, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -200,26 +201,26 @@ class TableRenderer(Vertical):
         selected  = item.row_data.name
         self.post_message(self.RowSelectedEvent(raw_data=self.raw_data_map[selected]))
 
-        self._style_row(prev_item=self.selected_item, next_item=item)
-        self.selected_item = item
+        self._style_row(prev_row=self.picked_row, next_row=item)
+        self.picked_row = item
 
     @on(ListView.Highlighted)
     def handler_highlighted(self, event: ListView.Highlighted):
         item: BaseRow = event.item
-        self._style_row(prev_item=self.selected_item, next_item=item)
-        self.selected_item = item
+        self._style_row(prev_row=self.picked_row, next_row=item)
+        self.picked_row = item
     
-    def _style_row(self, prev_item: BaseRow|None, next_item: BaseRow) -> None:
+    def _style_row(self, prev_row: BaseRow|None, next_row: BaseRow) -> None:
         """
         set the row height to 3 and the vertical position of the content to middle.
         """
-        if prev_item:
-            prev_item.styles.height = next_item.styles.height
-            prev_item.styles.border_bottom = next_item.styles.border_bottom
-            prev_item.styles.content_align_vertical = next_item.styles.content_align_vertical
-        next_item.styles.height = 3
-        next_item.styles.border_bottom = ("hidden", Color(0, 0, 0, a=0.3))
-        next_item.styles.content_align_vertical = "middle"
+        if prev_row:
+            prev_row.styles.height = next_row.styles.height
+            prev_row.styles.border_bottom = next_row.styles.border_bottom
+            prev_row.styles.content_align_vertical = next_row.styles.content_align_vertical
+        next_row.styles.height = 3
+        next_row.styles.border_bottom = ("hidden", Color(0, 0, 0, a=0.3))
+        next_row.styles.content_align_vertical = "middle"
     
     def on_action_triggered(self, event: ActionTriggered):
         ActionRegistry.dispatch(
