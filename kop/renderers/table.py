@@ -4,6 +4,7 @@ from textual.widgets import ListItem, ListView, Static
 from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.reactive import reactive
+from textual.color import Color
 from kop.models import RawField
 from kop.widgets.Actions import ActionTriggered, SelectActionButton
 from kop.registry import ActionRegistry
@@ -56,6 +57,7 @@ class BaseHeader(ListItem):
         with Horizontal():
             for col in self.columns:
                 yield BaseCol(text=col.title, width=col.width)
+        # yield DetailRule()
 
 
 class BaseRow(ListItem):
@@ -63,6 +65,12 @@ class BaseRow(ListItem):
     DEFAULT_CSS = """
         Horizontal {
             width: 100%;
+            align-vertical: middle;
+        }
+        BaseRow {
+            height: 2;
+            width: 1fr;
+            border-bottom: solid $surface-darken-2 30%;
         }
     """
 
@@ -84,6 +92,7 @@ class BaseRow(ListItem):
                     select_action.styles.width = f"{col.width}fr"
                     select_action.row_data = self.row_data
                     yield select_action
+        # yield DetailRule()
 
     def watch_row_data(self, old_value: dict, new_value: dict) -> None:
         if old_value == new_value:
@@ -114,8 +123,9 @@ class TableRenderer(Vertical):
               background: $surface;
           }
           BaseRow {
-                height: 1;
+                height: 2;
                 width: 1fr;
+                content-align: left middle;
             }
         }
     """
@@ -126,6 +136,7 @@ class TableRenderer(Vertical):
 
     data = reactive(list)
     raw_data = reactive(list)
+    selected_item = None
     
     def __init__(self, columns: list, data: list, raw_data: list, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -188,7 +199,27 @@ class TableRenderer(Vertical):
         item: BaseRow = event.item
         selected  = item.row_data.name
         self.post_message(self.RowSelectedEvent(raw_data=self.raw_data_map[selected]))
-        
+
+        self._style_row(prev_item=self.selected_item, next_item=item)
+        self.selected_item = item
+
+    @on(ListView.Highlighted)
+    def handler_highlighted(self, event: ListView.Highlighted):
+        item: BaseRow = event.item
+        self._style_row(prev_item=self.selected_item, next_item=item)
+        self.selected_item = item
+    
+    def _style_row(self, prev_item: BaseRow|None, next_item: BaseRow) -> None:
+        """
+        set the row height to 3 and the vertical position of the content to middle.
+        """
+        if prev_item:
+            prev_item.styles.height = next_item.styles.height
+            prev_item.styles.border_bottom = next_item.styles.border_bottom
+            prev_item.styles.content_align_vertical = next_item.styles.content_align_vertical
+        next_item.styles.height = 3
+        next_item.styles.border_bottom = ("hidden", Color(0, 0, 0, a=0.3))
+        next_item.styles.content_align_vertical = "middle"
     
     def on_action_triggered(self, event: ActionTriggered):
         ActionRegistry.dispatch(
