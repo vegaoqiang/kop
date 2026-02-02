@@ -137,7 +137,7 @@ class TableRenderer(Vertical):
     data = reactive(list)
     raw_data = reactive(list)
     # save Selected or Highlighted row object
-    picked_row = None
+    picked_row: BaseRow|None = None
     
     def __init__(self, columns: list, data: list, raw_data: list, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -205,7 +205,7 @@ class TableRenderer(Vertical):
         self.picked_row = item
 
     @on(ListView.Highlighted)
-    def handler_highlighted(self, event: ListView.Highlighted):
+    def handle_highlighted(self, event: ListView.Highlighted):
         item: BaseRow = event.item
         self._style_row(prev_row=self.picked_row, next_row=item)
         self.picked_row = item
