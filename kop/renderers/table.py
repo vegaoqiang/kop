@@ -70,7 +70,7 @@ class BaseRow(ListItem):
         BaseRow {
             height: 2;
             width: 1fr;
-            border-bottom: solid $surface-darken-2 30%;
+            border-bottom: solid $block-hover-background;
         }
     """
 
