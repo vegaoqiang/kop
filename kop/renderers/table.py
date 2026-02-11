@@ -5,8 +5,10 @@ from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.reactive import reactive
 from textual.color import Color
+from textual.events import Focus
 from kop.models import RawField
 from kop.widgets.Actions import ActionTriggered, SelectActionButton
+from kop.widgets.Panel import ResourcePanel
 from kop.registry import ActionRegistry
 
 
@@ -114,6 +116,7 @@ class TableRenderer(Vertical):
         TableRenderer {
           width: 1fr;
           height: 1fr;
+          layer: below;
           & > BaseHeader {
               height: 1;
               overflow: hidden hidden;
@@ -127,6 +130,9 @@ class TableRenderer(Vertical):
                 width: 1fr;
                 content-align: left middle;
             }
+            ResourcePanel {
+                height: 3;
+            }
         }
     """
 
@@ -138,6 +144,8 @@ class TableRenderer(Vertical):
     raw_data = reactive(list)
     # save Selected or Highlighted row object
     picked_row: BaseRow|None = None
+
+    can_focus = True
     
     def __init__(self, columns: list, data: list, raw_data: list, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -152,6 +160,7 @@ class TableRenderer(Vertical):
             self.raw_data_map: dict[str, dict] = {row.metadata.name: row for row in self.raw_data}
         
     def compose(self) -> ComposeResult:
+        yield ResourcePanel("Pods", self.raw_data_map, self.raw_data_map.keys())
         yield BaseHeader(self.columns)
         with ListView():
             for row in self.data:
@@ -209,6 +218,15 @@ class TableRenderer(Vertical):
         item: BaseRow = event.item
         self._style_row(prev_row=self.picked_row, next_row=item)
         self.picked_row = item
+
+    @on(Focus)
+    def handle_focus(self, event: Focus):
+        """
+        when user press `tab` key change focus from left side menu to right side table (self),
+        make focus on table instead of `ResourcePanel`.
+        """
+        self.query_one(ListView).focus()
+
     
     def _style_row(self, prev_row: BaseRow|None, next_row: BaseRow) -> None:
         """

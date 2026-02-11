@@ -3,14 +3,20 @@ from textual.app import ComposeResult, App
 from textual.containers import Horizontal
 from textual.widgets import Static, Footer
 from kop.widgets.SideMenu import SideMenu
+from kop.widgets.Panel import NamespaceSelection
 from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.provider.client import KbsEndpoint
 
 
+
+
 class ResourceView(Screen):
 
     DEFAULT_CSS = """
+        ResourceView {
+            layers: below above;
+        }
         SideMenu {
             dock: left;
             height: 100%;
@@ -102,6 +108,26 @@ class ResourceView(Screen):
         raw_data = event.raw_data
         renderer = self.FACTORY_CACHE.create_detail_renderer(raw_data)
         self.app.push_screen(renderer)
+
+    def on_resource_panel_selected_namespace(self, event) -> None:
+        print('on_resource_panel_selected_namespace:', event)
+        namespaces = event.namespaces
+        self.call_later(self._show_panel_selected_namespace, namespaces)
+
+    def _show_panel_selected_namespace(self, namespaces) -> None:
+        print('_show_panel_selected_namespace:')
+        selection_list = NamespaceSelection(namespaces)
+        selection_list.styles.height = 10
+        selection_list.styles.width = 50
+        selection_list.styles.offset = (10, 3)
+        selection_list.styles.layer = "above"
+        right_panel = self.query_one("#right_panel")
+        right_panel.mount(selection_list)
+        right_panel.refresh(layout=True)
+        right_panel.refresh(repaint=True)
+        selection_list.focus()
+    
+
 
     def delete_resource(self, row_data: PodViewModel) -> None:
         try:
