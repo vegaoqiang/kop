@@ -137,6 +137,10 @@ class KbsAuthLoader:
 
 class KbsEndpoint(KbsAuthLoader):
 
+    def list_namespaces(self):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.list_namespace()
+
     def get_pod(self, name: str, namespace: str):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.read_namespaced_pod(name=name, namespace=namespace)
