@@ -38,7 +38,7 @@ class ResourcePanel(Static):
         }
 
     """
-    namespaces = Reactive(list[str])
+    # namespaces = Reactive(list[str])
     
     resource_type = Reactive(str)
 
@@ -67,10 +67,19 @@ class ResourcePanel(Static):
     def watch_resource_count(self, resource_count: int) -> None:
        self.query_one("#resource_count", Label).update(f"Total: {resource_count} items")
 
+    def update_namespaces(self, namespaces: list[str]) -> None:
+       self.query_one("#namespace_select", Select).set_options((namespace, namespace) for namespace in namespaces)
+
     @on(Input.Blurred, "#search_input")
     def handle_search(self, event: Input.Blurred) -> None:
         pass
 
+    def _on_mount(self, event: Mount) -> None:
+        self.post_message(self.RequireNamespace().set_sender(self))
+
+    class RequireNamespace(Message):
+        def __init__(self) -> None:
+            super().__init__()
 
     class SelectedNamespace(Message):
         def __init__(self, namespaces: list[str]) -> None:

@@ -158,6 +158,10 @@ class ResourceView(Screen):
         resource_panel.set_class(show_resource_panel, "-resource_panel")
         resource_panel.resource_type = resource_type
 
+    async def on_resource_panel_require_namespace(self, event: ResourcePanel.RequireNamespace) -> None:
+        namespaces = self.endpoint.list_namespaces()
+        event._sender.update_namespaces([item.metadata.name for item in namespaces.items])
+
 
 
 class ResApp(App):
