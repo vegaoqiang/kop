@@ -116,7 +116,6 @@ class TableRenderer(Vertical):
         TableRenderer {
           width: 1fr;
           height: 1fr;
-          layer: below;
           & > BaseHeader {
               height: 1;
               overflow: hidden hidden;
@@ -160,7 +159,7 @@ class TableRenderer(Vertical):
             self.raw_data_map: dict[str, dict] = {row.metadata.name: row for row in self.raw_data}
         
     def compose(self) -> ComposeResult:
-        yield ResourcePanel("Pods", self.raw_data_map, self.raw_data_map.keys())
+        # yield ResourcePanel(id="resource_panel")
         yield BaseHeader(self.columns)
         with ListView():
             for row in self.data:
@@ -251,3 +250,7 @@ class TableRenderer(Vertical):
         def __init__(self, raw_data):
             super().__init__()
             self.raw_data = raw_data
+
+    # @property
+    # def _query_resource_panel(self):
+    #     return self.query_one("#resource_panel")

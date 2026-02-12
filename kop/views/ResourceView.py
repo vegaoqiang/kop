@@ -1,9 +1,9 @@
 from textual.screen import Screen
 from textual.app import ComposeResult, App
-from textual.containers import Horizontal
+from textual.containers import Horizontal, Vertical
 from textual.widgets import Static, Footer
 from kop.widgets.SideMenu import SideMenu
-from kop.widgets.Panel import NamespaceSelection
+from kop.widgets.Panel import ResourcePanel
 from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.provider.client import KbsEndpoint
@@ -14,18 +14,25 @@ from kop.provider.client import KbsEndpoint
 class ResourceView(Screen):
 
     DEFAULT_CSS = """
-        ResourceView {
-            layers: below above;
-        }
         SideMenu {
             dock: left;
             height: 100%;
             width: 20%;
         } 
-        #right_panel {
+        #resource_container {
             dock: right;
             width: 80%;
             height: 100%;
+        }
+        #right_panel {
+            width: 1fr;
+            height: 1fr;
+        }
+        .-resource_panel {
+            dock: top;
+            display: block;
+            width: 1fr;
+            height: 3;
         }
         Footer {
             dock: bottom;
@@ -50,15 +57,17 @@ class ResourceView(Screen):
 
 
     def compose(self) -> ComposeResult: 
-            with Horizontal():
-                yield SideMenu(id="side_menu")
-                yield Static("请选择左侧资源类型进行查看", id="right_panel")
-                yield Footer(id="footer")
+            yield SideMenu(id="side_menu")
+            with Vertical(id="resource_container"):
+                yield ResourcePanel(id="resource_panel")
+                yield Static("请选择左侧资源类型进行查看", id="resource_render")
+            yield Footer(id="footer")
     
     
     def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
         self.resource_type = resource_type = event.menu_id
         self._render_resource(resource_type)
+        self.call_after_refresh(self._update_resource_panel, resource_type)
 
         if hasattr(self, "timer"):
             self.timer.resume()
@@ -70,8 +79,8 @@ class ResourceView(Screen):
         self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
         data = factory.fetch()
         if not renderered:
-            self.table= table = factory.create_renderer(data)
-            right_panel = self.query_one("#right_panel")
+            self.table = table = factory.create_renderer(data)
+            right_panel = self.query_one("#resource_render")
             right_panel.remove_children()
             right_panel.mount(table)
         else:
@@ -109,26 +118,6 @@ class ResourceView(Screen):
         renderer = self.FACTORY_CACHE.create_detail_renderer(raw_data)
         self.app.push_screen(renderer)
 
-    def on_resource_panel_selected_namespace(self, event) -> None:
-        print('on_resource_panel_selected_namespace:', event)
-        namespaces = event.namespaces
-        self.call_later(self._show_panel_selected_namespace, namespaces)
-
-    def _show_panel_selected_namespace(self, namespaces) -> None:
-        print('_show_panel_selected_namespace:')
-        selection_list = NamespaceSelection(namespaces)
-        selection_list.styles.height = 10
-        selection_list.styles.width = 50
-        selection_list.styles.offset = (10, 3)
-        selection_list.styles.layer = "above"
-        right_panel = self.query_one("#right_panel")
-        right_panel.mount(selection_list)
-        right_panel.refresh(layout=True)
-        right_panel.refresh(repaint=True)
-        selection_list.focus()
-    
-
-
     def delete_resource(self, row_data: PodViewModel) -> None:
         try:
             self.FACTORY_CACHE.delete(name=row_data.name, namespace=row_data.namespace)
@@ -154,6 +143,16 @@ class ResourceView(Screen):
             self.notify(f"Delete {self.resource_type} {row_data.name} success", severity="information")
         except Exception as e:
             self.notify(f"Delete {self.resource_type} {row_data.name} failed: {e}", severity="error")
+
+
+    def _update_resource_panel(self, resource_type: str) -> None:
+        show_resource_panel = resource_type != "nodes"
+        if not show_resource_panel:
+            return
+        resource_panel = self.query_one("#resource_panel", ResourcePanel)
+        resource_panel.set_class(show_resource_panel, "-resource_panel")
+        resource_panel.resource_type = resource_type
+
 
 
 class ResApp(App):

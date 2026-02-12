@@ -1,9 +1,9 @@
 from textual import on
 from textual.message import Message
-from textual.events import Focus
+from textual.events import Mount
+from textual.reactive import Reactive
 from textual.app import ComposeResult
-from textual.widgets import Static, SelectionList, Input, Label, Select
-from textual.widgets.selection_list import Selection
+from textual.widgets import Static, Input, Label, Select
 from textual.containers import Grid
 
 
@@ -14,9 +14,10 @@ class ResourcePanel(Static):
 
     DEFAULT_CSS = """
         ResourcePanel {
-            width: 1fr;
-            height: 3;
-            dock: top;
+            # width: 1fr;
+            # height: 3;
+            # dock: top;
+            display: none;
         }
         Grid {
             grid-size: 4 1;
@@ -37,32 +38,34 @@ class ResourcePanel(Static):
         }
 
     """
-    LINES = """I must not fear.
-    Fear is the mind-killer.
-    Fear is the little-death that brings total obliteration.
-    I will face my fear.
-    I will permit it to pass over me and through me.""".splitlines()
+    namespaces = Reactive(list[str])
+    
+    resource_type = Reactive(str)
 
-    def __init__(self, resource_type: str, resources: dict, namespaces: list[str]) -> None:
-        super().__init__()
-        self.resource_type = resource_type
-        self.resource = resources
-        self.namespaces = namespaces
+    resource_count = Reactive(int)
+
+
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
 
     def compose(self) -> ComposeResult:
         with Grid():
             yield Label(self.resource_type, id="resource_type")
-            yield Label(f"Total: {len(self.resource)} items", id="resource_count")
-            # yield Input(placeholder=f"Namespaces: {', '.join(self.namespaces)}", id="namespace_input")
-            yield Select((line, line) for line in self.LINES)
+            yield Label(f"Total: {self.resource_count} items", id="resource_count")
+            yield Select(options=[("All namespaces", "All namespaces")], 
+                         value="All namespaces",
+                         prompt="Press enter or click to select namespace", 
+                         tooltip="Press enter or click to select namespace", 
+                         allow_blank=True, 
+                         id="namespace_select")
             yield Input(placeholder=f"Press / to search {self.resource_type} 🔍", id="search_input")
 
 
-    # @on(Focus)
-    # def handle_namespace(self, event: Focus) -> None:
-    #     print('handle_namespace:', event)
-    #     self.post_message(self.SelectedNamespace(self.namespaces))
-    #     # event.stop()
+    def watch_resource_type(self, resource_type: str) -> None:
+       self.query_one("#resource_type", Label).update(resource_type)
+
+    def watch_resource_count(self, resource_count: int) -> None:
+       self.query_one("#resource_count", Label).update(f"Total: {resource_count} items")
 
     @on(Input.Blurred, "#search_input")
     def handle_search(self, event: Input.Blurred) -> None:
@@ -74,20 +77,3 @@ class ResourcePanel(Static):
             super().__init__()
             self.namespaces = namespaces
         
-
-
-
-class NamespaceSelection(Static):
-    
-    def __init__(self, namespaces: list[str]) -> None:
-        super().__init__()
-        self.namespaces = namespaces
-
-
-    def compose(self) -> ComposeResult:
-        yield SelectionList(
-                Selection("All namespaces", "all", True),
-                Selection("default", "default"),
-                Selection("kube-system", "kube-system"),
-                id="selection_list"
-        )
