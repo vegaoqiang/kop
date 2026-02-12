@@ -110,8 +110,8 @@ class MultipleSelectOverlay(SelectionList):
         for index, option in enumerate(self.options):
             prompt = option.prompt
             if isinstance(prompt, Content):
-                prompt = prompt._text.lower()
-            if isinstance(prompt, Text):
+                lower_prompt = prompt._text.lower()
+            elif isinstance(prompt, Text):
                 lower_prompt = prompt.plain.lower()
             elif isinstance(prompt, str):
                 lower_prompt = prompt.lower()
