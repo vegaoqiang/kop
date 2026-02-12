@@ -8,7 +8,6 @@ from textual.color import Color
 from textual.events import Focus
 from kop.models import RawField
 from kop.widgets.Actions import ActionTriggered, SelectActionButton
-from kop.widgets.Panel import ResourcePanel
 from kop.registry import ActionRegistry
 
 
@@ -159,7 +158,6 @@ class TableRenderer(Vertical):
             self.raw_data_map: dict[str, dict] = {row.metadata.name: row for row in self.raw_data}
         
     def compose(self) -> ComposeResult:
-        # yield ResourcePanel(id="resource_panel")
         yield BaseHeader(self.columns)
         with ListView():
             for row in self.data:
@@ -250,7 +248,3 @@ class TableRenderer(Vertical):
         def __init__(self, raw_data):
             super().__init__()
             self.raw_data = raw_data
-
-    # @property
-    # def _query_resource_panel(self):
-    #     return self.query_one("#resource_panel")

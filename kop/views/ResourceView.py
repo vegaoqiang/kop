@@ -47,6 +47,8 @@ class ResourceView(Screen):
 
     table: TableRenderer | None = None
 
+    panel: ResourcePanel | None = None
+
     fast_timer = None
     resume_timer = None
 
@@ -59,7 +61,8 @@ class ResourceView(Screen):
     def compose(self) -> ComposeResult: 
             yield SideMenu(id="side_menu")
             with Vertical(id="resource_container"):
-                yield ResourcePanel(id="resource_panel")
+                self.panel = ResourcePanel(id="resource_panel")
+                yield self.panel
                 yield Static("请选择左侧资源类型进行查看", id="resource_render")
             yield Footer(id="footer")
     
@@ -88,6 +91,8 @@ class ResourceView(Screen):
             cleaned = factory.clean(data)
             cleaned.sort(key=lambda vm: vm.name)
             renderered.data = cleaned
+
+        self.panel.resource_count = len(data.items)
         
     
     def _update_resource(self) -> None:

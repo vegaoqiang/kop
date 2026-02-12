@@ -26,7 +26,7 @@ class ResourcePanel(Static):
         #resource_type {
             width: auto;
             height: 3;
-            content-align: left middle;
+            content-align: center middle;
             text-style: bold;
             color: $block-cursor-background;
         }
