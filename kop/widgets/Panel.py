@@ -5,10 +5,16 @@ from textual.reactive import Reactive
 from textual.app import ComposeResult
 from textual.widgets import Static, Input, Label, Select
 from textual.containers import Grid
+from rich.console import RenderableType
+
 
 
 
 class ResourcePanel(Static):
+
+    ALL_NAMESPACE: str = "__all__"
+
+    DEFAULT_NAMESPACE_OPTION: tuple[RenderableType, str] = ("All namespaces", ALL_NAMESPACE)
     
     can_focus = False
 
@@ -52,10 +58,9 @@ class ResourcePanel(Static):
         with Grid():
             yield Label(self.resource_type, id="resource_type")
             yield Label(f"Total: {self.resource_count} items", id="resource_count")
-            yield Select(options=[("All namespaces", "All namespaces")], 
-                         value="All namespaces",
+            yield Select(options=[], 
                          prompt="Press enter or click to select namespace", 
-                         tooltip="Press enter or click to select namespace", 
+                         tooltip="Press ] to open namespace options", 
                          allow_blank=True, 
                          id="namespace_select")
             yield Input(placeholder=f"Press / to search {self.resource_type} 🔍", id="search_input")
@@ -68,7 +73,11 @@ class ResourcePanel(Static):
        self.query_one("#resource_count", Label).update(f"Total: {resource_count} items")
 
     def update_namespaces(self, namespaces: list[str]) -> None:
-       self.query_one("#namespace_select", Select).set_options((namespace, namespace) for namespace in namespaces)
+       options = [self.DEFAULT_NAMESPACE_OPTION]
+       options.extend((namespace, namespace) for namespace in namespaces)
+       select = self.query_one("#namespace_select", Select)
+       select.set_options(options)
+       select.value = self.ALL_NAMESPACE
 
     @on(Input.Blurred, "#search_input")
     def handle_search(self, event: Input.Blurred) -> None:
