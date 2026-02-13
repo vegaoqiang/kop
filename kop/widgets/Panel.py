@@ -44,7 +44,6 @@ class ResourcePanel(Static):
         }
 
     """
-    # namespaces = Reactive(list[str])
     
     resource_type = Reactive(str)
 
@@ -83,6 +82,13 @@ class ResourcePanel(Static):
     def handle_search(self, event: Input.Blurred) -> None:
         pass
 
+    def on_select_changed(self, event: Select.Changed) -> None:
+        event.stop()
+        selected = event.value
+        if selected == Select.BLANK:
+            selected = self.ALL_NAMESPACE
+        self.post_message(self.SelectedNamespace(namespace=selected).set_sender(self))
+        
     def _on_mount(self, event: Mount) -> None:
         self.post_message(self.RequireNamespace().set_sender(self))
 
@@ -91,7 +97,7 @@ class ResourcePanel(Static):
             super().__init__()
 
     class SelectedNamespace(Message):
-        def __init__(self, namespaces: list[str]) -> None:
+        def __init__(self, namespace: str) -> None:
             super().__init__()
-            self.namespaces = namespaces
+            self.namespace = namespace
         

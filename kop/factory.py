@@ -29,7 +29,7 @@ class BaseFactory(ABC):
         self.endpoint = endpoint
 
     @abstractmethod
-    def fetch(self):
+    def fetch(self, namespace: str | None = None):
         """fetch raw data from kube api"""
         raise NotImplementedError
     
@@ -63,9 +63,9 @@ class PodFacotry(BaseFactory):
     """factory for pods"""
     resource_type = "pods"
 
-    def fetch(self):
+    def fetch(self, namespace: str | None = None):
         # client = self._client.core_v1()
-        return self.endpoint.list_pods()
+        return self.endpoint.list_pods(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_pods(name=name, namespace=namespace)

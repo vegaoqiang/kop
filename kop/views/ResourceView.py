@@ -56,6 +56,7 @@ class ResourceView(Screen):
         super().__init__(**kwargs)
         self.config_file = config_file
         self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file)
+        self.namespace = None
 
 
     def compose(self) -> ComposeResult: 
@@ -80,7 +81,7 @@ class ResourceView(Screen):
         if not factory_cls:
             return
         self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
-        data = factory.fetch()
+        data = factory.fetch(namespace=self.namespace)
         if not renderered:
             self.table = table = factory.create_renderer(data)
             right_panel = self.query_one("#resource_render")
@@ -162,6 +163,16 @@ class ResourceView(Screen):
         event.stop()
         namespaces = self.endpoint.list_namespaces()
         event._sender.update_namespaces([item.metadata.name for item in namespaces.items])
+
+    async def on_resource_panel_selected_namespace(self, event: ResourcePanel.SelectedNamespace) -> None:
+        event.stop()
+        namespace = event.namespace
+        if namespace == event._sender.ALL_NAMESPACE:
+            namespace = None
+        self.namespace = namespace
+        self._render_resource(self.resource_type, self.table)
+
+        
 
 
 
