@@ -85,6 +85,7 @@ class ResourcePanel(Static):
     def on_select_changed(self, event: Select.Changed) -> None:
         event.stop()
         selected = event.value
+        # if no namespace is selected, select all
         if selected == Select.BLANK:
             selected = self.ALL_NAMESPACE
         self.post_message(self.SelectedNamespace(namespace=selected).set_sender(self))

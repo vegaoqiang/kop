@@ -166,10 +166,13 @@ class ResourceView(Screen):
 
     async def on_resource_panel_selected_namespace(self, event: ResourcePanel.SelectedNamespace) -> None:
         event.stop()
-        namespace = event.namespace
-        if namespace == event._sender.ALL_NAMESPACE:
-            namespace = None
-        self.namespace = namespace
+        selected_namespace = event.namespace
+        if selected_namespace == self.namespace:
+            return
+        # if all namespace is selected, set namespace to None
+        if selected_namespace == event._sender.ALL_NAMESPACE:
+            selected_namespace = None
+        self.namespace = selected_namespace
         self._render_resource(self.resource_type, self.table)
 
         
