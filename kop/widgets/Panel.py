@@ -18,6 +18,8 @@ class ResourcePanel(Static):
     
     can_focus = False
     # select and input widget can't be focused
+    #     when user press `tab` key change focus from left side menu to right side table (self),
+    #     make focus on table instead of `ResourcePanel`.
     can_focus_children = False
 
     DEFAULT_CSS = """

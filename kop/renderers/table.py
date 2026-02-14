@@ -159,7 +159,7 @@ class TableRenderer(Vertical):
         
     def compose(self) -> ComposeResult:
         yield BaseHeader(self.columns)
-        with ListView():
+        with ListView(id="list_view"):
             for row in self.data:
                 base_row = BaseRow(row_data=row, columns=self.columns)
                 self.row_map[row.name] = base_row
@@ -216,15 +216,6 @@ class TableRenderer(Vertical):
         self._style_row(prev_row=self.picked_row, next_row=item)
         self.picked_row = item
 
-    @on(Focus)
-    def handle_focus(self, event: Focus):
-        """
-        when user press `tab` key change focus from left side menu to right side table (self),
-        make focus on table instead of `ResourcePanel`.
-        """
-        self.query_one(ListView).focus()
-
-    
     def _style_row(self, prev_row: BaseRow|None, next_row: BaseRow) -> None:
         """
         set the row height to 3 and the vertical position of the content to middle.
