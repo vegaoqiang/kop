@@ -1,3 +1,4 @@
+from textual.events import Key
 from textual.screen import Screen
 from textual.app import ComposeResult, App
 from textual.containers import Horizontal, Vertical
@@ -117,6 +118,11 @@ class ResourceView(Screen):
             return
         if hasattr(self, "timer"):
             self.timer.resume()
+
+    def on_key(self, event: Key) -> None:
+        if event.key == "right_square_bracket":
+            namespace_select = self.query_one("#namespace_select").focus()
+            namespace_select.expanded = True
 
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
