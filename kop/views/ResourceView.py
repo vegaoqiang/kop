@@ -123,7 +123,8 @@ class ResourceView(Screen):
         if event.key == "right_square_bracket":
             namespace_select = self.query_one("#namespace_select").focus()
             namespace_select.expanded = True
-
+        if event.key == 'slash':
+            self.query_one("#search_input").focus()
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
         raw_data = event.raw_data
