@@ -17,6 +17,8 @@ class ResourcePanel(Static):
     DEFAULT_NAMESPACE_OPTION: tuple[RenderableType, str] = ("All namespaces", ALL_NAMESPACE)
     
     can_focus = False
+    # select and input widget can't be focused
+    can_focus_children = False
 
     DEFAULT_CSS = """
         ResourcePanel {
