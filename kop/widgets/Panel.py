@@ -62,7 +62,7 @@ class ResourcePanel(Static):
             yield Label(self.resource_type, id="resource_type")
             yield Label(f"Total: {self.resource_count} items", id="resource_count")
             yield Select(options=[], 
-                         prompt="Press ] to select options", 
+                         prompt="Press ] to select options 🍒", 
                          tooltip="Type enter or click to choose a namespace", 
                          allow_blank=True, 
                          id="namespace_select")
@@ -81,10 +81,6 @@ class ResourcePanel(Static):
        select = self.query_one("#namespace_select", Select)
        select.set_options(options)
        select.value = Select.BLANK
-
-    @on(Input.Blurred, "#search_input")
-    def handle_search(self, event: Input.Blurred) -> None:
-        pass
 
     def on_select_changed(self, event: Select.Changed) -> None:
         event.stop()
