@@ -1,3 +1,4 @@
+from textual import work
 from textual.events import Key
 from textual.screen import Screen
 from textual.app import ComposeResult, App
@@ -50,7 +51,15 @@ class ResourceView(Screen):
 
     panel: ResourcePanel | None = None
 
+    # keyword to filter resource
+    keyword: str | None = None
+
+    # fetched resource
+    data: list | None = None
+
+    # 1s interval timer
     fast_timer = None
+    # flag to resume timer
     resume_timer = None
 
     def __init__(self, config_file: str, **kwargs) -> None:
@@ -82,7 +91,9 @@ class ResourceView(Screen):
         if not factory_cls:
             return
         self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
-        data = factory.fetch(namespace=self.namespace)
+        self.data = data = factory.fetch(namespace=self.namespace)
+        if self.keyword:
+            data = factory.filter(data, self.keyword)
         if not renderered:
             self.table = table = factory.create_renderer(data)
             right_panel = self.query_one("#resource_render")
@@ -182,7 +193,23 @@ class ResourceView(Screen):
         self.namespace = selected_namespace
         self._render_resource(self.resource_type, self.table)
 
+    async def on_resource_panel_search_resource(self, event: ResourcePanel.SearchResource) -> None:
+        event.stop()
+        self.keyword = event.query
+        # self._render_resource(self.resource_type, self.table)
+        if not self.data or not self.table:
+            return
+        if not self.keyword:
+            # keyword will be deleted on input
+            filtered = self.data
+        else:
+            filtered = self.FACTORY_CACHE.filter(self.data, self.keyword)
         
+        cleaned = self.FACTORY_CACHE.clean(filtered)
+        cleaned.sort(key=lambda vm: vm.name)
+        self.table.data = cleaned
+        self.panel.resource_count = len(filtered.items)
+
 
 
 

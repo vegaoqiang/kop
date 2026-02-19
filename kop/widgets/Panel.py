@@ -90,6 +90,10 @@ class ResourcePanel(Static):
         if selected == Select.BLANK:
             selected = self.ALL_NAMESPACE
         self.post_message(self.SelectedNamespace(namespace=selected).set_sender(self))
+
+    def on_input_changed(self, event: Input.Changed) -> None:
+        event.stop()
+        self.post_message(self.SearchResource(query=event.value).set_sender(self))
         
     def _on_mount(self, event: Mount) -> None:
         self.post_message(self.RequireNamespace().set_sender(self))
@@ -102,4 +106,9 @@ class ResourcePanel(Static):
         def __init__(self, namespace: str) -> None:
             super().__init__()
             self.namespace = namespace
+
+    class SearchResource(Message):
+        def __init__(self, query: str) -> None:
+            super().__init__()
+            self.query = query
         

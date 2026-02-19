@@ -10,6 +10,9 @@ from kop.models import (PodViewModel,
                     DaemonSetViewModel, 
                     StatefulSetViewModel,
                     PodDetailModel)
+from copy import copy
+
+
 
 
 class BaseFactory(ABC):
@@ -93,6 +96,42 @@ class PodFacotry(BaseFactory):
             columns=PodDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
         )
+    
+    def filter(self, raw, query: str):
+        """
+        raw: V1PodList
+        return: V1PodList. filtered pods
+        """
+        query = query.lower()
+        filtered = []
+        for item in raw.items:
+            if query in item.metadata.name.lower():
+                filtered.append(item)
+                continue
+            if query in item.metadata.namespace.lower():
+                filtered.append(item)
+                continue
+            if query in item.status.phase.lower():
+                filtered.append(item)
+                continue
+            if query in item.status.qos_class.lower():
+                filtered.append(item)
+                continue
+            if query in item.spec.node_name.lower():
+                filtered.append(item)
+                continue
+            owner_references_kind  = item.metadata.owner_references[0].kind if item.metadata.owner_references else ''
+            if query in owner_references_kind.lower():
+                filtered.append(item)
+                continue
+            labels = [f"{k}={v} {k}:{v}" for k, v in item.metadata.labels.items()]
+            if any(query in label.lower() for label in labels):
+                filtered.append(item)
+        # copy origin raw object keep its immutability
+        new_raw = copy(raw)
+        new_raw.items = filtered
+        return new_raw
+
     
 
 class DeploymentFactory(BaseFactory):
