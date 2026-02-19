@@ -62,7 +62,7 @@ class ResourcePanel(Static):
             yield Label(self.resource_type, id="resource_type")
             yield Label(f"Total: {self.resource_count} items", id="resource_count")
             yield Select(options=[], 
-                         prompt="Press ] to select options 🍒", 
+                         prompt="Press ] to select a namespace 🍒", 
                          tooltip="Type enter or click to choose a namespace", 
                          allow_blank=True, 
                          id="namespace_select")
@@ -71,6 +71,7 @@ class ResourcePanel(Static):
 
     def watch_resource_type(self, resource_type: str) -> None:
        self.query_one("#resource_type", Label).update(resource_type)
+       self.query_one("#search_input", Input).placeholder = f"Press / to search {resource_type} 🔍"
 
     def watch_resource_count(self, resource_count: int) -> None:
        self.query_one("#resource_count", Label).update(f"Total: {resource_count} items")
