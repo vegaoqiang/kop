@@ -5,6 +5,7 @@ from textual.reactive import Reactive
 from textual.app import ComposeResult
 from textual.widgets import Static, Input, Label, Select
 from textual.containers import Grid
+from textual.timer import Timer
 from rich.console import RenderableType
 
 
@@ -53,6 +54,9 @@ class ResourcePanel(Static):
 
     resource_count = Reactive(int)
 
+    # debounce search
+    search_timer: Timer | None = None
+    debounce_time: float = 0.3
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -93,7 +97,17 @@ class ResourcePanel(Static):
 
     def on_input_changed(self, event: Input.Changed) -> None:
         event.stop()
-        self.post_message(self.SearchResource(query=event.value).set_sender(self))
+        if self.search_timer:
+            self.search_timer.stop()
+            self.search_timer = None
+        
+        def _post_event() -> None:
+            self.post_message(self.SearchResource(query=event.value).set_sender(self))
+
+        self.search_timer = self.set_timer(
+            self.debounce_time, 
+            _post_event
+            )
         
     def _on_mount(self, event: Mount) -> None:
         self.post_message(self.RequireNamespace().set_sender(self))
