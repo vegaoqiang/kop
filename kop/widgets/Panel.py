@@ -1,4 +1,3 @@
-from textual import on
 from textual.message import Message
 from textual.events import Mount
 from textual.reactive import Reactive
@@ -6,6 +5,7 @@ from textual.app import ComposeResult
 from textual.widgets import Static, Input, Label, Select
 from textual.containers import Grid
 from textual.timer import Timer
+from textual.binding import Binding
 from rich.console import RenderableType
 
 
@@ -57,6 +57,10 @@ class ResourcePanel(Static):
     # debounce search
     search_timer: Timer | None = None
     debounce_time: float = 0.3
+
+    BINDINGS = [
+        Binding(key="escape", action="clear", show=False),
+    ]
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -111,6 +115,12 @@ class ResourcePanel(Static):
         
     def _on_mount(self, event: Mount) -> None:
         self.post_message(self.RequireNamespace().set_sender(self))
+
+    def action_clear(self) -> None:
+        """
+        clear search input
+        """
+        self.query_one("#search_input", Input).clear()
 
     class RequireNamespace(Message):
         def __init__(self) -> None:
