@@ -135,7 +135,10 @@ class ResourceView(Screen):
             namespace_select = self.query_one("#namespace_select").focus()
             namespace_select.expanded = True
         if event.key == 'slash':
-            self.query_one("#search_input").focus()
+            if self.app.focused.id == 'side_menu':
+                self.query_one("#search_menu").focus()
+            else:
+                self.query_one("#search_input").focus()
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
         raw_data = event.raw_data
