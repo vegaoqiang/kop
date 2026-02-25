@@ -6,7 +6,6 @@ from textual.reactive import Reactive
 from textual.widgets import Footer, ListItem, ListView, Label, Input, Static
 from typing import List
 from types import SimpleNamespace
-from copy import copy
 
 
 
