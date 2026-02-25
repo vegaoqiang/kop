@@ -11,55 +11,6 @@ from copy import copy
 
 
 
-NODE_MENUS: List[SimpleNamespace] = [
-    SimpleNamespace(id='nodes', name="Nodes")
-]
-
-WOEKLOADS_MENUS: List[SimpleNamespace] = [
-   SimpleNamespace(id='pods', name="Pods"),
-   SimpleNamespace(id='deployments', name="Deployments"),
-   SimpleNamespace(id='daemonsets', name="DaemonSets"),
-   SimpleNamespace(id='statefulsets', name="StatefulSets"),
-   SimpleNamespace(id='jobs', name="Jobs"),
-   SimpleNamespace(id='cronjobs', name="CronJobs")
-   ]
-
-CONFIG_MENUS: List[SimpleNamespace] = [
-    SimpleNamespace(id='configmaps', name="ConfigMaps"),
-    SimpleNamespace(id='secrets', name="Secrets")
-]
-
-NETWORK_MENUS: List[SimpleNamespace] = [
-    SimpleNamespace(id='services', name="Services"),
-    SimpleNamespace(id='endpoints', name="Endpoints"),
-    SimpleNamespace(id='ingresses', name="Ingresses"),
-    SimpleNamespace(id='ingressclasses', name="Ingress Classes"),
-    SimpleNamespace(id='networkpolicies', name="Network Policies")
-]
-
-STORAGE_MENUS: List[SimpleNamespace] = [
-    SimpleNamespace(id='persistentvolumes', name="Persistent Volumes"),
-    SimpleNamespace(id='persistentvolumeclaims', name="Persistent Volume Claims"),
-    SimpleNamespace(id='storageclasses', name="Storage Classes")
-]
-
-ACCESS_MENUS: List[SimpleNamespace] = [
-    SimpleNamespace(id='serviceaccounts', name="Service Accounts"),
-    SimpleNamespace(id='roles', name="Roles"),
-    SimpleNamespace(id='rolebindings', name="Role Bindings"),
-    SimpleNamespace(id='clusterroles', name="Cluster Roles"),    
-    SimpleNamespace(id='clusterrolebindings', name="Cluster Role Bindings")
-]
-
-DISPLAY: List = [
-    NODE_MENUS,
-    WOEKLOADS_MENUS,
-    CONFIG_MENUS,
-    NETWORK_MENUS,
-    STORAGE_MENUS,
-    ACCESS_MENUS
-]
-
 MENU: List[SimpleNamespace] = [
     SimpleNamespace(id='nodes', name="Nodes"),
     SimpleNamespace(id='pods', name="Pods"),
