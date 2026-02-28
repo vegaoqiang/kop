@@ -74,7 +74,6 @@ class ResourceView(Screen):
             with Vertical(id="resource_container"):
                 self.panel = ResourcePanel(id="resource_panel")
                 yield self.panel
-                yield Static("请选择左侧资源类型进行查看", id="resource_render")
             yield Footer(id="footer")
     
     
@@ -96,9 +95,9 @@ class ResourceView(Screen):
             data = factory.filter(data, self.keyword)
         if not renderered:
             self.table = table = factory.create_renderer(data)
-            right_panel = self.query_one("#resource_render")
-            right_panel.remove_children()
-            right_panel.mount(table)
+            resource_container = self.query_one("#resource_container")
+            resource_container.remove_children(TableRenderer)
+            resource_container.mount(table, after=self.panel)
         else:
             renderered.raw_data = data.items
             cleaned = factory.clean(data)
