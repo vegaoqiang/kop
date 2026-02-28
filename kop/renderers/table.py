@@ -197,6 +197,10 @@ class TableRenderer(Vertical):
         if old_value == new_value:
             return
         self.raw_data_map = {row.metadata.name: row for row in new_value}
+    
+    def _on_focus(self, event: Focus) -> None:
+        # focus on the first item when TableRenderer is focused
+        self.query_one("#list_view", ListView).focus()
 
     @on(ListView.Selected)
     def handle_selected(self, event: ListView.Selected):

@@ -1,9 +1,8 @@
-from textual import work
 from textual.events import Key
 from textual.screen import Screen
 from textual.app import ComposeResult, App
-from textual.containers import Horizontal, Vertical
-from textual.widgets import Static, Footer
+from textual.containers import Vertical
+from textual.widgets import Footer
 from kop.widgets.SideMenu import SideMenu
 from kop.widgets.Panel import ResourcePanel
 from kop.registry import ResourceRegistry
@@ -74,7 +73,7 @@ class ResourceView(Screen):
             with Vertical(id="resource_container"):
                 self.panel = ResourcePanel(id="resource_panel")
                 yield self.panel
-            yield Footer(id="footer")
+            # yield Footer(id="footer")
     
     
     def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
