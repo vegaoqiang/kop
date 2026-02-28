@@ -48,12 +48,20 @@ class SideMenu(Static):
         ListItem {
             border-bottom: tall black;
         }
+
+        .-filtered_first {
+                color: $block-cursor-blurred-foreground;
+                background: $block-cursor-blurred-background;
+                text-style: $block-cursor-blurred-text-style;
+        }
     """
 
     display_menu = Reactive(List[SimpleNamespace])
 
     search_timer = None
     debounce_time: float = 0.3
+
+    filtered_first: ListItem | None = None
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -101,12 +109,24 @@ class SideMenu(Static):
             filtered = MENU
         return filtered
     
+    def _highlight_filtered_first(self, item: ListItem):
+        # when menu is filtered, highlight the first item
+        if self.filtered_first:
+            # cancel previous filtered first item highlight
+            self.filtered_first.set_class(self.filtered_first == item, "-filtered_first")
+        item.set_class(self.filtered_first != item, "-filtered_first")
+        self.filtered_first = item
+
     def watch_display_menu(self, menu: List[SimpleNamespace]):
         # hide all menu
         self.query(ListItem).set(display=False)
         # display menu again where menu.id is in menu
-        for m in menu:
-            self.query_one(f"#{m.id}", ListItem).display = True
+        for index, m in enumerate(menu):
+            item = self.query_one(f"#{m.id}", ListItem)
+            item.display = True
+            # only highlight the filtered first item
+            if index == 0:
+                self._highlight_filtered_first(item)
 
     def _on_mount(self, event: Mount) -> None:
         self.query_one(ListView).focus()
