@@ -48,12 +48,6 @@ class SideMenu(Static):
         ListItem {
             border-bottom: tall black;
         }
-
-        .-filtered_first {
-                color: $block-cursor-blurred-foreground;
-                background: $block-cursor-blurred-background;
-                text-style: $block-cursor-blurred-text-style;
-        }
     """
 
     display_menu = Reactive(List[SimpleNamespace])
@@ -65,7 +59,6 @@ class SideMenu(Static):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # self.menu = copy(MENU)
         self.set_reactive(SideMenu.display_menu, MENU)
 
     def compose(self) -> ComposeResult:
@@ -101,6 +94,17 @@ class SideMenu(Static):
             self.debounce_time,
             _update_display_menu
         )
+
+    @on(Input.Submitted)
+    def hande_subbmit(self, event: Input.Submitted):
+        event.stop()
+        side_menu = self.query_one("#side_menu", ListView)
+        side_menu.focus()
+        if self.filtered_first:
+            index = side_menu.children.index(self.filtered_first)
+        else:
+            index = 0
+        side_menu.index = index
         
     def _search_menu(self, keyword: str):
         keyword = keyword.lower()
@@ -113,8 +117,8 @@ class SideMenu(Static):
         # when menu is filtered, highlight the first item
         if self.filtered_first:
             # cancel previous filtered first item highlight
-            self.filtered_first.set_class(self.filtered_first == item, "-filtered_first")
-        item.set_class(self.filtered_first != item, "-filtered_first")
+             self.filtered_first.highlighted = False
+        item.highlighted = True
         self.filtered_first = item
 
     def watch_display_menu(self, menu: List[SimpleNamespace]):
