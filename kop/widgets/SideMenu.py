@@ -60,9 +60,10 @@ class SideMenu(Static):
 
     search_timer = None
     debounce_time: float = 0.3
-
+    # highlighted item
     highlight_item: ListItem | None = None
 
+    # the cursor index of the highlighted item
     cursor_index: var[int] = var(0)
 
     def __init__(self, **kwargs):
@@ -155,10 +156,6 @@ class SideMenu(Static):
             self.highlight_item = None
 
     def watch_cursor_index(self, index: int) -> None:
-        # if not self.is_filtered:
-        #     # when menu is not filtered, just focus on ListView
-        #     self.query_one("#side_menu", ListView).focus()
-        #     return
         item: SimpleNamespace  = self.display_menu[index]
         menu: ListItem = self.query_one(f"#{item.id}", ListItem)
         self._highlight_filtered_item(menu)
@@ -189,14 +186,3 @@ class SideMenu(Static):
         def __init__(self, menu_id: str):
             super().__init__()
             self.menu_id = menu_id
-
-
-class SideApp(App):
-    def compose(self) -> ComposeResult:
-        yield SideMenu()
-        yield Footer()
-
-
-if __name__ == "__main__":
-    app = SideApp()
-    app.run()
