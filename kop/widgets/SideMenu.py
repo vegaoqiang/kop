@@ -2,7 +2,7 @@ from textual import on
 from textual.events import Key, Mount
 from textual.message import Message
 from textual.app import App, ComposeResult
-from textual.reactive import Reactive
+from textual.reactive import Reactive, var
 from textual.widgets import Footer, ListItem, ListView, Label, Input, Static
 from typing import List
 from types import SimpleNamespace
@@ -48,14 +48,22 @@ class SideMenu(Static):
         ListItem {
             border-bottom: tall black;
         }
+        .-cursor-border {
+            outline: solid $accent;
+        }
     """
 
     display_menu = Reactive(List[SimpleNamespace])
 
+    # current display menu is not filtered
+    is_filtered: var[bool] = var(False)
+
     search_timer = None
     debounce_time: float = 0.3
 
-    filtered_first: ListItem | None = None
+    highlight_item: ListItem | None = None
+
+    cursor_index: var[int] = var(0)
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -100,28 +108,33 @@ class SideMenu(Static):
         event.stop()
         side_menu = self.query_one("#side_menu", ListView)
         side_menu.focus()
-        if self.filtered_first:
-            index = side_menu.children.index(self.filtered_first)
+        if self.highlight_item:
+            index = side_menu.children.index(self.highlight_item)
+            self.is_filtered = False
         else:
             index = 0
         side_menu.index = index
         
-    def _search_menu(self, keyword: str):
-        keyword = keyword.lower()
+    def _search_menu(self, keyword: str) -> List[SimpleNamespace]:
+        if not keyword:
+            self.is_filtered = False
+            return MENU
+        keyword = keyword.strip().lower()
         filtered = [menu for menu in MENU if keyword in menu.name.lower()]
-        if not filtered:
-            filtered = MENU
-        return filtered
+        self.is_filtered = True
+        return filtered or MENU
     
-    def _highlight_filtered_first(self, item: ListItem):
+    def _highlight_filtered_item(self, item: ListItem) -> None:
         # when menu is filtered, highlight the first item
-        if self.filtered_first:
-            # cancel previous filtered first item highlight
-             self.filtered_first.highlighted = False
-        item.highlighted = True
-        self.filtered_first = item
+        if self.highlight_item:
+            # cancel previous filtered item highlight
+            self.highlight_item.remove_class("-cursor-border")
+            self.highlight_item = None
 
-    def watch_display_menu(self, menu: List[SimpleNamespace]):
+        item.add_class("-cursor-border")
+        self.highlight_item = item
+
+    def watch_display_menu(self, menu: List[SimpleNamespace]) -> None:
         # hide all menu
         self.query(ListItem).set(display=False)
         # display menu again where menu.id is in menu
@@ -129,9 +142,40 @@ class SideMenu(Static):
             item = self.query_one(f"#{m.id}", ListItem)
             item.display = True
             # only highlight the filtered first item
-            if index == 0:
-                self._highlight_filtered_first(item)
+            if index == 0 and self.is_filtered:
+                self._highlight_filtered_item(item)
 
+    def watch_is_filtered(self, is_filtered: bool) -> None:
+        # when menu is not filtered, do not highlight and reset cursor index
+        if is_filtered:
+            return
+        self.cursor_index = 0
+        if self.highlight_item:
+            self.highlight_item.remove_class("-cursor-border")
+            self.highlight_item = None
+
+    def watch_cursor_index(self, index: int) -> None:
+        # if not self.is_filtered:
+        #     # when menu is not filtered, just focus on ListView
+        #     self.query_one("#side_menu", ListView).focus()
+        #     return
+        item: SimpleNamespace  = self.display_menu[index]
+        menu: ListItem = self.query_one(f"#{item.id}", ListItem)
+        self._highlight_filtered_item(menu)
+
+    def validate_cursor_index(self, index: int) -> int:
+        if index < 0:
+            index = 0
+        if index > len(self.display_menu) - 1:
+            index = len(self.display_menu) - 1
+        return index
+
+    def on_key(self, event: Key) -> None:
+        if event.key == "down" and self.is_filtered:
+            self.cursor_index += 1
+        elif event.key == "up" and self.is_filtered:
+            self.cursor_index -= 1
+            
     def _on_mount(self, event: Mount) -> None:
         self.query_one(ListView).focus()
 
