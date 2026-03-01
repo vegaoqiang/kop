@@ -1,5 +1,5 @@
 from textual import on
-from textual.events import Mount
+from textual.events import Key, Mount
 from textual.message import Message
 from textual.app import App, ComposeResult
 from textual.reactive import Reactive
@@ -96,7 +96,7 @@ class SideMenu(Static):
         )
 
     @on(Input.Submitted)
-    def hande_subbmit(self, event: Input.Submitted):
+    def handle_subbmit(self, event: Input.Submitted):
         event.stop()
         side_menu = self.query_one("#side_menu", ListView)
         side_menu.focus()
