@@ -74,7 +74,7 @@ class SideMenu(Static):
         yield Input(id="search_menu", placeholder="Press / to search menu")
         with ListView(id="side_menu"):
             for menu in self.display_menu:
-                yield ListItem(Label(menu.name), id=menu.id)    
+                yield ListItem(Label(menu.name), id=menu.id, name=menu.name)    
 
     @on(ListView.Highlighted)
     async def handle_highlighted(self, event: ListView.Highlighted):
@@ -85,9 +85,9 @@ class SideMenu(Static):
         if not item.id:
             return
         menu_id = item.id
-
+        menu_name = item.name or menu_id
         # async call
-        self.run_worker(self.resource_render(menu_id))
+        self.run_worker(self.resource_render(menu_id, menu_name))
  
     @on(Input.Changed)
     def handle_search(self, event: Input.Changed):
@@ -176,13 +176,14 @@ class SideMenu(Static):
     def _on_mount(self, event: Mount) -> None:
         self.query_one(ListView).focus()
 
-    async def resource_render(self, menu_id: str):
+    async def resource_render(self, menu_id: str, menu_name: str) -> None:
         # send event
-        self.post_message(self.ResourceEvent(menu_id))
+        self.post_message(self.ResourceEvent(menu_id, menu_name))
 
     
     class ResourceEvent(Message):
         """event for menu item select and click"""
-        def __init__(self, menu_id: str):
+        def __init__(self, menu_id: str, menu_name: str):
             super().__init__()
             self.menu_id = menu_id
+            self.menu_name = menu_name

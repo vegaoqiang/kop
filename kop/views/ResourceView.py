@@ -79,7 +79,7 @@ class ResourceView(Screen):
     def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
         self.resource_type = resource_type = event.menu_id
         self._render_resource(resource_type)
-        self.call_after_refresh(self._update_resource_panel, resource_type)
+        self.call_after_refresh(self._update_resource_panel, event.menu_name)
 
         if hasattr(self, "timer"):
             self.timer.resume()
