@@ -3,7 +3,6 @@ from textual.screen import Screen
 from textual.app import ComposeResult, App
 from textual.containers import Vertical
 from textual.widgets import Footer
-# from textual.binding import Binding
 from kop.widgets.SideMenu import SideMenu
 from kop.widgets.Panel import ResourcePanel
 from kop.registry import ResourceRegistry
@@ -40,10 +39,6 @@ class ResourceView(Screen):
             dock: bottom;
         }
     """
-
-    # BINDINGS = [
-    #     Binding("d", "delete", "Delete Selected Item"),
-    # ]
 
     FACTORY_CACHE: BaseFactory
 
@@ -198,7 +193,6 @@ class ResourceView(Screen):
     async def on_resource_panel_search_resource(self, event: ResourcePanel.SearchResource) -> None:
         event.stop()
         self.keyword = event.query
-        # self._render_resource(self.resource_type, self.table)
         if not self.data or not self.table:
             return
         if not self.keyword:
@@ -211,12 +205,6 @@ class ResourceView(Screen):
         cleaned.sort(key=lambda vm: vm.name)
         self.table.data = cleaned
         self.panel.resource_count = len(filtered.items)
-
-    
-    def action_delete(self) -> None:
-        ...
-
-
 
 
 class ResApp(App):
