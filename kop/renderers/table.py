@@ -5,7 +5,6 @@ from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.reactive import reactive
 from textual.color import Color
-from textual.events import Focus
 from kop.models import RawField
 from kop.widgets.Actions import ActionTriggered, SelectActionButton
 from kop.registry import ActionRegistry
@@ -134,10 +133,6 @@ class TableRenderer(Vertical):
         }
     """
 
-    # BINDINGS = [
-    #     ("enter", "selected", "Seleted Item")
-    # ]
-
     data = reactive(list)
     raw_data = reactive(list)
     # save Selected or Highlighted row object
@@ -146,8 +141,14 @@ class TableRenderer(Vertical):
     # not allow TableRenderer focus, let focus to ListView
     # focus on the first item when TableRenderer is focused
     can_focus = False
-    
-    def __init__(self, columns: list, data: list, raw_data: list, **kwargs) -> None:
+
+    def __init__(self, 
+                columns: list, 
+                data: list, 
+                raw_data: list, 
+                bindings: list|None = None, 
+                **kwargs) -> None:
+        
         super().__init__(**kwargs)
         self.columns = columns
         # self.data = data
@@ -155,6 +156,7 @@ class TableRenderer(Vertical):
         self.row_map: dict[str, BaseRow] = {}
         # self.raw_data = raw_data # cache raw data
         self.set_reactive(TableRenderer.raw_data, raw_data)
+        self.bindings = bindings
 
         if self.raw_data:
             self.raw_data_map: dict[str, dict] = {row.metadata.name: row for row in self.raw_data}
@@ -166,6 +168,13 @@ class TableRenderer(Vertical):
                 base_row = BaseRow(row_data=row, columns=self.columns)
                 self.row_map[row.name] = base_row
                 yield base_row
+    
+    def on_mount(self) -> None:
+        if not self.bindings:
+            return
+        for bind in self.bindings:
+            self._bindings.bind(**bind)
+
 
     async def watch_data(self, old_value: list, new_value: list) -> None:
         new_value_map: dict[str, dict] = {row.name: row for row in new_value}
@@ -230,12 +239,48 @@ class TableRenderer(Vertical):
         next_row.styles.border_bottom = ("hidden", Color(0, 0, 0, a=0.3))
         next_row.styles.content_align_vertical = "middle"
     
-    def on_action_triggered(self, event: ActionTriggered):
-        ActionRegistry.dispatch(
-            event.action,
-            event.context,
-            self.app
-        )
+    # def on_action_triggered(self, event: ActionTriggered):
+    #     ActionRegistry.dispatch(
+    #         event.action,
+    #         event.context,
+    #         self.app
+    #     )
+    
+    # def action_delete(self) -> None:
+    #     if not self.picked_row:
+    #         return
+    #     action = next(
+    #         a for a in self.picked_row.row_data.actions if a.name == 'delete'
+    #     )
+    #     ActionRegistry.dispatch(
+    #         action,
+    #         self.picked_row.row_data,
+    #         self.app
+    #     )
+
+    # def action_edit(self) -> None:
+    #     if not self.picked_row:
+    #         return
+    #     action = next(
+    #         a for a in self.picked_row.row_data.actions if a.name == 'edit'
+    #     )
+    #     ActionRegistry.dispatch(
+    #         action,
+    #         self.picked_row.row_data,
+    #         self.app
+    #     )
+    
+    # def action_log(self) -> None:
+    #     if not self.picked_row:
+    #         return
+    #     action = next(
+    #         a for a in self.picked_row.row_data.actions if a.name == 'log'
+    #     )
+    #     ActionRegistry.dispatch(
+    #         action,
+    #         self.picked_row.row_data,
+    #         self.app
+    #     )
 
     class RowSelectedEvent(Message):
         def __init__(self, raw_data):

@@ -60,7 +60,6 @@ class BaseFactory(ABC):
         """create renderer from detail models"""
         raise NotImplementedError
     
-    
 
 class PodFacotry(BaseFactory):
     """factory for pods"""
@@ -88,7 +87,8 @@ class PodFacotry(BaseFactory):
         return TableRenderer(
             columns=PodViewModel.get_columns(),
             data=cleaned,
-            raw_data=data.items
+            raw_data=data.items,
+            bindings=self.bindings
         )
 
     def create_detail_renderer(self, data) -> DetailModalRenderer:
@@ -131,8 +131,23 @@ class PodFacotry(BaseFactory):
         new_raw = copy(raw)
         new_raw.items = filtered
         return new_raw
-
     
+    @property
+    def bindings(self) -> list[dict]:
+        """
+        get actions from PodViewModel, Extract the data needed to create Binding from actions.
+        the data required to create a Binding can be found in `textual/binding.py` BindingType.
+        """
+        binds: list[dict] = []
+        for action in PodViewModel.get_actions():
+            binds.append(dict(
+                keys=action.key, 
+                action=action.action, 
+                description=action.tooltip
+                )
+            )
+        return binds
+
 
 class DeploymentFactory(BaseFactory):
     """factory for deployments"""

@@ -46,6 +46,8 @@ class ActionModel:
     action: str
     icon: str | None = None
 
+    key: str | None = None # "ctrl+l"
+
 @dataclass
 class RawField:
     raw: Any
@@ -88,6 +90,12 @@ class ViewModel:
                                        item.name)
             field_metadata[item.name] = item.metadata
         return cls._resorted_columns(columns, field_metadata)
+    
+    @classmethod
+    def get_actions(cls) -> List[ActionModel]:
+        for item in fields(cls):
+            if item.name == "actions":
+                return item.default_factory()
     
     @classmethod
     def _resorted_columns(cls, columns: dict[str, ColumnModel], fields: dict[str, Any]) -> List[ColumnModel]:
@@ -252,11 +260,11 @@ class PodViewModel(ViewModel):
     qos: str = field(metadata={"title": "QoS", "width": 9})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     actions: List[ActionModel] = field(default_factory=lambda: [
-        ActionModel("shell", "Shell", "default", "Exec shell on pod", "shell"),
-        ActionModel("attach", "Attach", "default", "Attach to the pod", "attach"),
-        ActionModel("log", "Logs", "default", "View the pod logs", "log"),
-        ActionModel("edit", "Edit", "default", "Edit the Pod", "edit"),
-        ActionModel("delete", "Delete", "default", "Delete the Pod", "delete")],
+        ActionModel("shell", "Shell", "default", "Exec shell on Pod", "shell", key="s"),
+        ActionModel("attach", "Attach", "default", "Attach to the Pod", "attach", key="a"),
+        ActionModel("log", "Logs", "default", "View logs of the Pod", "log", key="l"),
+        ActionModel("edit", "Edit", "default", "Edit the Pod", "edit", key="e"),
+        ActionModel("delete", "Delete", "default", "Delete the Pod", "delete", key="d")],
         metadata={"title": "Actions", "width": 5, "detail": False})
 
 
