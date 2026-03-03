@@ -142,7 +142,7 @@ class PodFacotry(BaseFactory):
         for action in PodViewModel.get_actions():
             binds.append(dict(
                 keys=action.key, 
-                action=action.action, 
+                action=f"dispatch('{action.action}')", 
                 description=action.tooltip
                 )
             )

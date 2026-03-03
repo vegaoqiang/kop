@@ -239,48 +239,23 @@ class TableRenderer(Vertical):
         next_row.styles.border_bottom = ("hidden", Color(0, 0, 0, a=0.3))
         next_row.styles.content_align_vertical = "middle"
     
-    # def on_action_triggered(self, event: ActionTriggered):
-    #     ActionRegistry.dispatch(
-    #         event.action,
-    #         event.context,
-    #         self.app
-    #     )
-    
-    # def action_delete(self) -> None:
-    #     if not self.picked_row:
-    #         return
-    #     action = next(
-    #         a for a in self.picked_row.row_data.actions if a.name == 'delete'
-    #     )
-    #     ActionRegistry.dispatch(
-    #         action,
-    #         self.picked_row.row_data,
-    #         self.app
-    #     )
+    def action_dispatch(self, action_name: str) -> None:
+        """
+        all bindings action are unified as dispatch, and dispatch distinguishes
+          the specific action based on the action_name passed in by the binding.
+        see: https://textual.textualize.io/guide/actions/#bindings
+        """
+        if not self.picked_row:
+            return
+        action = next(
+            a for a in self.picked_row.row_data.actions if a.name == action_name
+        )
+        ActionRegistry.dispatch(
+            action,
+            self.picked_row.row_data,
+            self.app
+        )
 
-    # def action_edit(self) -> None:
-    #     if not self.picked_row:
-    #         return
-    #     action = next(
-    #         a for a in self.picked_row.row_data.actions if a.name == 'edit'
-    #     )
-    #     ActionRegistry.dispatch(
-    #         action,
-    #         self.picked_row.row_data,
-    #         self.app
-    #     )
-    
-    # def action_log(self) -> None:
-    #     if not self.picked_row:
-    #         return
-    #     action = next(
-    #         a for a in self.picked_row.row_data.actions if a.name == 'log'
-    #     )
-    #     ActionRegistry.dispatch(
-    #         action,
-    #         self.picked_row.row_data,
-    #         self.app
-    #     )
 
     class RowSelectedEvent(Message):
         def __init__(self, raw_data):
