@@ -2,7 +2,7 @@ from textual.events import Key
 from textual.screen import Screen
 from textual.app import ComposeResult, App
 from textual.containers import Vertical
-from textual.widgets import Footer
+from textual.widgets import Footer, Header
 from kop.widgets.SideMenu import SideMenu
 from kop.widgets.Panel import ResourcePanel
 from kop.registry import ResourceRegistry

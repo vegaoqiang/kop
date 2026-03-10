@@ -88,7 +88,7 @@ class BaseRow(ListItem):
                 if col.title != "Actions":
                     yield BaseCol(text=self.row_data.get(col.field), width=col.width)
                 else:
-                    select_action = SelectActionButton(label="💡", variant="default", id="actions", compact=True, tooltip="More actions")
+                    select_action = SelectActionButton(label="∙∙∙", variant="default", id="actions", compact=True, tooltip="More actions")
                     select_action.styles.width = f"{col.width}fr"
                     select_action.row_data = self.row_data
                     yield select_action
