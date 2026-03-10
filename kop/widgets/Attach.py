@@ -97,7 +97,7 @@ class PodAttachView(ScrollView):
                 )
                 break
 
-        self.app.call_from_thread(self._exit)
+        # self.app.call_from_thread(self._exit)
 
     def _exit(self):
         try:
