@@ -14,7 +14,8 @@ from kubernetes.client.models import (
     V1ResourceRequirements,
     )
 from datetime import datetime
-from typing import List, Any
+from typing import List, Any, Callable, Optional
+from kop.renderers.fields import pod_status_renderer
 
 
 @dataclass
@@ -27,6 +28,7 @@ class ColumnModel:
     title: str
     width: int | None
     field: str
+    renderer: Optional[Callable] | None = None
 
 
 @dataclass
@@ -69,8 +71,10 @@ class ViewModel:
             if item.name.startswith("_") or item.metadata.get("column", True) is False:
                 continue
             columns.append(ColumnModel(item.metadata["title"], 
-                                       item.metadata["width"] if item.metadata.get("width") else None, 
-                                       item.name))
+                                       item.metadata.get("width", None), 
+                                       item.name,
+                                       item.metadata.get("renderer", None))
+            )
         return columns
 
     @classmethod
@@ -255,13 +259,13 @@ class PodViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 22})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     node: str = field(metadata={"title": "Node", "width": 10})
-    status: str = field(metadata={"title": "Status", "width": 8})
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
     containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 9, "after": "tolerations"})
     restarts: str = field(metadata={"title": "Restarts", "width": 8})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 9})
     qos: str = field(metadata={"title": "QoS", "width": 9})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+    status: str = field(metadata={"title": "Status", "width": 8, "renderer": pod_status_renderer})
 
     @classmethod
     def clean(cls, data: V1Pod) -> "PodViewModel":

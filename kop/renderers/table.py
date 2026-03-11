@@ -85,7 +85,10 @@ class BaseRow(ListItem):
     def compose(self) -> ComposeResult:
         with Horizontal():
             for col in self.columns:
-                yield BaseCol(text=self.row_data.get(col.field), width=col.width)
+                text = self.row_data.get(col.field)
+                if col.renderer:
+                    text = col.renderer(text)
+                yield BaseCol(text=text, width=col.width)
 
     def watch_row_data(self, old_value: dict, new_value: dict) -> None:
         if old_value == new_value:
