@@ -253,13 +253,13 @@ class PodViewModel(ViewModel):
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 9})
     qos: str = field(metadata={"title": "QoS", "width": 9})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
-    actions: List[ActionModel] = field(default_factory=lambda: [
-        ActionModel("shell", "Shell", "default", "Exec shell on Pod", "shell", key="s"),
-        ActionModel("attach", "Attach", "default", "Attach to the Pod", "attach", key="a"),
-        ActionModel("log", "Logs", "default", "View logs of the Pod", "log", key="l"),
-        ActionModel("edit", "Edit", "default", "Edit the Pod", "edit", key="e"),
-        ActionModel("delete", "Delete", "default", "Delete the Pod", "delete", key="d")],
-        metadata={"title": "Actions", "width": 5, "detail": False})
+    # actions: List[ActionModel] = field(default_factory=lambda: [
+    #     ActionModel("shell", "Shell", "default", "Exec shell on Pod", "shell", key="s"),
+    #     ActionModel("attach", "Attach", "default", "Attach to the Pod", "attach", key="a"),
+    #     ActionModel("log", "Logs", "default", "View logs of the Pod", "log", key="l"),
+    #     ActionModel("edit", "Edit", "default", "Edit the Pod", "edit", key="e"),
+    #     ActionModel("delete", "Delete", "default", "Delete the Pod", "delete", key="d")],
+    #     metadata={"title": "Actions", "width": 5, "detail": False})
 
 
     @classmethod

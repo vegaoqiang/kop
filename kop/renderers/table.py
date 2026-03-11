@@ -85,14 +85,7 @@ class BaseRow(ListItem):
     def compose(self) -> ComposeResult:
         with Horizontal():
             for col in self.columns:
-                if col.title != "Actions":
-                    yield BaseCol(text=self.row_data.get(col.field), width=col.width)
-                else:
-                    select_action = SelectActionButton(label="∙∙∙", variant="default", id="actions", compact=True, tooltip="More actions")
-                    select_action.styles.width = f"{col.width}fr"
-                    select_action.row_data = self.row_data
-                    yield select_action
-        # yield DetailRule()
+                yield BaseCol(text=self.row_data.get(col.field), width=col.width)
 
     def watch_row_data(self, old_value: dict, new_value: dict) -> None:
         if old_value == new_value:
