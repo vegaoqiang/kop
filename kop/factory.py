@@ -9,7 +9,8 @@ from kop.models import (PodViewModel,
                     DeploymentDetailModel,
                     DaemonSetViewModel, 
                     StatefulSetViewModel,
-                    PodDetailModel)
+                    PodDetailModel,
+                    ActionModel)
 from copy import copy
 
 
@@ -64,6 +65,38 @@ class BaseFactory(ABC):
 class PodFacotry(BaseFactory):
     """factory for pods"""
     resource_type = "pods"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="shell", 
+                    label="Shell", 
+                    variant="default", 
+                    tooltip="Exec shell on Pod", 
+                    action="shell", 
+                    key="s"),
+        ActionModel(name="attach", 
+                    label="Attach", 
+                    variant="default", 
+                    tooltip="Attach to the Pod", 
+                    action="attach", 
+                    key="a"),
+        ActionModel(name="log", 
+                    label="Logs", 
+                    variant="default", 
+                    tooltip="View logs of the Pod", 
+                    action="log", 
+                    key="l"),
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit the Pod", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete the Pod", 
+                    action="delete", 
+                    key="d")]
 
     def fetch(self, namespace: str | None = None):
         # client = self._client.core_v1()
@@ -138,15 +171,14 @@ class PodFacotry(BaseFactory):
         get actions from PodViewModel, Extract the data needed to create Binding from actions.
         the data required to create a Binding can be found in `textual/binding.py` BindingType.
         """
-        binds: list[dict] = []
-        for action in PodViewModel.get_actions():
-            binds.append(dict(
-                keys=action.key, 
-                action=f"dispatch('{action.action}')", 
-                description=action.tooltip
-                )
+        return [
+            dict(
+                keys=a.key,
+                action=f"dispatch('{a.action}')",
+                description=a.tooltip
             )
-        return binds
+            for a in self.actions
+        ]
 
 
 class DeploymentFactory(BaseFactory):
