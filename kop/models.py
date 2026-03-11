@@ -92,12 +92,6 @@ class ViewModel:
         return cls._resorted_columns(columns, field_metadata)
     
     @classmethod
-    def get_actions(cls) -> List[ActionModel]:
-        for item in fields(cls):
-            if item.name == "actions":
-                return item.default_factory()
-    
-    @classmethod
     def _resorted_columns(cls, columns: dict[str, ColumnModel], fields: dict[str, Any]) -> List[ColumnModel]:
         """
         Sort all fields based on the 'after' and 'before' values in the field metadata.

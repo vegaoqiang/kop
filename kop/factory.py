@@ -128,6 +128,7 @@ class PodFacotry(BaseFactory):
         return DetailModalRenderer(
             columns=PodDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
+            actions=self.actions
         )
     
     def filter(self, raw, query: str):

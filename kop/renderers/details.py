@@ -135,18 +135,18 @@ class DetailModalRenderer(ModalScreen):
         ("escape", "close", "Close"),
     ]
 
-    def __init__(self, columns: list, data, **kwargs):
+    def __init__(self, columns: list, data, actions: list, **kwargs):
         """
         :param data: PodDetailModel
         """
         super().__init__(**kwargs)
         self.columns = columns
         self.data = data
+        self.actions = actions
 
     def compose(self) -> ComposeResult:
-        actions = self.data.get('actions')
         with VerticalScroll(id="detail"):
-            yield DetailActionsView(actions=actions, context=self.data)
+            yield DetailActionsView(actions=self.actions, context=self.data)
             for item in self.columns:
                 field_value = self.data.get(item.field)
                 if not field_value:
