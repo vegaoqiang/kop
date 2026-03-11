@@ -132,26 +132,36 @@ class ViewModel:
     @staticmethod
     def get_age_text(start_time: datetime) -> str:
         now = datetime.now(tz=start_time.tzinfo)
-        diff = now - start_time
+        diff = int((now - start_time).total_seconds())
 
-        if 0 <= diff.total_seconds() < 60:
-            return f"{diff.seconds}s"
-        if 60 <= diff.total_seconds() < 3600:
-            return f"{int(diff.total_seconds()) // 60}m"
-        if 3600 <= diff.total_seconds() < 86400:
-            return f"{int(diff.total_seconds()) // 3600}h"
-        if 86400 <= diff.total_seconds() < 2592000:
-            return f"{int(diff.total_seconds()) // 86400}d"
-        if 2592000 <= diff.total_seconds() < 31536000:
-            return f"{int(diff.total_seconds()) // 2592000}M"
-        if diff.total_seconds() >= 31536000:
-            return f"{int(diff.total_seconds()) // 31536000}y"
-        return "-"
+        units = [
+            ("y", 31536000),
+            ("M", 2592000),
+            ("d", 86400),
+            ("h", 3600),
+            ("m", 60),
+            ("s", 1),
+        ]
+
+        parts = []
+
+        for suffix, seconds in units:
+            value, diff = divmod(diff, seconds)
+            if value > 0:
+                parts.append(f"{value}{suffix}")
+
+            if len(parts) >= 2:
+                break
+
+        return "".join(parts) if parts else "0s"
 
 
     @staticmethod
     def get_created_text(start_time: datetime) -> str:
-        return start_time.strftime("%Y-%m-%d %H:%M:%S")
+        # return start_time.strftime("%Y-%m-%d %H:%M:%S")
+        created = start_time.strftime("%Y-%m-%d %H:%M:%S")
+        age = ViewModel.get_age_text(start_time)
+        return f"{created} ({age})"
                                  
     
     @classmethod
@@ -277,7 +287,7 @@ class PodViewModel(ViewModel):
             controlled_by=data.metadata.owner_references[0].kind if data.metadata.owner_references else "", # type: ignore
             qos=data.status.qos_class, # type: ignore
             age=cls.get_age_text(data.status.start_time), # type: ignore
-            created=f"{cls.get_created_text(data.status.start_time)}  Age: {cls.get_age_text(data.status.start_time)}", # type: ignore
+            created=cls.get_created_text(data.status.start_time), # type: ignore
         )
     
     @staticmethod
