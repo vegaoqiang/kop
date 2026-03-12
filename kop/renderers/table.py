@@ -6,7 +6,6 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.color import Color
 from kop.models import RawField
-from kop.widgets.Actions import ActionTriggered, SelectActionButton
 from kop.registry import ActionRegistry
 
 
@@ -155,7 +154,7 @@ class TableRenderer(Vertical):
         
         if actions:
             self.actions_map: dict[str, dict] = {a.name: a for a in actions}
-            
+
             self.bindings = [
                 dict(
                     keys=a.key,
