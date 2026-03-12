@@ -142,7 +142,7 @@ class TableRenderer(Vertical):
                 columns: list, 
                 data: list, 
                 raw_data: list, 
-                bindings: list|None = None, 
+                actions: list|None = None,
                 **kwargs) -> None:
         
         super().__init__(**kwargs)
@@ -152,7 +152,18 @@ class TableRenderer(Vertical):
         self.row_map: dict[str, BaseRow] = {}
         # self.raw_data = raw_data # cache raw data
         self.set_reactive(TableRenderer.raw_data, raw_data)
-        self.bindings = bindings
+        
+        if actions:
+            self.actions_map: dict[str, dict] = {a.name: a for a in actions}
+            
+            self.bindings = [
+                dict(
+                    keys=a.key,
+                    action=f"dispatch('{a.action}')",
+                    description=a.tooltip
+                )
+                for a in actions
+            ]
 
         if self.raw_data:
             self.raw_data_map: dict[str, dict] = {row.metadata.name: row for row in self.raw_data}
@@ -243,9 +254,7 @@ class TableRenderer(Vertical):
         """
         if not self.picked_row:
             return
-        action = next(
-            a for a in self.picked_row.row_data.actions if a.name == action_name
-        )
+        action = self.actions_map.get(action_name)
         ActionRegistry.dispatch(
             action,
             self.picked_row.row_data,

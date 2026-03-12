@@ -121,7 +121,7 @@ class PodFacotry(BaseFactory):
             columns=PodViewModel.get_columns(),
             data=cleaned,
             raw_data=data.items,
-            bindings=self.bindings
+            actions=self.actions,
         )
 
     def create_detail_renderer(self, data) -> DetailModalRenderer:
