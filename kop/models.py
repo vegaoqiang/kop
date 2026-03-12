@@ -260,7 +260,7 @@ class PodViewModel(ViewModel):
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     node: str = field(metadata={"title": "Node", "width": 10})
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
-    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 9, "after": "tolerations"})
+    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 9, "after": "affinities"})
     restarts: str = field(metadata={"title": "Restarts", "width": 8})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 9})
     qos: str = field(metadata={"title": "QoS", "width": 9})

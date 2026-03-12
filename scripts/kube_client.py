@@ -13,5 +13,5 @@ k = KbsEndpoint(config_file="/Users/gaoxiang/Library/Application Support/OpenLen
 
 pods = k.list_pods()
 for p in pods.items:
-    if "nginx-deployment" in p.metadata.name:# == "nginx-deployment":
+    if "svclb-traefik-46e374cd-wsn59" in p.metadata.name:# == "nginx-deployment":
         print(p)

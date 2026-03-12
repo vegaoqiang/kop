@@ -3,7 +3,9 @@ from textual.app import ComposeResult
 from rich.console import RenderableType
 from rich.text import Text
 from rich.style import Style
+from rich.syntax import Syntax
 from textual.containers import Grid, Horizontal
+from textual.widgets import Pretty, Collapsible
 from typing import Any, Callable
 from kop.widgets.Expandable import ExpandableText
 
@@ -163,5 +165,14 @@ class DescAnnotations(Static):
     
     def compose(self) -> ComposeResult:
         for k, v in self.desc.items():
-            print('DescAnnotations:', k, v)
             yield ExpandableText(text=f"{k}={v}")
+
+
+class DescAffinity(Static):
+    def __init__(self, desc: Any):
+        super().__init__()
+        self.desc = desc
+
+    def compose(self) -> ComposeResult:
+        with Collapsible(title="Affinity"):
+            yield Static(Syntax(self.desc, "yaml"))

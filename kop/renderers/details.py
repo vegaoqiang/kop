@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Container
-from kop.widgets.RichDetail import Row, Title,  Desc, DescPorts, DescAnnotations
+from kop.widgets.RichDetail import Row, Title,  Desc, DescPorts, DescAnnotations, DescAffinity
 from kop.widgets.Rules import DetailRule
 from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel, RawField
@@ -111,6 +111,18 @@ def render_selector(title: str, desc: dict) -> ComposeResult:
 def render_strategy(title: str, desc: dict) -> ComposeResult:
     yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.strategy_formatter))
 
+
+@RendererRegistry.register_renderer('affinities')
+def render_affinities(title: str, desc: list) -> ComposeResult:
+    from kubernetes.client import ApiClient
+    from yaml import safe_dump
+    api_client = ApiClient()
+    yield DescAffinity(
+        desc=safe_dump(
+            api_client.sanitize_for_serialization(desc), 
+            allow_unicode=True, 
+            sort_keys=False, 
+            default_flow_style=False))
 
 
 class DetailModalRenderer(ModalScreen):
