@@ -340,6 +340,7 @@ class PodDetailModel(PodViewModel):
     tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})
 
+    _raw: V1Pod |None = field(default=None, repr=False)
 
     @classmethod
     def clean(cls, data: V1Pod) -> "PodDetailModel":
@@ -350,26 +351,14 @@ class PodDetailModel(PodViewModel):
             'pod_ip': data.status.pod_ip,
             'service_account': data.spec.service_account_name,
             'priority': data.spec.priority_class_name,
-            # 'conditions': data.status.conditions,
             'conditions': RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
             'node_selector': data.spec.node_selector,
             'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
             'containers': [ContainerModel(_raw=_c, container_statuses=ContainerStatusModel(_raw=_status)) for _c, _status in zip(data.spec.containers, data.status.container_statuses)], # re-assign containers
         })
+        base["_raw"] = data
         return cls(**base)
-        # return cls(
-        #     labels=data.metadata.labels,
-        #     annotations=data.metadata.annotations,
-        #     pod_ip=data.status.pod_ip,
-        #     service_account=data.spec.service_account_name,
-        #     priority=data.spec.priority_class_name,
-        #     conditions=data.status.conditions,
-        #     node_selector=data.spec.node_selector,
-        #     tolerations=data.spec.tolerations,
-        #     affinities=data.spec.affinity,
-        #     # containers=[ContainerModel(c) for c in data.spec.containers], # re-assign containers
-        # )
     
 
 

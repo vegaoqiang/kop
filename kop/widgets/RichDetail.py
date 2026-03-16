@@ -23,10 +23,12 @@ class Title(Static):
     def __init__(self, 
                  text: str, 
                  expand: bool = False, 
+                 color: str | None = None,
                  bg: str | None = None) -> None:
         """
         :param str text:  text string
         :param bool expand: define the title col expand in row
+        :param str color: text color
         :param str bg: text background
         """
         super().__init__()
@@ -34,6 +36,8 @@ class Title(Static):
         self.expand = expand
         self.style = "bold"
         self.bg = bg
+        if color:
+            self.style = f"bold {color}"
         
 
     def render(self) -> RenderableType:

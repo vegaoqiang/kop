@@ -7,7 +7,10 @@ from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel, RawField
 from kop.renderers import formatter
 from kop.widgets.Actions import ActionTriggered, DetailActionsView
+from kop.widgets.Events import ResourceEvents
 from kop.controllers.handler import ActionRegistry
+from kop.provider.events import EventService
+
 
 
 
@@ -147,6 +150,8 @@ class DetailModalRenderer(ModalScreen):
         ("escape", "close", "Close"),
     ]
 
+    event_service: EventService | None = None
+
     def __init__(self, columns: list, data, actions: list, **kwargs):
         """
         :param data: PodDetailModel
@@ -166,7 +171,14 @@ class DetailModalRenderer(ModalScreen):
                 renderer = RendererRegistry.get_renderer(item.field, render_default)
                 yield from renderer(title=item.title, desc=field_value)
                 yield DetailRule()
+            yield ResourceEvents(event_service=self.event_service, data=self.data)
 
+    # def on_mount(self) -> None:
+    #     self._start_event_service()
+
+    def on_unmount(self) -> None:
+        if self.event_service and self.event_service._started:
+            self.event_service.stop()
 
     def action_close(self):
         """
@@ -180,3 +192,9 @@ class DetailModalRenderer(ModalScreen):
             event.context,
             self.app
         )
+
+    def _start_event_service(self):
+        if not self.event_service:
+            return
+
+        self.event_service.start(namespace=self.data.namespace, kind=self.data._raw.kind)

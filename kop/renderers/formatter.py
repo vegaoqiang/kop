@@ -168,3 +168,29 @@ def strategy_formatter(desc):
         return f"{strategy_type} {DEFAULT_CHAR}"
     text = " ".join(f"{k or DEFAULT_CHAR}: {v or DEFAULT_CHAR}" for k, v in value.to_dict().items())
     return f"{strategy_type} {text}"
+
+
+def events_formatter(desc):
+    """
+    make a card for a event, like:
+    -----
+    Last    xx
+    Object  xx
+    Count   xx
+    -----
+    """
+    # A tuple of 2 values sets the top/bottom and left/right padding, 
+    # whereas a tuple of 4 values sets the padding for top, right, bottom, and left sides
+    table = Table.grid(padding=(0, 1), expand=True)
+
+    table.add_column(justify="left", ratio=3)
+    table.add_column(ratio=7)
+
+    table.add_row("Last", str(desc.last_timestamp or DEFAULT_CHAR))
+    table.add_row("Object", str(desc.involved_object.field_path or DEFAULT_CHAR))
+    table.add_row("Count", str(desc.count or DEFAULT_CHAR))
+    table.add_row("Reason", str(desc.reason or DEFAULT_CHAR))
+    table.add_row("Source", 
+                  f"{desc.source.component} {desc.source.host}" 
+                  if (desc.source.component and desc.source.host) else DEFAULT_CHAR)
+    return table
