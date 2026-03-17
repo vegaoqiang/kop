@@ -52,8 +52,9 @@ class ResourceEvents(Static):
     def compose(self) -> ComposeResult:
         self.container = Vertical(id="events")
         self.container.border_title = "Events"
+        self.empty = Static("📭 No events found", id="empty")
         with self.container:
-            yield Static("📭 No events found", id="empty")
+            yield self.empty
 
     def on_mount(self):
         self.event_service.subscribe(self._event_callback, 
@@ -76,9 +77,8 @@ class ResourceEvents(Static):
         if not value or not self.container:
             return
         
-        empty = self.container.query_one("#empty")
-        if empty:
-            empty.remove()
+        if self.empty and self.empty.parent:
+            self.empty.remove()
 
         first = next(iter(self.container.children), None)
         if first:
