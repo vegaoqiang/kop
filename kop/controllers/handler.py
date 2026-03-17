@@ -95,7 +95,7 @@ class PodActionHandler(BaseActionHandlerMixin):
             view = app.view
             view.delete_resource(resource)
             # pop ActionsViewModal screen
-            app.pop_screen()
+            # app.pop_screen()
         app.push_screen(Delete(resource), callback=delete_callback)
 
 
