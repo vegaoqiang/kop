@@ -42,6 +42,11 @@ class EventService:
 
         self._lock = threading.Lock()
 
+        # deduplication (avoid duplicate events flooding cache)
+        self._seen_events = set()
+        self._seen_order = deque(maxlen=cache_size)
+
+
         self._started = False
 
     def start(self, namespace: Optional[str] = None, kind: Optional[str] = None, name: Optional[str] = None):
@@ -120,7 +125,7 @@ class EventService:
     def _restart(self):
 
         with self._lock:
-            self._cache.clear()
+            # self._cache.clear()
             self._kind_index.clear()
             self._name_index.clear()
 
