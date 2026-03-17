@@ -223,10 +223,11 @@ class EventService:
 
         # replay cache
         with self._lock:
-            cached = list(self._cache)
-        # retrieve event data from the cache and put it back into the queue.
-        for e in cached:
-            self._enqueue_event(e)
+            if name:
+                cached = self._name_index.get(name, [])
+                # retrieve event data from the cache and put it back into the queue.
+                for e in cached:
+                    self._enqueue_event(e)
 
     def unsubscribe(self, callback: Callable):
         if callback in self._subscribers:
