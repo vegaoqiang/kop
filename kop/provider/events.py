@@ -20,7 +20,7 @@ class EventService:
         self.kind_filter: Optional[str] = None
         self.name_filter: Optional[str] = None
 
-        self._cache = deque(maxlen=cache_size)
+        # self._cache = deque(maxlen=cache_size)
 
         self._kind_index: Dict[str, List] = defaultdict(list)
         self._name_index: Dict[str, List] = defaultdict(list)
@@ -200,7 +200,7 @@ class EventService:
         name = involved.name
 
         with self._lock:
-            self._cache.append(event)
+            # self._cache.append(event)
             if kind:
                 self._kind_index[kind].append(event)
             if name:
@@ -248,6 +248,6 @@ class EventService:
         with self._lock:
             return list(self._kind_index.get(kind, []))
 
-    def get_all_events(self):
-        with self._lock:
-            return list(self._cache)
+    # def get_all_events(self):
+    #     with self._lock:
+    #         return list(self._cache)
