@@ -31,7 +31,8 @@ class ResourceEvents(Static):
     DEFAULT_CSS = """
         #events {
             border: heavy green;
-            border-title-align: left
+            border-title-align: left;
+            height: auto;
         }
     """
 
@@ -51,7 +52,8 @@ class ResourceEvents(Static):
     def compose(self) -> ComposeResult:
         self.container = Vertical(id="events")
         self.container.border_title = "Events"
-        yield self.container
+        with self.container:
+            yield Static("📭 No events found", id="empty")
 
     def on_mount(self):
         self.event_service.subscribe(self._event_callback, 
@@ -73,6 +75,11 @@ class ResourceEvents(Static):
     def watch_event_data(self, value):
         if not value or not self.container:
             return
+        
+        empty = self.container.query_one("#empty")
+        if empty:
+            empty.remove()
+
         first = next(iter(self.container.children), None)
         if first:
             self.container.mount(
