@@ -22,8 +22,10 @@ class EventService:
 
         # self._cache = deque(maxlen=cache_size)
 
-        self._kind_index: Dict[str, List] = defaultdict(list)
-        self._name_index: Dict[str, List] = defaultdict(list)
+        self._kind_index: Dict[str, deque] = defaultdict(lambda: deque(maxlen=cache_size))
+        self._name_index: Dict[str, deque] = defaultdict(lambda: deque(maxlen=cache_size))
+        # save cached event keys
+        self._cached: deque = deque(maxlen=cache_size)
 
         # event queue (decouple watch thread from UI)
         self._queue = Queue(maxsize=queue_size)
@@ -41,11 +43,6 @@ class EventService:
         self._resource_version: Optional[str] = None
 
         self._lock = threading.Lock()
-
-        # deduplication (avoid duplicate events flooding cache)
-        self._seen_events = set()
-        self._seen_order = deque(maxlen=cache_size)
-
 
         self._started = False
 
@@ -178,6 +175,7 @@ class EventService:
                 time.sleep(1)
 
     def _enqueue_event(self, event):
+        print('event in _enqueue_event:', event)
         try:
             self._queue.put_nowait(event)
         except Exception:
@@ -198,18 +196,21 @@ class EventService:
             self._handle_event(event)
 
     def _handle_event(self, event):
-        # obj = event["object"]
         involved = event.involved_object
 
         kind = involved.kind
         name = involved.name
 
+        key = (event.metadata.uid, involved.resource_version, event.reason)
+
         with self._lock:
             # self._cache.append(event)
-            if kind:
-                self._kind_index[kind].append(event)
-            if name:
-                self._name_index[name].append(event)
+            if key not in self._cached:
+                self._cached.append(key)
+                if kind:
+                    self._kind_index[kind].append(event)
+                if name:
+                    self._name_index[name].append(event)
 
         self._notify(event)
 
