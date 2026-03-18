@@ -52,7 +52,7 @@ class ResourceEvents(Static):
     def compose(self) -> ComposeResult:
         self.container = Vertical(id="events")
         self.container.border_title = "Events"
-        self.empty = Static("📭 No events found", id="empty")
+        self.empty = Static("🪧 No events found", id="empty")
         with self.container:
             yield self.empty
 
