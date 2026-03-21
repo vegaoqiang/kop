@@ -187,17 +187,26 @@ class TableRenderer(Vertical):
 
     async def watch_data(self, old_value: list, new_value: list) -> None:
         new_value_map: dict[str, dict] = {row.name: row for row in new_value}
+
+        list_view = self.query_one(ListView)
+
         # remove a row if it is not in new_value
         for name in list(self.row_map):
             if name not in new_value_map:
                 
                 # if current delete row is picked(selected)
                 row = self.row_map[name]
+                row_index = list_view.children.index(row)
+
                 if self.picked_row is row:
                     self.picked_row = None
 
                 await self.row_map[name].remove()
                 del self.row_map[name]
+
+                # update the ListView index if deleted row before current ListView index
+                if list_view.index > row_index:
+                    list_view.index -= 1
         
         # add new row if it is not in self.row_map
         # update row if it is in self.row_map
