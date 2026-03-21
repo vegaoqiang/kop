@@ -232,6 +232,7 @@ class TableRenderer(Vertical):
 
     @on(ListView.Highlighted)
     def handle_highlighted(self, event: ListView.Highlighted):
+        event.stop()
         item: BaseRow = event.item
         self._style_row(prev_row=self.picked_row, next_row=item)
         self.picked_row = item
