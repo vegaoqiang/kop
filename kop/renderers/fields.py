@@ -16,6 +16,8 @@ def pod_status_renderer(value: str):
         "Pending": "yellow",
         "Failed": "red",
         "Succeeded": "blue",
+        "Terminating": "magenta",
+        "Evicted": "red",
     }
 
     color = color_map.get(value)

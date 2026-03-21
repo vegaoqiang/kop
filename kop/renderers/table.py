@@ -98,7 +98,10 @@ class BaseRow(ListItem):
         ):
             if old_value.get(col.field) == new_value.get(col.field):
                 continue
-            col_widget.text = new_value.get(col.field)
+            text = new_value.get(col.field)
+            if col.renderer:
+                text = col.renderer(text)
+            col_widget.text = text
 
     def update_row_data(self, row_data):
         self.row_data = row_data
