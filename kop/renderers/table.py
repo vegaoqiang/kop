@@ -190,6 +190,12 @@ class TableRenderer(Vertical):
         # remove a row if it is not in new_value
         for name in list(self.row_map):
             if name not in new_value_map:
+                
+                # if current delete row is picked(selected)
+                row = self.row_map[name]
+                if self.picked_row is row:
+                    self.picked_row = None
+
                 await self.row_map[name].remove()
                 del self.row_map[name]
         
@@ -211,6 +217,10 @@ class TableRenderer(Vertical):
                 self.row_map[name] = row
                 # new row is inserted into the table based on its list position.
                 list_view.insert(new_index, [row])
+                # update the ListView index if new row inserted before current ListView index
+                if list_view.index >= new_index:
+                    list_view.index += 1
+
 
     
     def watch_raw_data(self, old_value: list, new_value: list) -> None:
