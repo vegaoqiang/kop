@@ -6,9 +6,9 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "kubernetes>=33.1.0",
-    "textual>=7.4.0",
+    "textual>=8.1.1",
     "textual[syntax]",
     "pyte",
-    "rich-pixels>=3.0.1",
     "pytest>=9.0.2",
+    "textual-dev>=1.8.0",
 ]
