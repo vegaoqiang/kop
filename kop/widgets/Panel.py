@@ -89,13 +89,13 @@ class ResourcePanel(Static):
        options.extend((namespace, namespace) for namespace in namespaces)
        select = self.query_one("#namespace_select", Select)
        select.set_options(options)
-       select.value = Select.BLANK
+       select.value = Select.NULL
 
     def on_select_changed(self, event: Select.Changed) -> None:
         event.stop()
         selected = event.value
         # if no namespace is selected, select all
-        if selected == Select.BLANK:
+        if selected == Select.NULL:
             selected = self.ALL_NAMESPACE
         self.post_message(self.SelectedNamespace(namespace=selected).set_sender(self))
 
