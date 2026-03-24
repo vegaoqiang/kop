@@ -10,6 +10,11 @@ from typing import Any, Callable
 
 
 class PortItem(ListItem):
+    DEFAULT_CSS = """
+        .-hidden {
+            display: none;
+        }
+    """
 
     def __init__(self, item, **kwargs):
         super().__init__(**kwargs)
@@ -17,7 +22,8 @@ class PortItem(ListItem):
 
     def compose(self) -> ComposeResult:
         yield Link(self.link_text, disabled=True)
-        yield Button("Start Forward", compact=True, variant="primary")
+        yield Button("Start Forward", compact=True, variant="primary", id="start_forward")
+        yield Button("Stop Forward", compact=True, variant="error", id="stop_forward", classes="-hidden")
 
     @property
     def remote_port(self) -> int:
@@ -34,11 +40,16 @@ class PortItem(ListItem):
         return self.base_text
 
     def set_forward_local_port(self, local_port: int | None) -> None:
+        if not local_port:
+            return
         self._forward_local_port = local_port
         link = self.query_one(Link)
         link.update(self.link_text)
         link.url = f"http://localhost:{local_port}"
         link.disabled = False
+
+        self.query_one("#start_forward").set_class(True, "-hidden")
+        self.query_one("#stop_forward").remove_class("-hidden")
 
 
 class DescPorts(Static):
@@ -116,8 +127,6 @@ class DescPorts(Static):
             forward = self._find_forward(port_item.remote_port)
             if forward and forward.running:
                 port_item.set_forward_local_port(forward.local_port)
-            else:
-                port_item.set_forward_local_port(None)
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         event.stop()
