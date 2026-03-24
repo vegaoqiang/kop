@@ -4,7 +4,7 @@ from textual.app import ComposeResult
 from textual.widgets import ListView, ListItem, Link, Button, Static
 from kop.widgets.Modals import PortForward
 from kop.provider.forward import PortForwardSpec, PodPortForwardManager
-from typing import Any, Callable
+from typing import Any
 
 
 

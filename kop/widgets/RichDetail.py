@@ -1,16 +1,13 @@
-import webbrowser
-from textual.widgets import Static, ListView, ListItem, Link, Button, Switch, Label
+from textual.widgets import Static
 from textual.app import ComposeResult
 from rich.console import RenderableType
 from rich.text import Text
 from rich.style import Style
 from rich.syntax import Syntax
-from textual.containers import Grid, Horizontal
-from textual.widgets import Pretty, Collapsible
+from textual.containers import Grid
+from textual.widgets import Collapsible
 from typing import Any, Callable
 from kop.widgets.Expandable import ExpandableText
-from kop.widgets.Modals import PortForward
-from kop.provider.forward import PortForwardSpec, PodPortForwardManager
 
 
 
