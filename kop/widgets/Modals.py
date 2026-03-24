@@ -4,7 +4,7 @@ from textual.binding import Binding
 from textual.screen import ModalScreen
 from textual.app import ComposeResult
 from textual.containers import Grid, Horizontal
-from textual.widgets import Button, OptionList, Label, Input
+from textual.widgets import Button, OptionList, Label, Input, Switch
 from textual.validation import Number
 
 
@@ -150,12 +150,12 @@ class PortForward(ModalScreen):
             align: center middle;
         }
         #dialog {
-            grid-size: 2 3;
+            grid-size: 2 4;
             grid-gutter: 1 2;
             grid-rows: 1fr 1fr 1fr;
             padding: 0 1;
             width: 60;
-            height: 13;
+            height: 17;
             border: thick $background 80%;
             background: $surface;
         }
@@ -176,6 +176,8 @@ class PortForward(ModalScreen):
                   id="local_port"),
             Label("Remote Port"),
             Input(value=self.dest_port, disabled=True),
+            Label("Open in Browser"),
+            Switch(id="open_in_browser", value=True),
             Button("Cancel", variant="error", id="cancel"),
             Button("Start", variant="primary", id="start", disabled=False),
             id="dialog"
