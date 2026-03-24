@@ -1,4 +1,4 @@
-from textual.widgets import Static, ListView, ListItem, Link, Button
+from textual.widgets import Static, ListView, ListItem, Link, Button, Switch, Label
 from textual.app import ComposeResult
 from rich.console import RenderableType
 from rich.text import Text
@@ -8,6 +8,7 @@ from textual.containers import Grid, Horizontal
 from textual.widgets import Pretty, Collapsible
 from typing import Any, Callable
 from kop.widgets.Expandable import ExpandableText
+from kop.widgets.Modals import PortForward
 
 
 
@@ -144,6 +145,10 @@ class DescPorts(Static):
         Button {
             dock: right;
         }
+        Switch {
+            height: 1fr;
+            padding: 0 0;
+        }
     """
 
     def __init__(self, desc: Any):
@@ -155,11 +160,17 @@ class DescPorts(Static):
             for item in self.desc:
                 yield ListItem(
                     Horizontal(
-                        Link(
-                            text=f"{item.name}: {item.container_port}/{item.protocol}", tooltip="Enter to forward or click right side Forward button to"), 
-                            Button(label="Forward", compact=True)
-                    )    
+                        Label(
+                            f"{item.name or ""}:{item.container_port}/{item.protocol}")
+                        ),
+                        Button("Start Forward", compact=True, variant="primary")
                 )
+    
+    def on_button_pressed(self, event: Button.Pressed) -> None:
+        event.stop()
+        self.app.push_screen(PortForward(dest_port="80"))
+
+
 
 
 class DescAnnotations(Static):
