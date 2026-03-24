@@ -40,10 +40,17 @@ class PortItem(ListItem):
         return self.base_text
 
     def set_forward_local_port(self, local_port: int | None) -> None:
-        if not local_port:
-            return
         self._forward_local_port = local_port
         link = self.query_one(Link)
+        if local_port is None:
+            link.update(self.base_text)
+            link.url = None
+            link.disabled = True
+
+            self.query_one("#start_forward").remove_class("-hidden")
+            self.query_one("#stop_forward").set_class(True, "-hidden")
+            return
+
         link.update(self.link_text)
         link.url = f"http://localhost:{local_port}"
         link.disabled = False
@@ -108,18 +115,25 @@ class DescPorts(Static):
         return None
 
     def _find_forward(self, remote_port: int):
+        entry = self._find_forward_entry(remote_port)
+        if not entry:
+            return None
+        _, forward = entry
+        return forward
+
+    def _find_forward_entry(self, remote_port: int):
         context = self._get_pod_context()
         if not context:
             return None
         pod_name, namespace = context
         manager = self._get_forward_manager()
-        for _, forward in manager.list().items():
+        for key, forward in manager.list().items():
             if (
                 forward.pod_name == pod_name
                 and forward.namespace == namespace
                 and forward.remote_port == remote_port
             ):
-                return forward
+                return key, forward
         return None
 
     def _sync_forward_state(self) -> None:
@@ -127,8 +141,11 @@ class DescPorts(Static):
             forward = self._find_forward(port_item.remote_port)
             if forward and forward.running:
                 port_item.set_forward_local_port(forward.local_port)
+            else:
+                port_item.set_forward_local_port(None)
 
-    def on_button_pressed(self, event: Button.Pressed) -> None:
+    @on(Button.Pressed, "#start_forward")
+    def on_start_pressed(self, event: Button.Pressed) -> None:
         event.stop()
         port_item = event.button.parent
         if not isinstance(port_item, PortItem):
@@ -146,6 +163,33 @@ class DescPorts(Static):
             PortForward(dest_port=port_item.remote_port),
             callback=self._hander_start_forward
         )
+    
+    @on(Button.Pressed, "#stop_forward")
+    def on_stop_pressed(self, event: Button.Pressed) -> None:
+        event.stop()
+        port_item = event.button.parent
+        if not isinstance(port_item, PortItem):
+            return
+
+        manager = self._get_forward_manager()
+        entry = self._find_forward_entry(port_item.remote_port)
+        if not entry:
+            port_item.set_forward_local_port(None)
+            return
+
+        key, _ = entry
+        try:
+            manager.stop(key, remove=True)
+        except Exception as e:
+            self.app.notify(f"Stop port-forward failed: {e}", severity="error")
+            return
+
+        port_item.set_forward_local_port(None)
+        self.app.notify(
+            f"Stopped forwarding remote port {port_item.remote_port}",
+            severity="information",
+        )
+        
 
     def _hander_start_forward(self, obj: dict | None) -> None:
         if not obj or not self._pending_port_item:
@@ -172,7 +216,7 @@ class DescPorts(Static):
             if forward:
                 if not forward.running:
                     forward.start()
-                # local_port = forward.local_port
+                local_port = forward.local_port
             else:
                 spec = PortForwardSpec(
                     pod_name=pod_name,
