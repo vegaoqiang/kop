@@ -1,13 +1,14 @@
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Container
-from kop.widgets.RichDetail import Row, Title,  Desc, DescPorts, DescAnnotations, DescAffinity
+from kop.widgets.RichDetail import Row, Title,  Desc, DescAnnotations, DescAffinity
 from kop.widgets.Rules import DetailRule
 from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel, RawField
 from kop.renderers import formatter
 from kop.widgets.Actions import ActionTriggered, DetailActionsView
 from kop.widgets.Events import ResourceEvents
+from kop.widgets.Forward import DescPorts
 from kop.controllers.handler import ActionRegistry
 from kop.provider.events import EventService
 

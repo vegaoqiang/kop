@@ -164,9 +164,9 @@ class PortForward(ModalScreen):
         }
     """
 
-    def __init__(self, dest_port: str):
+    def __init__(self, dest_port: int):
         super().__init__()
-        self.dest_port = dest_port
+        self.dest_port = str(dest_port)
 
     def compose(self) -> ComposeResult:
         yield Grid(
@@ -190,13 +190,19 @@ class PortForward(ModalScreen):
     @on(Button.Pressed, "#start")
     def on_start_press(self, event: Button.Pressed) -> None:
         local_port_input = self.query_one("#local_port", Input)
+        open_in_browser = self.query_one("#open_in_browser", Switch).value
         local_port_text = local_port_input.value.strip()
         if not local_port_text:
             local_port = random.randint(1000, 65535)
             local_port_input.value = str(local_port)
         else:
             local_port = int(local_port_text)
-        self.dismiss(local_port)
+        self.dismiss(
+            {
+                "local_port": local_port,
+                "open_in_browser": open_in_browser,
+            }
+        )
 
     @on(Input.Changed, "#local_port")
     def enable_start(self, event: Input.Changed) -> None:
