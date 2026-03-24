@@ -8,7 +8,6 @@ from kop.widgets.Panel import ResourcePanel
 from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.provider.client import KbsEndpoint
-from kop.provider.events import EventService
 
 
 
@@ -63,8 +62,6 @@ class ResourceView(Screen):
         self.config_file = config_file
         self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file)
         self.namespace = None
-        self.event_service = EventService(api_client=self.endpoint.api_client)
-
 
     def compose(self) -> ComposeResult: 
             yield SideMenu(id="side_menu")
@@ -140,7 +137,6 @@ class ResourceView(Screen):
         # open detail screen
         raw_data = event.raw_data
         renderer = self.FACTORY_CACHE.create_detail_renderer(raw_data)
-        renderer.event_service = self.event_service
         self.app.push_screen(renderer)
 
     def delete_resource(self, row_data: PodViewModel) -> None:
