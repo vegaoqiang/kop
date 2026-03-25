@@ -221,13 +221,13 @@ class TableRenderer(Vertical):
                 # determine if the position of an existing row in the table has changed.
                 current_index = list_view.children.index(row)
                 if current_index != new_index:
-                    list_view.pop(current_index)
-                    list_view.insert(new_index, [row])
+                    await list_view.pop(current_index)
+                    await list_view.insert(new_index, [row])
             else:
                 row = BaseRow(new_row_data, self.columns)
                 self.row_map[name] = row
                 # new row is inserted into the table based on its list position.
-                list_view.insert(new_index, [row])
+                await list_view.insert(new_index, [row])
                 # update the ListView index if new row inserted before current ListView index
                 if list_view.index >= new_index:
                     list_view.index += 1
