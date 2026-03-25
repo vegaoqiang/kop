@@ -154,6 +154,8 @@ class TableRenderer(Vertical):
         self.row_map: dict[str, BaseRow] = {}
         # self.raw_data = raw_data # cache raw data
         self.set_reactive(TableRenderer.raw_data, raw_data)
+
+        self.bindings = []
         
         if actions:
             self.actions_map: dict[str, dict] = {a.name: a for a in actions}
