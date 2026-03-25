@@ -226,9 +226,11 @@ class DeploymentFactory(BaseFactory):
         return DeploymentDetailModel.clean(raw)
     
     def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
         return TableRenderer(
             columns=DeploymentViewModel.get_columns(),
-            data=self.clean(data),
+            data=cleaned,
             raw_data=data.items,
             actions=self.actions,
         )
