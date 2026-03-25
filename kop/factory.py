@@ -88,7 +88,7 @@ class PodFacotry(BaseFactory):
         ActionModel(name="edit", 
                     label="Edit", 
                     variant="default", 
-                    tooltip="Edit Pod Config", 
+                    tooltip="Edit Pod", 
                     action="edit", 
                     key="e"),
         ActionModel(name="delete", 
@@ -186,9 +186,35 @@ class DeploymentFactory(BaseFactory):
     """factory for deployments"""
     resource_type = "deployments"
 
-    def fetch(self):
+    actions: List[ActionModel] = [
+        ActionModel(name="scale", 
+                    label="Scale", 
+                    variant="default", 
+                    tooltip="Scale Deployment", 
+                    action="scale", 
+                    key="s"),
+        ActionModel(name="restart", 
+                    label="Restart", 
+                    variant="default", 
+                    tooltip="Restart Deployment", 
+                    action="restart", 
+                    key="r"),
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit Deployment", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete Deployment", 
+                    action="delete", 
+                    key="d")]
+
+    def fetch(self, namespace: str | None = None):
         # client = self._client.apps_v1()
-        return self.endpoint.list_deployments()
+        return self.endpoint.list_deployments(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_deployments(name=name, namespace=namespace)
@@ -203,14 +229,27 @@ class DeploymentFactory(BaseFactory):
         return TableRenderer(
             columns=DeploymentViewModel.get_columns(),
             data=self.clean(data),
-            raw_data=data.items
+            raw_data=data.items,
+            actions=self.actions,
         )
 
     def create_detail_renderer(self, data) -> DetailModalRenderer:
         return DetailModalRenderer(
             columns=DeploymentDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
+            actions=self.actions
         )
+    
+    @property
+    def bindings(self) -> list[dict]:
+        return [
+            dict(
+                keys=a.key,
+                action=f"dispatch('{a.action}')",
+                description=a.tooltip
+            )
+            for a in self.actions
+        ]
     
 
 class DaemonSetFactory(BaseFactory):
