@@ -116,7 +116,6 @@ class Confirm(ModalScreen):
 
     BINDINGS = [
         Binding("escape", "close", "Cancel", show=False),
-        Binding('enter', 'action_confirm', 'Confirm', show=False),
     ]
 
     def __init__(self, data, action_name: str):
