@@ -218,3 +218,11 @@ class DeploymentActionHandler(BaseActionHandlerMixin):
             deployment=app.endpoint.api_client.sanitize_for_serialization(deployment)
             return deployment
         app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=app.view.FACTORY_CACHE.update))
+
+    
+    @staticmethod
+    def delete(action, resource: models.DeploymentViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
