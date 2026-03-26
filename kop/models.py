@@ -51,11 +51,6 @@ class ActionModel:
 
     key: str | None = None # "ctrl+l"
 
-@dataclass
-class RawField:
-    raw: Any
-    string: str
-
 
 @dataclass
 class ViewModel:
@@ -336,7 +331,6 @@ class PodDetailModel(PodViewModel):
     service_account: str = field(default="", metadata={"title": "Service Account"})
     priority: str = field(default="", metadata={"title": "Priority Class"})
     conditions: list[V1Condition] = field(default_factory=list, metadata={"title": "Conditions"})
-    # conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions"})
     node_selector: list = field(default_factory=list, metadata={"title": "Node Selector"})
     tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})
@@ -353,7 +347,6 @@ class PodDetailModel(PodViewModel):
             'service_account': data.spec.service_account_name,
             'priority': data.spec.priority_class_name,
             'conditions': data.status.conditions,
-            # 'conditions': RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
             'node_selector': data.spec.node_selector,
             'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
@@ -386,8 +379,6 @@ class DeploymentViewModel(ViewModel):
             replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
             created=f"{cls.get_created_text(data.metadata.creation_timestamp)}  Age: {cls.get_age_text(data.metadata.creation_timestamp)}",
-            # conditions=" ".join([c.type for c in data.status.conditions]),
-            # conditions=RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
             conditions=data.status.conditions or []
         )
 

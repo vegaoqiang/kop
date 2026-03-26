@@ -5,7 +5,6 @@ from textual.containers import Horizontal, Vertical
 from textual.message import Message
 from textual.reactive import reactive
 from textual.color import Color
-from kop.models import RawField
 from kop.registry import ActionRegistry
 
 
@@ -19,11 +18,9 @@ class BaseCol(Static):
         """
     text = reactive("")
 
-    def __init__(self, text: str|list|RawField, width: int,  **kwargs) -> None:
+    def __init__(self, text: str|list, width: int,  **kwargs) -> None:
         if isinstance(text, list):
             text = str(len(text))
-        # if isinstance(text, RawField):
-        #     text = text.string
         self.set_reactive(BaseCol.text, text)
         super().__init__(text, **kwargs)
         self.width = width
@@ -34,8 +31,6 @@ class BaseCol(Static):
     def watch_text(self, old_value: str, new_value: str) -> None:
         if isinstance(new_value, list):
             new_value = str(len(new_value))
-        # if isinstance(new_value, RawField):
-        #     new_value = new_value.string
         if old_value == new_value:
             return
         self.content = new_value

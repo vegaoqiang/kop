@@ -4,7 +4,7 @@ from textual.containers import VerticalScroll, Container
 from kop.widgets.RichDetail import Row, Title,  Desc, DescAnnotations, DescAffinity
 from kop.widgets.Rules import DetailRule
 from kop.registry import RendererRegistry
-from kop.models import ContainerModel, ContainerStatusModel, RawField
+from kop.models import ContainerModel, ContainerStatusModel
 from kop.renderers import formatter
 from kop.widgets.Actions import ActionTriggered, DetailActionsView
 from kop.widgets.Events import ResourceEvents
