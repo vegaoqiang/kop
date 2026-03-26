@@ -37,9 +37,12 @@ def render_default(title: str, desc) -> ComposeResult:
 
 
 @RendererRegistry.register_renderer('conditions')
-def render_conditions(title: str, desc: RawField) -> ComposeResult:
+def render_conditions(title: str, desc) -> ComposeResult:
     conditions: list = []
-    for item in desc.raw:
+    # for item in desc.raw:
+    #     if item.status == 'True':
+    #         conditions.append(item.type)
+    for item in desc:
         if item.status == 'True':
             conditions.append(item.type)
     yield Row(title=Title(title), desc=Desc(desc=conditions))

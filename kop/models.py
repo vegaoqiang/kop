@@ -12,10 +12,11 @@ from kubernetes.client.models import (
     V1ContainerPort,
     V1VolumeMount,
     V1ResourceRequirements,
+    V1Condition,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
-from kop.renderers.fields import pod_status_renderer
+from kop.renderers.fields import pod_status_renderer, deployment_conditions_renderer
 
 
 @dataclass
@@ -334,8 +335,8 @@ class PodDetailModel(PodViewModel):
     pod_ip: str = field(default="", metadata={"title": "Pod IP"})
     service_account: str = field(default="", metadata={"title": "Service Account"})
     priority: str = field(default="", metadata={"title": "Priority Class"})
-    # conditions: list[V1Condition] = field(default_factory=list, metadata={"title": "Conditions"})
-    conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions"})
+    conditions: list[V1Condition] = field(default_factory=list, metadata={"title": "Conditions"})
+    # conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions"})
     node_selector: list = field(default_factory=list, metadata={"title": "Node Selector"})
     tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})
@@ -351,7 +352,8 @@ class PodDetailModel(PodViewModel):
             'pod_ip': data.status.pod_ip,
             'service_account': data.spec.service_account_name,
             'priority': data.spec.priority_class_name,
-            'conditions': RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
+            'conditions': data.status.conditions,
+            # 'conditions': RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
             'node_selector': data.spec.node_selector,
             'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
@@ -370,7 +372,10 @@ class DeploymentViewModel(ViewModel):
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
-    conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions", "width": 20})
+    conditions: list[V1Condition] = field(
+        default_factory=list,
+        metadata={"title": "Conditions", "width": 20, "renderer": deployment_conditions_renderer},
+    )
 
     @classmethod
     def clean(cls, data: V1Deployment) -> "DeploymentViewModel":
@@ -382,7 +387,8 @@ class DeploymentViewModel(ViewModel):
             age=cls.get_age_text(data.metadata.creation_timestamp),
             created=f"{cls.get_created_text(data.metadata.creation_timestamp)}  Age: {cls.get_age_text(data.metadata.creation_timestamp)}",
             # conditions=" ".join([c.type for c in data.status.conditions]),
-            conditions=RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
+            # conditions=RawField(raw=data.status.conditions, string=" ".join(item.type for item in data.status.conditions)),
+            conditions=data.status.conditions or []
         )
 
 
