@@ -289,10 +289,7 @@ class Scale(ModalScreen):
             border: thick $background 80%;
             background: $surface;
         }
-        #scale {
-            width: 100%;
-        }
-        #cancel {
+        #scale, #cancel {
             width: 100%;
         }
     """
