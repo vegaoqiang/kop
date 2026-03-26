@@ -378,7 +378,7 @@ class DeploymentViewModel(ViewModel):
             pods="/".join([str(data.status.ready_replicas), str(data.status.replicas)]),
             replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
-            created=f"{cls.get_created_text(data.metadata.creation_timestamp)}  Age: {cls.get_age_text(data.metadata.creation_timestamp)}",
+            created=f"{cls.get_created_text(data.metadata.creation_timestamp)}",
             conditions=data.status.conditions or []
         )
 
