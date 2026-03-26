@@ -97,9 +97,7 @@ class PodActionHandler(BaseActionHandlerMixin):
         def delete_callback(resource) -> None:
             view = app.view
             view.delete_resource(resource)
-            # pop ActionsViewModal screen
-            # app.pop_screen()
-        app.push_screen(Delete(resource), callback=delete_callback)
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
 
 
     @staticmethod
