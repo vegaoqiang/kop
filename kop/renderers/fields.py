@@ -51,7 +51,7 @@ def deployment_conditions_renderer(value):
         return ""
 
     rendered = Text()
-    for idx, name in enumerate(names):
+    for idx, name in enumerate(sorted(names)):
         color = color_map.get(name)
         if color:
             rendered.append(name, style=color)
