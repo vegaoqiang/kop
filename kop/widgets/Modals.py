@@ -79,6 +79,68 @@ class Option(ModalScreen):
         )
 
 
+class Confirm(ModalScreen):
+
+    """
+    Modal screen to confirm an action
+    """
+
+    DEFAULT_CSS = """
+        Confirm {
+            align: center middle;
+        }
+
+        #dialog {
+            grid-size: 2;
+            grid-gutter: 1 2;
+            grid-rows: 1fr 3;
+            padding: 0 1;
+            width: 60;
+            height: 11;
+            border: thick $background 80%;
+            background: $surface;
+        }
+
+        #title {
+            column-span: 2;
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+        }
+
+        #cancel, #confirm {
+            width: 100%;
+        }
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+        Binding('enter', 'action_confirm', 'Confirm', show=False),
+    ]
+
+    def __init__(self, data, action_name: str):
+        super().__init__()
+        self.data = data
+        self.action_name = action_name
+
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label(f"{self.action_name} {self.data.name}? Are you sure?", id="title"),
+            Button("Cancel", variant="default", id="cancel"),
+            Button(f"{self.action_name}", variant="error", id="confirm"),
+            id="dialog"
+        )
+
+    @on(Button.Pressed, "#cancel")
+    def action_close(self):
+        self.app.pop_screen()
+    
+    @on(Button.Pressed, "#confirm")
+    def action_confirm(self):
+        self.dismiss(self.data)
+    
 
 class Delete(ModalScreen):
     """
