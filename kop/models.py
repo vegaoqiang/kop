@@ -379,7 +379,7 @@ class DeploymentViewModel(ViewModel):
             replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
             created=f"{cls.get_created_text(data.metadata.creation_timestamp)}",
-            conditions=data.status.conditions or []
+            conditions=sorted(data.status.conditions, key=lambda x: x.type) or []
         )
 
 
