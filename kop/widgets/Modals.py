@@ -33,18 +33,16 @@ class Option(ModalScreen):
         }
         #option_dialog {
             grid-size: 2 3;
-            grid-gutter: 0 2;
+            grid-gutter: 1 2;
             grid-rows: 1fr 3fr 1fr;
             padding: 0 1;
-            height: 25%;
-            width: 50%;
+            height: 15;
+            width: 60;
             border: thick $background 80%;
             background: $surface;
         }
-        Button {
+        #cancel, #choose {
             width: 100%;
-            margin-left: 1;
-            margin-right: 1;
         }
 
     """
@@ -62,8 +60,8 @@ class Option(ModalScreen):
         yield Grid(
             Label(f"Choose a container for {self.action}", id="title"),
             OptionList(*self.options, id="option_list"),
-            Button("Cancel", id="cancel", flat=True),
-            Button("Choose", variant="success", id="choose", flat=True),
+            Button("Cancel", id="cancel"),
+            Button("Choose", variant="success", id="choose"),
             id="option_dialog"
         )
 
