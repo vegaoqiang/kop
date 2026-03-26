@@ -242,6 +242,28 @@ class DeploymentFactory(BaseFactory):
             actions=self.actions
         )
     
+    def filter(self, raw, query: str):
+        """
+        raw: V1DeploymentList
+        return: V1DeploymentList. filtered Deployments
+        """
+        query = query.lower()
+        filtered = []
+        for item in raw.items:
+            if query in item.metadata.name.lower():
+                filtered.append(item)
+                continue
+            if query in item.metadata.namespace.lower():
+                filtered.append(item)
+                continue
+            labels = [f"{k}={v} {k}:{v}" for k, v in item.metadata.labels.items()]
+            if any(query in label.lower() for label in labels):
+                filtered.append(item)
+        # copy origin raw object keep its immutability
+        new_raw = copy(raw)
+        new_raw.items = filtered
+        return new_raw
+    
     @property
     def bindings(self) -> list[dict]:
         return [
