@@ -370,14 +370,7 @@ class DeploymentViewModel(ViewModel):
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
-    # conditions: str = field(metadata={"title": "Conditions", "width": 20})
     conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions", "width": 20})
-    actions: List[ActionModel] = field(default_factory=lambda: [
-        ActionModel("sc", "Scale", "success", "Scale", "scale"),
-        ActionModel("re", "Restart", "success", "Restart", "restart"),
-        ActionModel("ed", "Edit", "success", "Edit", "edit"),
-        ActionModel("del", "Delete Deployment", "error", "Delete", "delete")],
-        metadata={"title": "Actions", "width": 10, "detail": False})
 
     @classmethod
     def clean(cls, data: V1Deployment) -> "DepolymentViewModel":
