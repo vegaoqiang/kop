@@ -1,4 +1,5 @@
 from abc import ABC
+from datetime import datetime, timezone
 from kop.registry import ActionRegistry
 from kop.models import PodViewModel, PodDetailModel
 from kop import models
@@ -6,7 +7,7 @@ from kop.views.PodTerminal import PodTerminal
 from kop.views.PodLog import PodLog
 from kop.views.PodAttach import Attach
 from kop.views.EditView import ResourceEditScreen
-from kop.widgets.Modals import Option, Delete, Scale
+from kop.widgets.Modals import Option, Delete, Scale, Confirm
 from kubernetes import client
 
 
@@ -161,3 +162,46 @@ class DeploymentActionHandler(BaseActionHandlerMixin):
                 )
 
         app.push_screen(Scale(resource), callback=scale_callback)
+
+
+    @staticmethod
+    def restart(action, resource: models.DeploymentViewModel, app):
+        def restart_callback(data: models.DeploymentViewModel | None) -> None:
+            if data is None:
+                return
+
+            try:
+                endpoint = client.AppsV1Api(api_client=app.endpoint.api_client)
+                endpoint.patch_namespaced_deployment(
+                    name=data.name,
+                    namespace=data.namespace,
+                    body={
+                        "spec": {
+                            "template": {
+                                "metadata": {
+                                    "annotations": {
+                                        "kubectl.kubernetes.io/restartedAt": datetime.now(timezone.utc).isoformat()
+                                    }
+                                }
+                            }
+                        }
+                    },
+                )
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(
+                    f"Restart deployment {data.name} success",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Restart deployment {data.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(
+            Confirm(data=resource, action_name=action.name.capitalize()),
+            callback=restart_callback,
+        )
