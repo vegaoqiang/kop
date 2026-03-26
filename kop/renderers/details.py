@@ -85,7 +85,7 @@ def render_environment(title: str, desc: list) -> ComposeResult:
 
 
 @RendererRegistry.register_renderer('probe')
-def render_probe(title: str, desc: RawField) -> ComposeResult:
+def render_probe(title: str, desc) -> ComposeResult:
     yield Row(title=Title(title, expand=False), desc=Desc(desc=desc, formatter=formatter.probe_formatter))
 
 
