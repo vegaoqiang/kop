@@ -1,11 +1,13 @@
 from abc import ABC
 from kop.registry import ActionRegistry
 from kop.models import PodViewModel, PodDetailModel
+from kop import models
 from kop.views.PodTerminal import PodTerminal
 from kop.views.PodLog import PodLog
 from kop.views.PodAttach import Attach
 from kop.views.EditView import ResourceEditScreen
-from kop.widgets.Modals import Option, Delete
+from kop.widgets.Modals import Option, Delete, Scale
+from kubernetes import client
 
 
 
@@ -115,4 +117,47 @@ class PodActionHandler(BaseActionHandlerMixin):
         app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=app.view.FACTORY_CACHE.update))
 
 
-        
+
+class DeploymentActionHandler(BaseActionHandlerMixin):
+    """
+    Action handler for Deployment resources    
+    """
+
+    resource_type = [models.DeploymentViewModel, models.DeploymentDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.DeploymentViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for Deployment, {e}", severity="error")
+
+
+    @staticmethod
+    def scale(action, resource: models.DeploymentViewModel, app):
+        def scale_callback(replicas: int | None) -> None:
+            if replicas is None:
+                return
+
+            try:
+                endpoint = client.AppsV1Api(api_client=app.endpoint.api_client)
+                endpoint.patch_namespaced_deployment_scale(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                    body={"spec": {"replicas": replicas}},
+                )
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(
+                    f"Scale deployment {resource.name} to {replicas} replicas success",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Scale deployment {resource.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(Scale(resource), callback=scale_callback)

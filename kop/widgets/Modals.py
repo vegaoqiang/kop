@@ -210,3 +210,66 @@ class PortForward(ModalScreen):
             self.query_one("#start", Button).disabled = False
         else:
             self.query_one("#start", Button).disabled = True
+
+
+class Scale(ModalScreen):
+    DEFAULT_CSS = """
+        Scale {
+            align: center middle;
+        }
+        #dialog {
+            grid-size: 2 3;
+            grid-gutter: 1 2;
+            grid-rows: 1fr 1fr 1fr;
+            padding: 0 1;
+            width: 60;
+            height: 12;
+            border: thick $background 80%;
+            background: $surface;
+        }
+        #scale {
+            width: 100%;
+        }
+        #cancel {
+            width: 100%;
+        }
+    """
+
+    def __init__(self, row_data):
+        self.row_data = row_data
+        super().__init__()
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label("Current Replicas"),
+            Label(str(self.row_data.replicas)),
+            Label("New Replicas"),
+            Input(placeholder="1 ~ 100", 
+                  validators=[Number(minimum=1, maximum=10)],
+                  id="new_replicas"),
+            Button("Cancel", variant="error", id="cancel"),
+            Button("Scale", variant="primary", id="scale", disabled=True),
+            id="dialog"
+        )
+
+    @on(Button.Pressed, "#cancel")
+    def on_cancel_press(self, event: Button.Pressed) -> None:
+        self.app.pop_screen()
+
+    @on(Button.Pressed, "#scale")
+    def on_scale_press(self, event: Button.Pressed) -> None:
+        replicas_input = self.query_one("#new_replicas", Input)
+        replicas_text = replicas_input.value.strip()
+        if not replicas_text:
+            replicas = 1
+            replicas_input.value = str(replicas)
+        else:
+            replicas = int(replicas_text)
+        self.dismiss(replicas)
+
+    @on(Input.Changed, "#new_replicas")
+    def enable_scale(self, event: Input.Changed) -> None:
+        if event.validation_result.is_valid:
+            self.query_one("#scale", Button).disabled = False
+        else:
+            self.query_one("#scale", Button).disabled = True
