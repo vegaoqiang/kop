@@ -373,7 +373,7 @@ class DeploymentViewModel(ViewModel):
     conditions: RawField = field(default_factory=lambda: RawField(raw=[], string=""), metadata={"title": "Conditions", "width": 20})
 
     @classmethod
-    def clean(cls, data: V1Deployment) -> "DepolymentViewModel":
+    def clean(cls, data: V1Deployment) -> "DeploymentViewModel":
         return cls(
             name=data.metadata.name,
             namespace=data.metadata.namespace,
