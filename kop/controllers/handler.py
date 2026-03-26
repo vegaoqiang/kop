@@ -203,3 +203,18 @@ class DeploymentActionHandler(BaseActionHandlerMixin):
             Confirm(data=resource, action_name=action.name.capitalize()),
             callback=restart_callback,
         )
+
+
+    @staticmethod
+    def edit(action, resource: models.DeploymentViewModel, app):
+        def fetcher():
+            try:
+                deployment = app.endpoint.get_deployment(
+                    name=resource.name,
+                    namespace=resource.namespace)
+            except Exception as e:
+                return
+            # serialize deployment object to dict
+            deployment=app.endpoint.api_client.sanitize_for_serialization(deployment)
+            return deployment
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=app.view.FACTORY_CACHE.update))

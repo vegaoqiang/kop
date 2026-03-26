@@ -186,6 +186,14 @@ class KbsEndpoint(KbsAuthLoader):
         if namespace:
             return endpoint.list_namespaced_deployment(namespace, watch=watch, async_req=async_req)
         return endpoint.list_deployment_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def get_deployment(self, name: str, namespace: str):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.read_namespaced_deployment(name=name, namespace=namespace)
+    
+    def patch_deployment(self, name: str, namespace: str, body: dict, **kwargs):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.patch_namespaced_deployment(name=name, namespace=namespace, body=body, **kwargs)
 
     def list_daemon_sets(self, namespace: str | None = None, 
                          watch: bool = False, 

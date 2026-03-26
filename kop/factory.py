@@ -218,6 +218,9 @@ class DeploymentFactory(BaseFactory):
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_deployments(name=name, namespace=namespace)
+    
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_deployment(name=name, namespace=namespace, **kwargs)
 
     def clean(self, raw) -> List[DeploymentViewModel]:
         return [DeploymentViewModel.clean(dep) for dep in raw.items]
