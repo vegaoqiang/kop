@@ -8,6 +8,7 @@ from kop.models import (PodViewModel,
                     DeploymentViewModel, 
                     DeploymentDetailModel,
                     DaemonSetViewModel, 
+                    DaemonSetDetailModel,
                     StatefulSetViewModel,
                     PodDetailModel,
                     ActionModel)
@@ -287,19 +288,19 @@ class DaemonSetFactory(BaseFactory):
         ActionModel(name="restart", 
                     label="Restart", 
                     variant="default", 
-                    tooltip="Restart Deployment", 
+                    tooltip="Restart DaemonSet", 
                     action="restart", 
                     key="r"),
         ActionModel(name="edit", 
                     label="Edit", 
                     variant="default", 
-                    tooltip="Edit Deployment", 
+                    tooltip="Edit DaemonSet", 
                     action="edit", 
                     key="e"),
         ActionModel(name="delete", 
                     label="Delete", 
                     variant="default", 
-                    tooltip="Delete Deployment", 
+                    tooltip="Delete DaemonSet", 
                     action="delete", 
                     key="d")
     ]
@@ -313,8 +314,8 @@ class DaemonSetFactory(BaseFactory):
     def clean(self, raw) -> List[DaemonSetViewModel]:
         return [DaemonSetViewModel.clean(dep) for dep in raw.items]
     
-    def clean_detail(self, raw) -> DaemonSetViewModel:
-        return DaemonSetViewModel.clean(raw)
+    def clean_detail(self, raw) -> DaemonSetDetailModel:
+        return DaemonSetDetailModel.clean(raw)
     
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
@@ -326,7 +327,7 @@ class DaemonSetFactory(BaseFactory):
     
     def create_detail_renderer(self, data) -> DetailModalRenderer:
         return DetailModalRenderer(
-            columns=DaemonSetViewModel.get_detail_columns(),
+            columns=DaemonSetDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
             actions=self.actions
         )

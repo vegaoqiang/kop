@@ -423,7 +423,7 @@ class DaemonSetViewModel(ViewModel):
     namespace: str = field(metadata={"title": "Namespace", "width": 20})
     pods: str = field(metadata={"title": "Pods", "width": 10})
     node_selector: str = field(metadata={"title": "NodeSelector", "width": 30})
-    age: str = field(metadata={"title": "Age", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 10, "detail": False})
     
     @classmethod
     def clean(cls, data: V1DaemonSet) -> "DaemonSetViewModel":
@@ -434,7 +434,30 @@ class DaemonSetViewModel(ViewModel):
             node_selector="".join(f"{k}={v}" for k, v in data.spec.template.spec.node_selector.items()) if data.spec.template.spec.node_selector else "",
             age=cls.get_age_text(data.metadata.creation_timestamp),
         )
-    
+
+
+@dataclass
+class DaemonSetDetailModel(DaemonSetViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"}) 
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
+    strategy: dict = field(default_factory=dict, metadata={"title": "Strategy"})
+    tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
+
+    @classmethod
+    def clean(cls, data: V1DaemonSet) -> "DaemonSetDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'selector': data.spec.selector,
+            'strategy': data.spec.update_strategy,
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'tolerations': data.spec.template.spec.tolerations
+        })
+        return cls(**base)
+
 
 @dataclass
 class StatefulSetViewModel(ViewModel):
