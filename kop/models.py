@@ -161,8 +161,19 @@ class ViewModel:
         created = start_time.strftime("%Y-%m-%d %H:%M:%S")
         age = ViewModel.get_age_text(start_time)
         return f"{created} ({age})"
-                                 
     
+    @staticmethod
+    def make_containers(data) -> List["ContainerModel"]:
+        # when resource created and status is pending, data.status.container_statuses is None
+        if data.spec.containers and data.status.container_statuses:
+            return [ContainerModel(
+                    _raw=_c, 
+                    container_statuses=ContainerStatusModel(_raw=_status)) 
+                    for _c, _status in zip(data.spec.containers, data.status.container_statuses)]
+        return [ContainerModel(
+                    _raw=_c, 
+                    container_statuses=None) for _c in data.spec.containers]
+                                 
     @classmethod
     def clean(cls, data):
         raise NotImplementedError
@@ -350,11 +361,7 @@ class PodDetailModel(PodViewModel):
             'node_selector': data.spec.node_selector,
             'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
-            'containers': [
-                ContainerModel(
-                    _raw=_c, 
-                    container_statuses=ContainerStatusModel(_raw=_status)) 
-                    for _c, _status in zip(data.spec.containers, data.status.container_statuses or [])], # re-assign containers
+            'containers': cls.make_containers(data)
         })
         base["_raw"] = data
         return cls(**base)
