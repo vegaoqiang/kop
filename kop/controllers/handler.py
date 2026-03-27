@@ -226,3 +226,60 @@ class DeploymentActionHandler(BaseActionHandlerMixin):
             view = app.view
             view.delete_resource(resource)
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+class DaemonSetActionHandler(BaseActionHandlerMixin):
+    """
+    Action handler for DaemonSet resources    
+    """
+
+    resource_type = [models.DaemonSetViewModel, models.DaemonSetDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.DaemonSetViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for DaemonSet, {e}", severity="error")
+
+    @staticmethod
+    def restart(action, resource: models.DaemonSetViewModel, app):
+        def restart_callback(data: models.DaemonSetViewModel | None) -> None:
+            if data is None:
+                return
+
+            try:
+                endpoint = client.AppsV1Api(api_client=app.endpoint.api_client)
+                endpoint.patch_namespaced_daemon_set(
+                    name=data.name,
+                    namespace=data.namespace,
+                    body={
+                        "spec": {
+                            "template": {
+                                "metadata": {
+                                    "annotations": {
+                                        "kubectl.kubernetes.io/restartedAt": datetime.now(timezone.utc).isoformat()
+                                    }
+                                }
+                            }
+                        }
+                    },
+                )
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(
+                    f"Restart daemonset {data.name} success",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Restart daemonset {data.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(
+            Confirm(data=resource, action_name=action.name.capitalize()),
+            callback=restart_callback,
+        )
