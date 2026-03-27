@@ -271,14 +271,14 @@ class PodViewModel(ViewModel):
         return cls(
             name=data.metadata.name, # type: ignore
             namespace=data.metadata.namespace, # type: ignore
-            node=data.spec.node_name, # type: ignore
+            node=data.spec.node_name or "", # type: ignore
             status=cls.get_pod_status(data), # type: ignore
             containers=[ContainerModel(_raw=cs) for cs in data.spec.containers], # type: ignore
             restarts=str(sum(cs.restart_count for cs in data.status.container_statuses)) if data.status.container_statuses else "", # type: ignore
             controlled_by=data.metadata.owner_references[0].kind if data.metadata.owner_references else "", # type: ignore
             qos=data.status.qos_class, # type: ignore
-            age=cls.get_age_text(data.status.start_time), # type: ignore
-            created=cls.get_created_text(data.status.start_time), # type: ignore
+            age=cls.get_age_text(data.status.start_time) if data.status.start_time else "", # type: ignore
+            created=cls.get_created_text(data.metadata.creation_timestamp), # type: ignore
         )
     
     @staticmethod
@@ -350,7 +350,11 @@ class PodDetailModel(PodViewModel):
             'node_selector': data.spec.node_selector,
             'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
-            'containers': [ContainerModel(_raw=_c, container_statuses=ContainerStatusModel(_raw=_status)) for _c, _status in zip(data.spec.containers, data.status.container_statuses)], # re-assign containers
+            'containers': [
+                ContainerModel(
+                    _raw=_c, 
+                    container_statuses=ContainerStatusModel(_raw=_status)) 
+                    for _c, _status in zip(data.spec.containers, data.status.container_statuses or [])], # re-assign containers
         })
         base["_raw"] = data
         return cls(**base)
@@ -466,11 +470,6 @@ class StatefulSetViewModel(ViewModel):
     pods: str = field(metadata={"title": "Pods", "width": 10})
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5})
-    actions: List[ActionModel] = field(default_factory=lambda: [
-        ActionModel("re", "success", "Restart", "restart"),
-        ActionModel("ed", "success", "Edit", "Edit"),
-        ActionModel("del", "error", "Delete StatefulSet", "delete")],
-        metadata={"title": "Actions", "width": 10})
     
     @classmethod
     def clean(cls, data: V1StatefulSet) -> "StatefulSetViewModel":
