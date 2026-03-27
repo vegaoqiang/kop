@@ -202,6 +202,14 @@ class KbsEndpoint(KbsAuthLoader):
         if namespace:
             return endpoint.list_namespaced_daemon_set(namespace, watch=watch, async_req=async_req)
         return endpoint.list_daemon_set_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def get_daemon_set(self, name: str, namespace: str):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.read_namespaced_daemon_set(name=name, namespace=namespace)
+    
+    def patch_daemon_set(self, name: str, namespace: str, body: dict, **kwargs):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.patch_namespaced_daemon_set(name=name, namespace=namespace, body=body, **kwargs)
 
     def list_stateful_sets(self, 
                            namespace: str | None = None, 
@@ -211,4 +219,3 @@ class KbsEndpoint(KbsAuthLoader):
         if namespace:
             return endpoint.list_namespaced_stateful_set(namespace, watch=watch, async_req=async_req)
         return endpoint.list_stateful_set_for_all_namespaces(watch=watch, async_req=async_req)
-

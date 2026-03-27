@@ -283,3 +283,25 @@ class DaemonSetActionHandler(BaseActionHandlerMixin):
             Confirm(data=resource, action_name=action.name.capitalize()),
             callback=restart_callback,
         )
+
+    @staticmethod
+    def edit(action, resource: models.DaemonSetViewModel, app):
+        def fetcher():
+            try:
+                daemonset = app.endpoint.get_daemon_set(
+                    name=resource.name,
+                    namespace=resource.namespace)
+            except Exception as e:
+                return
+            # serialize daemonset object to dict
+            daemonset=app.endpoint.api_client.sanitize_for_serialization(daemonset)
+            return daemonset
+        
+        def updater(name: str, namespace: str = "default", **kwargs):
+            res = app.endpoint.patch_daemon_set(name=name, namespace=namespace, **kwargs)
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update daemonset {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))

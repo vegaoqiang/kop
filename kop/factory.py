@@ -310,6 +310,9 @@ class DaemonSetFactory(BaseFactory):
 
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_daemon_sets(name=name, namespace=namespace)
+    
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_daemon_set(name=name, namespace=namespace, **kwargs)
 
     def clean(self, raw) -> List[DaemonSetViewModel]:
         return [DaemonSetViewModel.clean(dep) for dep in raw.items]
