@@ -305,3 +305,11 @@ class DaemonSetActionHandler(BaseActionHandlerMixin):
             return res
 
         app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+
+    @staticmethod
+    def delete(action, resource: models.DaemonSetViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
