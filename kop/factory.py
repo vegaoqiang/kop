@@ -283,9 +283,29 @@ class DaemonSetFactory(BaseFactory):
     """factory for daemonsets"""
     resource_type = "daemonsets"
 
-    def fetch(self):
-        # client = self._client.apps_v1()
-        return self.endpoint.list_daemon_sets()
+    actions: List[ActionModel] = [
+        ActionModel(name="restart", 
+                    label="Restart", 
+                    variant="default", 
+                    tooltip="Restart Deployment", 
+                    action="restart", 
+                    key="r"),
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit Deployment", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete Deployment", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_daemon_sets(namespace=namespace)
 
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_daemon_sets(name=name, namespace=namespace)
@@ -293,11 +313,22 @@ class DaemonSetFactory(BaseFactory):
     def clean(self, raw) -> List[DaemonSetViewModel]:
         return [DaemonSetViewModel.clean(dep) for dep in raw.items]
     
+    def clean_detail(self, raw) -> DaemonSetViewModel:
+        return DaemonSetViewModel.clean(raw)
+    
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
             columns=DaemonSetViewModel.get_columns(),
             data=self.clean(data),
-            raw_data=data.items
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data) -> DetailModalRenderer:
+        return DetailModalRenderer(
+            columns=DaemonSetViewModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions
         )
     
 

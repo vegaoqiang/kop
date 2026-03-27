@@ -424,11 +424,6 @@ class DaemonSetViewModel(ViewModel):
     pods: str = field(metadata={"title": "Pods", "width": 10})
     node_selector: str = field(metadata={"title": "NodeSelector", "width": 30})
     age: str = field(metadata={"title": "Age", "width": 10})
-    actions: List[ActionModel] = field(default_factory=lambda: [
-        ActionModel("re", "success", "Restart", "restart"),
-        ActionModel("ed", "success", "Edit", "Edit"),
-        ActionModel("del", "error", "Delete Deployment", "delete")],
-        metadata={"title": "Actions", "width": 10})
     
     @classmethod
     def clean(cls, data: V1DaemonSet) -> "DaemonSetViewModel":
@@ -436,7 +431,7 @@ class DaemonSetViewModel(ViewModel):
             name=data.metadata.name,
             namespace=data.metadata.namespace,
             pods="/".join([str(data.status.current_number_scheduled), str(data.status.desired_number_scheduled)]),
-            node_selector="".join(f"{k}={v}" for k, v in data.spec.template.spec.node_selector.items()),
+            node_selector="".join(f"{k}={v}" for k, v in data.spec.template.spec.node_selector.items()) if data.spec.template.spec.node_selector else "",
             age=cls.get_age_text(data.metadata.creation_timestamp),
         )
     
