@@ -516,7 +516,7 @@ class JobsViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     completions: str = field(metadata={"title": "Completions", "width": 10})
-    age: str = field(metadata={"title": "Age", "width": 5})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     start_time: str = field(metadata={"title": "Start Time", "width": 20})
     completion_time: str = field(metadata={"title": "Completion Time", "width": 20})
 
