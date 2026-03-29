@@ -12,6 +12,8 @@ from kop.models import (PodViewModel,
                     StatefulSetViewModel,
                     StatefulSetDetailModel,
                     PodDetailModel,
+                    JobsViewModel,
+                    JobsDetailModel,
                     ActionModel)
 from copy import copy
 
@@ -391,6 +393,59 @@ class StatefulSetFactory(BaseFactory):
     def create_detail_renderer(self, data) -> DetailModalRenderer:
         return DetailModalRenderer(
             columns=StatefulSetDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions
+        )
+
+
+class JobFactory(BaseFactory):
+    """factory for jobs"""
+    resource_type = "jobs"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="restart", 
+                    label="Restart", 
+                    variant="default", 
+                    tooltip="Restart Job", 
+                    action="restart", 
+                    key="r"),
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit Job", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete Job", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_jobs(namespace=namespace)
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_jobs(name=name, namespace=namespace)
+    
+    def clean(self, raw) -> List[JobsViewModel]:
+        return [JobsViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> JobsDetailModel:
+        return JobsDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        return TableRenderer(
+            columns=JobsViewModel.get_columns(),
+            data=self.clean(data),
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data) -> DetailModalRenderer:
+        return DetailModalRenderer(
+            columns=JobsDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
             actions=self.actions
         )

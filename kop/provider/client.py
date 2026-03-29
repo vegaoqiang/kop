@@ -226,3 +226,18 @@ class KbsEndpoint(KbsAuthLoader):
                              async_req: bool = False):
         endpoint = client.AppsV1Api(api_client=self.api_client)
         return endpoint.delete_namespaced_stateful_set(name=name, namespace=namespace, async_req=async_req)
+    
+    def list_jobs(self, namespace: str | None = None, 
+                  watch: bool = False, 
+                  async_req: bool = False):
+        endpoint = client.BatchV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_job(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_job_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def delete_jobs(self, name: str,
+                    namespace: str = 'default', 
+                    watch: bool = False, 
+                    async_req: bool = False):
+        endpoint = client.BatchV1Api(api_client=self.api_client)
+        return endpoint.delete_namespaced_job(name=name, namespace=namespace, async_req=async_req)
