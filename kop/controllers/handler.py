@@ -437,3 +437,99 @@ class StatefueSetActionHandler(BaseActionHandlerMixin):
             view.delete_resource(resource)
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+class JobActionHandler(BaseActionHandlerMixin):
+    """
+    Action handler for Job resources    
+    """
+
+    resource_type = [models.JobViewModel, models.JobDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.JobViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for Job, {e}", severity="error")
+
+    @staticmethod
+    def restart(action, resource: models.JobViewModel, app):
+        def restart_callback(data: models.JobViewModel | None) -> None:
+            if data is None:
+                return
+
+            try:
+                endpoint = client.BatchV1Api(api_client=app.endpoint.api_client)
+                job = endpoint.read_namespaced_job(name=data.name, namespace=data.namespace)
+                job_body = app.endpoint.api_client.sanitize_for_serialization(job)
+
+                job_body.pop("status", None)
+                metadata = job_body.get("metadata", {})
+                for key in (
+                    "uid",
+                    "resourceVersion",
+                    "generation",
+                    "creationTimestamp",
+                    "managedFields",
+                    "selfLink",
+                ):
+                    metadata.pop(key, None)
+
+                endpoint.delete_namespaced_job(name=data.name, namespace=data.namespace)
+                endpoint.create_namespaced_job(namespace=data.namespace, body=job_body)
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(
+                    f"Restart job {data.name} success",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Restart job {data.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(
+            Confirm(data=resource, action_name=action.name.capitalize()),
+            callback=restart_callback,
+        )
+
+    @staticmethod
+    def edit(action, resource: models.JobViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.BatchV1Api(api_client=app.endpoint.api_client)
+                job = endpoint.read_namespaced_job(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            job = app.endpoint.api_client.sanitize_for_serialization(job)
+            return job
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.BatchV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_job(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update job {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.JobViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
