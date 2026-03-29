@@ -30,7 +30,8 @@ class ResourceEdit(Static):
             width: 1fr;
             padding-left: 1;
         }
-        Button {
+        #save, #cancel {
+            width: auto;
             margin-right: 1;
         }
     """
@@ -47,8 +48,8 @@ class ResourceEdit(Static):
     def compose(self) -> ComposeResult:
         yield TextArea.code_editor(language=self.language)
         yield Horizontal(
-            Button(label="Save", variant="default", id="save"),
             Button(label="Cancel", variant="default", id="cancel"),
+            Button(label="Save", variant="default", id="save"),
             id="button_group"
         )
 
