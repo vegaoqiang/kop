@@ -527,8 +527,8 @@ class JobsViewModel(ViewModel):
             namespace=data.metadata.namespace,
             completions=str(data.status.succeeded),
             age=cls.get_age_text(data.metadata.creation_timestamp),
-            start_time=cls.get_time_text(data.status.start_time),
-            completion_time=cls.get_time_text(data.status.completion_time),
+            start_time=str(data.status.start_time),
+            completion_time=str(data.status.completion_time),
         )
 
 
@@ -539,14 +539,13 @@ class JobsDetailModel(JobsViewModel):
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
     conditions: list[V1Condition] = field(default_factory=list,metadata={"title": "Conditions"})
-    completions: str = field(default_factory=str, metadata={"title": "Completions"})
     parallelism: str = field(default_factory=str, metadata={"title": "Parallelism"})
     backofflimit: str = field(default_factory=str, metadata={"title": "BackoffLimit"})
     completionmode: str = field(default_factory=str, metadata={"title": "CompletionMode"})
     podfailurepolicy: str = field(default_factory=str, metadata={"title": "PodFailurePolicy"})
 
     @classmethod
-    def clean(cls, data: V1Job) -> JobsDetailModel:
+    def clean(cls, data: V1Job) -> "JobsDetailModel":
         base = super().clean(data).__dict__
         base.update({
             'labels': data.metadata.labels,
