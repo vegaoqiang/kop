@@ -487,3 +487,24 @@ class StatefulSetViewModel(ViewModel):
             replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
         )
+
+
+@dataclass
+class StatefulSetDetailModel(StatefulSetViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"}) 
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
+    strategy: dict = field(default_factory=dict, metadata={"title": "Strategy"})
+
+    @classmethod
+    def clean(cls, data: V1StatefulSet) -> "StatefulSetDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'selector': data.spec.selector,
+            'strategy': data.spec.update_strategy,
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+        })
+        return cls(**base)
