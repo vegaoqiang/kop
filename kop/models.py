@@ -512,7 +512,7 @@ class StatefulSetDetailModel(StatefulSetViewModel):
     
 
 @dataclass
-class JobsViewModel(ViewModel):
+class JobViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     completions: str = field(metadata={"title": "Completions", "width": 10})
@@ -521,7 +521,7 @@ class JobsViewModel(ViewModel):
     completion_time: str = field(metadata={"title": "Completion Time", "width": 20})
 
     @classmethod
-    def clean(cls, data: V1Job) -> "JobsViewModel":
+    def clean(cls, data: V1Job) -> "JobViewModel":
         return cls(
             name=data.metadata.name,
             namespace=data.metadata.namespace,
@@ -533,7 +533,7 @@ class JobsViewModel(ViewModel):
 
 
 @dataclass
-class JobsDetailModel(JobsViewModel):
+class JobDetailModel(JobViewModel):
     created: str = field(default_factory=str, metadata={"title": "Created"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"}) 
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
@@ -545,7 +545,7 @@ class JobsDetailModel(JobsViewModel):
     podfailurepolicy: str = field(default_factory=str, metadata={"title": "PodFailurePolicy"})
 
     @classmethod
-    def clean(cls, data: V1Job) -> "JobsDetailModel":
+    def clean(cls, data: V1Job) -> "JobDetailModel":
         base = super().clean(data).__dict__
         base.update({
             'labels': data.metadata.labels,

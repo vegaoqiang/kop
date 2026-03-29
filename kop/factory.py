@@ -12,8 +12,8 @@ from kop.models import (PodViewModel,
                     StatefulSetViewModel,
                     StatefulSetDetailModel,
                     PodDetailModel,
-                    JobsViewModel,
-                    JobsDetailModel,
+                    JobViewModel,
+                    JobDetailModel,
                     ActionModel)
 from copy import copy
 
@@ -429,17 +429,17 @@ class JobFactory(BaseFactory):
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_jobs(name=name, namespace=namespace)
     
-    def clean(self, raw) -> List[JobsViewModel]:
-        return [JobsViewModel.clean(dep) for dep in raw.items]
+    def clean(self, raw) -> List[JobViewModel]:
+        return [JobViewModel.clean(dep) for dep in raw.items]
     
-    def clean_detail(self, raw) -> JobsDetailModel:
-        return JobsDetailModel.clean(raw)
+    def clean_detail(self, raw) -> JobDetailModel:
+        return JobDetailModel.clean(raw)
     
     def create_renderer(self, data) -> TableRenderer:
         cleaned = self.clean(data)
         cleaned.sort(key=lambda vm: vm.name)
         return TableRenderer(
-            columns=JobsViewModel.get_columns(),
+            columns=JobViewModel.get_columns(),
             data=cleaned,
             raw_data=data.items,
             actions=self.actions
@@ -447,7 +447,7 @@ class JobFactory(BaseFactory):
     
     def create_detail_renderer(self, data) -> DetailModalRenderer:
         return DetailModalRenderer(
-            columns=JobsDetailModel.get_detail_columns(),
+            columns=JobDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
             actions=self.actions
         )
