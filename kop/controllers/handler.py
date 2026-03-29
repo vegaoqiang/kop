@@ -313,3 +313,127 @@ class DaemonSetActionHandler(BaseActionHandlerMixin):
             view = app.view
             view.delete_resource(resource)
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+
+class StatefueSetActionHandler(BaseActionHandlerMixin):
+    """
+    Action handler for StatefulSet resources    
+    """
+
+    resource_type = [models.StatefulSetViewModel, models.StatefulSetDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.StatefulSetViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for StatefulSet, {e}", severity="error")
+
+    @staticmethod
+    def scale(action, resource: models.StatefulSetViewModel, app):
+        def scale_callback(replicas: int | None) -> None:
+            if replicas is None:
+                return
+
+            try:
+                endpoint = client.AppsV1Api(api_client=app.endpoint.api_client)
+                endpoint.patch_namespaced_stateful_set_scale(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                    body={"spec": {"replicas": replicas}},
+                )
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(
+                    f"Scale statefulset {resource.name} to {replicas} replicas success",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Scale statefulset {resource.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(Scale(resource), callback=scale_callback)
+
+    @staticmethod
+    def restart(action, resource: models.StatefulSetViewModel, app):
+        def restart_callback(data: models.StatefulSetViewModel | None) -> None:
+            if data is None:
+                return
+
+            try:
+                endpoint = client.AppsV1Api(api_client=app.endpoint.api_client)
+                endpoint.patch_namespaced_stateful_set(
+                    name=data.name,
+                    namespace=data.namespace,
+                    body={
+                        "spec": {
+                            "template": {
+                                "metadata": {
+                                    "annotations": {
+                                        "kubectl.kubernetes.io/restartedAt": datetime.now(timezone.utc).isoformat()
+                                    }
+                                }
+                            }
+                        }
+                    },
+                )
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(
+                    f"Restart statefulset {data.name} success",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Restart statefulset {data.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(
+            Confirm(data=resource, action_name=action.name.capitalize()),
+            callback=restart_callback,
+        )
+
+    @staticmethod
+    def edit(action, resource: models.StatefulSetViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.AppsV1Api(api_client=app.endpoint.api_client)
+                statefulset = endpoint.read_namespaced_stateful_set(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            statefulset = app.endpoint.api_client.sanitize_for_serialization(statefulset)
+            return statefulset
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.AppsV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_stateful_set(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update statefulset {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.StatefulSetViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
