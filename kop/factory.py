@@ -10,6 +10,7 @@ from kop.models import (PodViewModel,
                     DaemonSetViewModel, 
                     DaemonSetDetailModel,
                     StatefulSetViewModel,
+                    StatefulSetDetailModel,
                     PodDetailModel,
                     ActionModel)
 from copy import copy
@@ -340,16 +341,56 @@ class StatefulSetFactory(BaseFactory):
     """factory for statefulsets"""
     resource_type = "statefulsets"
 
-    def fetch(self):
-        # client = self._client.apps_v1()
-        return self.endpoint.list_stateful_sets()
+    actions: List[ActionModel] = [
+        ActionModel(name="scale", 
+                    label="Scale", 
+                    variant="default", 
+                    tooltip="Scale StatefulSet", 
+                    action="scale", 
+                    key="s"),
+        ActionModel(name="restart", 
+                    label="Restart", 
+                    variant="default", 
+                    tooltip="Restart StatefulSet", 
+                    action="restart", 
+                    key="r"),
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit StatefulSet", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete StatefulSet", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_stateful_sets(namespace=namespace)
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_stateful_sets(name=name, namespace=namespace)
 
     def clean(self, raw) -> List[StatefulSetViewModel]:
         return [StatefulSetViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> StatefulSetDetailModel:
+        return StatefulSetDetailModel.clean(raw)
     
     def create_renderer(self, data) -> TableRenderer:
         return TableRenderer(
             columns=StatefulSetViewModel.get_columns(),
             data=self.clean(data),
-            raw_data=data.items
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data) -> DetailModalRenderer:
+        return DetailModalRenderer(
+            columns=StatefulSetDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions
         )

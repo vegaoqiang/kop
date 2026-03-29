@@ -219,3 +219,10 @@ class KbsEndpoint(KbsAuthLoader):
         if namespace:
             return endpoint.list_namespaced_stateful_set(namespace, watch=watch, async_req=async_req)
         return endpoint.list_stateful_set_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def delete_stateful_sets(self, name: str,
+                             namespace: str = 'default', 
+                             watch: bool = False, 
+                             async_req: bool = False):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.delete_namespaced_stateful_set(name=name, namespace=namespace, async_req=async_req)
