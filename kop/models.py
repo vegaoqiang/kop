@@ -13,6 +13,7 @@ from kubernetes.client.models import (
     V1VolumeMount,
     V1ResourceRequirements,
     V1Condition,
+    V1Job,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -505,6 +506,58 @@ class StatefulSetDetailModel(StatefulSetViewModel):
             'annotations': data.metadata.annotations,
             'selector': data.spec.selector,
             'strategy': data.spec.update_strategy,
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+        })
+        return cls(**base)
+    
+
+@dataclass
+class JobsViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 20})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    completions: str = field(metadata={"title": "Completions", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5})
+    start_time: str = field(metadata={"title": "Start Time", "width": 20})
+    completion_time: str = field(metadata={"title": "Completion Time", "width": 20})
+
+    @classmethod
+    def clean(cls, data: V1Job) -> "JobsViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            completions=str(data.status.succeeded),
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+            start_time=cls.get_time_text(data.status.start_time),
+            completion_time=cls.get_time_text(data.status.completion_time),
+        )
+
+
+@dataclass
+class JobsDetailModel(JobsViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"}) 
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
+    conditions: list[V1Condition] = field(default_factory=list,metadata={"title": "Conditions"})
+    completions: str = field(default_factory=str, metadata={"title": "Completions"})
+    parallelism: str = field(default_factory=str, metadata={"title": "Parallelism"})
+    backofflimit: str = field(default_factory=str, metadata={"title": "BackoffLimit"})
+    completionmode: str = field(default_factory=str, metadata={"title": "CompletionMode"})
+    podfailurepolicy: str = field(default_factory=str, metadata={"title": "PodFailurePolicy"})
+
+    @classmethod
+    def clean(cls, data: V1Job) -> JobsDetailModel:
+        base = super().clean(data).__dict__
+        base.update({
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'selector': data.spec.selector,
+            'conditions': data.status.conditions,
+            'completions': str(data.spec.completions),
+            'parallelism': str(data.spec.parallelism),
+            'backofflimit': str(data.spec.backoff_limit),
+            'completionmode': str(data.spec.completion_mode),
+            'podfailurepolicy': str(data.spec.failed_jobs_history_limit),
             'created': cls.get_created_text(data.metadata.creation_timestamp),
         })
         return cls(**base)
