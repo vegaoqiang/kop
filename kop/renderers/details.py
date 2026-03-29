@@ -1,7 +1,7 @@
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Container
-from kop.widgets.RichDetail import Row, Title,  Desc, DescAnnotations, DescAffinity
+from kop.widgets.RichDetail import Row, Title,  Desc, DescAnnotations, DescAffinity, DescPodFailurePolicy
 from kop.widgets.Rules import DetailRule
 from kop.registry import RendererRegistry
 from kop.models import ContainerModel, ContainerStatusModel
@@ -130,6 +130,19 @@ def render_affinities(title: str, desc: list) -> ComposeResult:
             allow_unicode=True, 
             sort_keys=False, 
             default_flow_style=False))
+    
+
+@RendererRegistry.register_renderer('podfailurepolicy')
+def render_podfailurepolicy(title: str, desc: dict) -> ComposeResult:
+    from kubernetes.client import ApiClient
+    from yaml import safe_dump
+    api_client = ApiClient()
+    yield DescPodFailurePolicy(
+            desc=safe_dump(
+                api_client.sanitize_for_serialization(desc), 
+                allow_unicode=True, 
+                sort_keys=False, 
+                default_flow_style=False))
 
 
 class DetailModalRenderer(ModalScreen):

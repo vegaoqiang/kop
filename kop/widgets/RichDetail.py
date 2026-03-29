@@ -146,3 +146,13 @@ class DescAffinity(Static):
     def compose(self) -> ComposeResult:
         with Collapsible(title="Affinity"):
             yield Static(Syntax(self.desc, "yaml"))
+
+
+class DescPodFailurePolicy(DescAffinity):
+    """
+    for job podFailurePolicy field
+    """
+    
+    def compose(self) -> ComposeResult:
+        with Collapsible(title="PodFailurePolicy"):
+            yield Static(Syntax(self.desc, "yaml"))

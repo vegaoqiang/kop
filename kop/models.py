@@ -556,7 +556,7 @@ class JobsDetailModel(JobsViewModel):
             'parallelism': str(data.spec.parallelism),
             'backofflimit': str(data.spec.backoff_limit),
             'completionmode': str(data.spec.completion_mode),
-            'podfailurepolicy': str(data.spec.failed_jobs_history_limit),
+            'podfailurepolicy': data.spec.pod_failure_policy,
             'created': cls.get_created_text(data.metadata.creation_timestamp),
         })
         return cls(**base)
