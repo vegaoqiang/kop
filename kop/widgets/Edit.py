@@ -86,3 +86,32 @@ class ResourceEdit(Static):
         def __init__(self, playload: PlayLoad, **kwargs):
             super().__init__(**kwargs)
             self.playload = playload
+
+
+
+class DataEdit(Static):
+    """
+    Edit resource fragments, e.g. configmaps data
+    """
+
+    DEFAULT_CSS = """
+        #resource {
+            height: 10;
+        }
+        #save {
+            margin-left: 1;
+        }
+    """
+
+    def __init__(self, language: str = "yaml", resource=None, **kwargs):
+        super().__init__(**kwargs)
+        self.language = language
+        self.resource = resource if resource is not None else ""
+
+    def compose(self) -> ComposeResult:
+        yield TextArea.code_editor(language=self.language, id="resource")
+        yield Button(label="Save", variant="default", id="save")
+    
+    def on_mount(self) -> None:
+        self.query_one(TextArea).text = self.resource
+

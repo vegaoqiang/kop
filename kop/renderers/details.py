@@ -1,3 +1,5 @@
+import json
+from yaml import safe_load
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
 from textual.containers import VerticalScroll, Container
@@ -9,6 +11,7 @@ from kop.renderers import formatter
 from kop.widgets.Actions import ActionTriggered, DetailActionsView
 from kop.widgets.Events import ResourceEvents
 from kop.widgets.Forward import DescPorts
+from kop.widgets.Edit import DataEdit
 from kop.controllers.handler import ActionRegistry
 from kop.provider.events import EventService
 
@@ -143,6 +146,43 @@ def render_podfailurepolicy(title: str, desc: dict) -> ComposeResult:
                 allow_unicode=True, 
                 sort_keys=False, 
                 default_flow_style=False))
+    
+
+@RendererRegistry.register_renderer('data')
+def render_configmap_data(title: str, desc: dict) -> ComposeResult:
+    def guess_data_language(key: str, value) -> str:
+        if not isinstance(value, str):
+            return "yaml"
+
+        key_lower = key.lower()
+        text = value.strip()
+
+        if key_lower.endswith((".sh", ".bash")) or text.startswith("#!/bin/sh") or text.startswith("#!/usr/bin/env sh"):
+            return "bash"
+        if key_lower.endswith((".yaml", ".yml")):
+            return "yaml"
+        if key_lower.endswith(".json"):
+            return "json"
+
+        if text:
+            try:
+                json.loads(text)
+                return "json"
+            except Exception:
+                pass
+
+            try:
+                loaded = safe_load(text)
+                if isinstance(loaded, (dict, list)):
+                    return "yaml"
+            except Exception:
+                pass
+
+        return "text"
+
+    for key, value in desc.items():
+        yield Row(title=Title(key, expand=True), desc=DataEdit(language=guess_data_language(key, value), resource=value))
+        yield DetailRule()
 
 
 class DetailModalRenderer(ModalScreen):
