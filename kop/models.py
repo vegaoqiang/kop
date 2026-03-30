@@ -15,6 +15,7 @@ from kubernetes.client.models import (
     V1Condition,
     V1Job,
     V1CronJob,
+    V1ConfigMap,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -571,7 +572,7 @@ class CronJobViewModel(ViewModel):
     suspend: str = field(metadata={"title": "Suspend", "width": 10})
     active: str = field(metadata={"title": "Active", "width": 10})
     lastschedule: str = field(metadata={"title": "Last Schedule", "width": 10})
-    age: str = field(metadata={"title": "Age", "width": 5})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
 
     @classmethod
     def clean(cls, data: V1CronJob) -> "CronJobViewModel":
@@ -601,5 +602,41 @@ class CronJobDetailModel(CronJobViewModel):
             'successfuljobshistorylimit': str(data.spec.successful_jobs_history_limit),
             'failedjobshistorylimit': str(data.spec.failed_jobs_history_limit),
             'created': cls.get_created_text(data.metadata.creation_timestamp),
+        })
+        return cls(**base)
+
+
+@dataclass
+class ConfigMapViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 20})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    configs: str = field(metadata={"title": "Configs", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1ConfigMap) -> "ConfigMapViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            configs=data.data,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class ConfigMapDetailModel(ConfigMapViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    data: dict = field(default_factory=dict, metadata={"title": "Data"})
+
+    @classmethod
+    def clean(cls, data: V1ConfigMap) -> "ConfigMapDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'data': data.data
         })
         return cls(**base)
