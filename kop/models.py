@@ -14,6 +14,7 @@ from kubernetes.client.models import (
     V1ResourceRequirements,
     V1Condition,
     V1Job,
+    V1CronJob,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -557,6 +558,47 @@ class JobDetailModel(JobViewModel):
             'backofflimit': str(data.spec.backoff_limit),
             'completionmode': str(data.spec.completion_mode),
             'podfailurepolicy': data.spec.pod_failure_policy,
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+        })
+        return cls(**base)
+
+
+@dataclass
+class CronJobViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 20})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    schedule: str = field(metadata={"title": "Schedule", "width": 10})
+    suspend: str = field(metadata={"title": "Suspend", "width": 10})
+    active: int = field(metadata={"title": "Active", "width": 10})
+    lastschedule: str = field(metadata={"title": "Last Schedule", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5})
+
+    @classmethod
+    def clean(cls, data: V1CronJob) -> "CronJobViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            schedule=str(data.spec.schedule),
+            suspend=str(data.spec.suspend),
+            active=len(data.status.active),
+            lastschedule=str(data.status.last_schedule_time),
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+class CronJobDetailModel(CronJobViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    concurrencypolicy: str = field(default_factory=str, metadata={"title": "ConcurrencyPolicy"})
+    successfuljobshistorylimit: str = field(default_factory=str, metadata={"title": "SuccessfulJobsHistoryLimit"})
+    failedjobshistorylimit: str = field(default_factory=str, metadata={"title": "FailedJobsHistoryLimit"})
+
+    @classmethod
+    def clean(cls, data: V1CronJob) -> "CronJobDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'concurrencypolicy': str(data.spec.concurrency_policy),
+            'successfuljobshistorylimit': str(data.spec.successful_jobs_history_limit),
+            'failedjobshistorylimit': str(data.spec.failed_jobs_history_limit),
             'created': cls.get_created_text(data.metadata.creation_timestamp),
         })
         return cls(**base)
