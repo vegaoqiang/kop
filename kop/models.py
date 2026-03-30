@@ -306,28 +306,28 @@ class PodViewModel(ViewModel):
         if status and status.phase == "Failed" and status.reason == "Evicted":
             return "Evicted"
 
-        # container level status
-        container_statuses = (
-            status.container_statuses or []
-        ) + (
-            status.init_container_statuses or []
-        )
+        # # container level status
+        # container_statuses = (
+        #     status.container_statuses or []
+        # ) + (
+        #     status.init_container_statuses or []
+        # )
 
-        for cs in container_statuses:
-            state = cs.state
-            if not state:
-                continue
+        # for cs in container_statuses:
+        #     state = cs.state
+        #     if not state:
+        #         continue
 
-            # Waiting 
-            if state.waiting:
-                reason = state.waiting.reason
-                if reason:
-                    return reason  # CrashLoopBackOff / ImagePullBackOff / ErrImagePull
+        #     # Waiting 
+        #     if state.waiting:
+        #         reason = state.waiting.reason
+        #         if reason:
+        #             return reason  # CrashLoopBackOff / ImagePullBackOff / ErrImagePull
 
-            # Terminated but abnormal
-            if state.terminated:
-                if state.terminated.exit_code != 0:
-                    return state.terminated.reason or "Error"
+        #     # Terminated but abnormal
+        #     if state.terminated:
+        #         if state.terminated.exit_code != 0:
+        #             return state.terminated.reason or "Error"
 
         # default get pod phase
         if status and status.phase:
