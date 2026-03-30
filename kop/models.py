@@ -610,7 +610,7 @@ class CronJobDetailModel(CronJobViewModel):
 class ConfigMapViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    keys: dict = field(metadata={"title": "Keys", "width": 10, "detail": False})
+    keys: str = field(metadata={"title": "Keys", "width": 10, "detail": False})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
 
     @classmethod
@@ -618,7 +618,7 @@ class ConfigMapViewModel(ViewModel):
         return cls(
             name=data.metadata.name,
             namespace=data.metadata.namespace,
-            keys=','.join(data.data.keys()),
+            keys=','.join(data.data.keys() if data.data else []),
             age=cls.get_age_text(data.metadata.creation_timestamp),
         )
     
