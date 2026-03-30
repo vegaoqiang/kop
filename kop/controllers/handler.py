@@ -565,6 +565,9 @@ class CronJobActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def suspend(action, resource: models.CronJobViewModel, app):
+        is_suspended = str(resource.suspend).lower() == "true"
+        confirm_action_name = "Resume" if is_suspended else "Suspend"
+
         def suspend_callback(data: models.CronJobViewModel | None) -> None:
             if data is None:
                 return
@@ -583,7 +586,7 @@ class CronJobActionHandler(BaseActionHandlerMixin):
                     namespace=data.namespace,
                     body={"spec": {"suspend": target_suspend}},
                 )
-
+ 
                 if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
                     app.view._update_resource()
 
@@ -599,7 +602,7 @@ class CronJobActionHandler(BaseActionHandlerMixin):
                 )
 
         app.push_screen(
-            Confirm(data=resource, action_name=action.name.capitalize()),
+            Confirm(data=resource, action_name=confirm_action_name),
             callback=suspend_callback,
         )
 

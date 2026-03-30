@@ -463,7 +463,7 @@ class CronJobFactory(BaseFactory):
         ActionModel(name="suspend", 
                     label="suspend", 
                     variant="default", 
-                    tooltip="Suspend CronJob", 
+                    tooltip="Suspend/Resume CronJob", 
                     action="suspend", 
                     key="s"),            
         ActionModel(name="edit", 
