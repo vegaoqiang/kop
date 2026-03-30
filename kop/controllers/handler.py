@@ -489,3 +489,153 @@ class JobActionHandler(BaseActionHandlerMixin):
             view.delete_resource(resource)
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+class CronJobActionHandler(BaseActionHandlerMixin):
+    """
+    Action handler for CronJob resources    
+    """
+
+    resource_type = [models.CronJobViewModel, models.CronJobDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.CronJobViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for CronJob, {e}", severity="error")
+
+    @staticmethod
+    def trigger(action, resource: models.CronJobViewModel, app):
+        def trigger_callback(data: models.CronJobViewModel | None) -> None:
+            if data is None:
+                return
+
+            try:
+                endpoint = client.BatchV1Api(api_client=app.endpoint.api_client)
+                cronjob = endpoint.read_namespaced_cron_job(
+                    name=data.name,
+                    namespace=data.namespace,
+                )
+
+                template = app.endpoint.api_client.sanitize_for_serialization(cronjob.spec.job_template)
+                metadata = template.get("metadata", {}) or {}
+                spec = template.get("spec", {}) or {}
+
+                ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+                base_name = f"{data.name}-manual-{ts}"
+                job_name = base_name[:63].rstrip("-")
+
+                metadata["name"] = job_name
+                metadata.pop("creationTimestamp", None)
+                metadata.pop("resourceVersion", None)
+                metadata.pop("uid", None)
+                metadata.pop("managedFields", None)
+
+                labels = metadata.setdefault("labels", {})
+                labels["cronjob.kubernetes.io/instantiate"] = "manual"
+
+                endpoint.create_namespaced_job(
+                    namespace=data.namespace,
+                    body={
+                        "apiVersion": "batch/v1",
+                        "kind": "Job",
+                        "metadata": metadata,
+                        "spec": spec,
+                    },
+                )
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(
+                    f"Trigger cronjob {data.name} success, created job {job_name}",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Trigger cronjob {data.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(
+            Confirm(data=resource, action_name=action.name.capitalize()),
+            callback=trigger_callback,
+        )
+
+    @staticmethod
+    def suspend(action, resource: models.CronJobViewModel, app):
+        def suspend_callback(data: models.CronJobViewModel | None) -> None:
+            if data is None:
+                return
+
+            try:
+                endpoint = client.BatchV1Api(api_client=app.endpoint.api_client)
+                cronjob = endpoint.read_namespaced_cron_job(
+                    name=data.name,
+                    namespace=data.namespace,
+                )
+                current_suspend = bool(cronjob.spec.suspend)
+                target_suspend = not current_suspend
+
+                endpoint.patch_namespaced_cron_job(
+                    name=data.name,
+                    namespace=data.namespace,
+                    body={"spec": {"suspend": target_suspend}},
+                )
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                action_text = "Suspend" if target_suspend else "Resume"
+                app.notify(
+                    f"{action_text} cronjob {data.name} success",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Suspend cronjob {data.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(
+            Confirm(data=resource, action_name=action.name.capitalize()),
+            callback=suspend_callback,
+        )
+
+    @staticmethod
+    def edit(action, resource: models.CronJobViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.BatchV1Api(api_client=app.endpoint.api_client)
+                cronjob = endpoint.read_namespaced_cron_job(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            cronjob = app.endpoint.api_client.sanitize_for_serialization(cronjob)
+            return cronjob
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.BatchV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_cron_job(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update cronjob {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.CronJobViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
