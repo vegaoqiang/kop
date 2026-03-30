@@ -539,8 +539,8 @@ class ConfigMapFactory(BaseFactory):
     def clean(self, raw) -> List[models.ConfigMapViewModel]:
         return [models.ConfigMapViewModel.clean(dep) for dep in raw.items]
     
-    def clean_detail(self, raw) -> models.ConfigMapViewModel:
-        return models.ConfigMapViewModel.clean(raw)
+    def clean_detail(self, raw) -> models.ConfigMapDetailModel:
+        return models.ConfigMapDetailModel.clean(raw)
     
     def create_renderer(self, data) -> TableRenderer:
         cleaned = self.clean(data)
