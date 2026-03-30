@@ -14,6 +14,8 @@ from kop.models import (PodViewModel,
                     PodDetailModel,
                     JobViewModel,
                     JobDetailModel,
+                    CronJobViewModel,
+                    CronJobDetailModel,
                     ActionModel)
 from copy import copy
 
@@ -442,6 +444,67 @@ class JobFactory(BaseFactory):
     def create_detail_renderer(self, data) -> DetailModalRenderer:
         return DetailModalRenderer(
             columns=JobDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions
+        )
+    
+
+class CronJobFactory(BaseFactory):
+    """factory for cronjobs"""
+    resource_type = "cronjobs"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="trigger", 
+                    label="trigger", 
+                    variant="default", 
+                    tooltip="Trigger CronJob", 
+                    action="trigger", 
+                    key="t"),
+        ActionModel(name="suspend", 
+                    label="suspend", 
+                    variant="default", 
+                    tooltip="Suspend CronJob", 
+                    action="suspend", 
+                    key="s"),            
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit CronJob", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete CronJob", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_cron_jobs(namespace=namespace)
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_cron_jobs(name=name, namespace=namespace)
+    
+    def clean(self, raw) -> List[CronJobViewModel]:
+        return [CronJobViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> CronJobDetailModel:
+        return CronJobDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=CronJobViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data) -> DetailModalRenderer:
+        return DetailModalRenderer(
+            columns=CronJobDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
             actions=self.actions
         )
