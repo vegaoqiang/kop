@@ -571,7 +571,7 @@ class CronJobViewModel(ViewModel):
     schedule: str = field(metadata={"title": "Schedule", "width": 10})
     suspend: str = field(metadata={"title": "Suspend", "width": 10})
     active: str = field(metadata={"title": "Active", "width": 10})
-    lastschedule: str = field(metadata={"title": "Last Schedule", "width": 10})
+    lastschedule: str = field(metadata={"title": "Last Schedule", "width": 20})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
 
     @classmethod
@@ -610,7 +610,7 @@ class CronJobDetailModel(CronJobViewModel):
 class ConfigMapViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    keys: str = field(metadata={"title": "Keys", "width": 10, "detail": False})
+    keys: str = field(metadata={"title": "Keys", "width": 20, "detail": False})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
 
     @classmethod
