@@ -61,12 +61,3 @@ def deployment_conditions_renderer(value):
             # add space to word end
             rendered.append(" ")
     return rendered
-
-
-def configmap_configs_renderer(value):
-    """
-    render configmap configs in table (TableRenderer)
-    """
-    if not value:
-        return ""
-    return Text(','.join(value.keys()))
