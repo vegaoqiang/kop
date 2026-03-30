@@ -256,3 +256,19 @@ class KbsEndpoint(KbsAuthLoader):
                          async_req: bool = False):
         endpoint = client.BatchV1Api(api_client=self.api_client)
         return endpoint.delete_namespaced_cron_job(name=name, namespace=namespace, async_req=async_req)
+    
+
+    def list_config_maps(self, namespace: str | None = None, 
+                         watch: bool = False, 
+                         async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_config_map(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_config_map_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def delete_config_maps(self, name: str,
+                           namespace: str = 'default', 
+                           watch: bool = False, 
+                           async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.delete_namespaced_config_map(name=name, namespace=namespace, async_req=async_req)

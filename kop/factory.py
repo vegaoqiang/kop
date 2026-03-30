@@ -17,6 +17,7 @@ from kop.models import (PodViewModel,
                     CronJobViewModel,
                     CronJobDetailModel,
                     ActionModel)
+from kop import models
 from copy import copy
 
 
@@ -505,6 +506,55 @@ class CronJobFactory(BaseFactory):
     def create_detail_renderer(self, data) -> DetailModalRenderer:
         return DetailModalRenderer(
             columns=CronJobDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions
+        )
+    
+
+class ConfigMapFactory(BaseFactory):
+    """factory for configmaps"""
+    resource_type = "configmaps"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit ConfigMap", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete ConfigMap", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_config_maps(namespace=namespace)
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_config_maps(name=name, namespace=namespace)
+    
+    def clean(self, raw) -> List[models.ConfigMapViewModel]:
+        return [models.ConfigMapViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> models.ConfigMapViewModel:
+        return models.ConfigMapViewModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.ConfigMapViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data) -> DetailModalRenderer:
+        return DetailModalRenderer(
+            columns=models.ConfigMapDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
             actions=self.actions
         )
