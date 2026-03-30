@@ -19,7 +19,7 @@ from kubernetes.client.models import (
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
-from kop.renderers.fields import pod_status_renderer, deployment_conditions_renderer
+from kop.renderers.fields import pod_status_renderer, deployment_conditions_renderer, configmap_configs_renderer
 
 
 @dataclass
@@ -610,7 +610,7 @@ class CronJobDetailModel(CronJobViewModel):
 class ConfigMapViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    configs: str = field(metadata={"title": "Configs", "width": 10})
+    configs: dict = field(metadata={"title": "Configs", "width": 10, "renderer": configmap_configs_renderer})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
 
     @classmethod
