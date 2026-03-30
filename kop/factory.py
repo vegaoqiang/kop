@@ -403,12 +403,6 @@ class JobFactory(BaseFactory):
     resource_type = "jobs"
 
     actions: List[ActionModel] = [
-        ActionModel(name="restart", 
-                    label="Restart", 
-                    variant="default", 
-                    tooltip="Restart Job", 
-                    action="restart", 
-                    key="r"),
         ActionModel(name="edit", 
                     label="Edit", 
                     variant="default", 
