@@ -642,3 +642,55 @@ class CronJobActionHandler(BaseActionHandlerMixin):
             view.delete_resource(resource)
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+class ConfigMapActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for ConfigMap resource"""
+    resource_type = [models.ConfigMapViewModel, models.ConfigMapDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.ConfigMapViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for ConfigMap, {e}", severity="error")
+
+    @staticmethod
+    def edit(action, resource: models.ConfigMapViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                configmap = endpoint.read_namespaced_config_map(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            configmap = app.endpoint.api_client.sanitize_for_serialization(configmap)
+            return configmap
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_config_map(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update configmap {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.ConfigMapViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+    
