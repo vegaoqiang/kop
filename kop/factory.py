@@ -191,9 +191,10 @@ class PodFacotry(BaseFactory):
             if query in owner_references_kind.lower():
                 filtered.append(item)
                 continue
-            labels = [f"{k}={v} {k}:{v}" for k, v in item.metadata.labels.items()]
-            if any(query in label.lower() for label in labels):
-                filtered.append(item)
+            if item.metadata.labels:
+                labels = [f"{k}={v} {k}:{v}" for k, v in item.metadata.labels.items()]
+                if any(query in label.lower() for label in labels):
+                    filtered.append(item)
         # copy origin raw object keep its immutability
         new_raw = copy(raw)
         new_raw.items = filtered
