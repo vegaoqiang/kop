@@ -611,3 +611,59 @@ class ConfigMapFactory(BaseFactory):
             data=self.clean_detail(data),
             actions=self.actions
         )
+
+
+class SecretFactory(BaseFactory):
+    """factory for secrets"""
+    resource_type = "secrets"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit Secret", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete Secret", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_secrets(namespace=namespace)
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_secrets(name=name, namespace=namespace)
+
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_secret(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_secret(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.SecretViewModel]:
+        return [models.SecretViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> models.SecretDetailModel:
+        return models.SecretDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.SecretViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.SecretDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions
+        )

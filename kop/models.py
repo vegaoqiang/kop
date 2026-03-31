@@ -16,6 +16,7 @@ from kubernetes.client.models import (
     V1Job,
     V1CronJob,
     V1ConfigMap,
+    V1Secret,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -637,6 +638,42 @@ class ConfigMapDetailModel(ConfigMapViewModel):
             'created': cls.get_created_text(data.metadata.creation_timestamp),
             'labels': data.metadata.labels,
             'annotations': data.metadata.annotations,
+            'data': data.data
+        })
+        return cls(**base)
+    
+
+@dataclass
+class SecretViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 20})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    keys: str = field(metadata={"title": "Keys", "width": 20, "detail": False})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1Secret) -> "SecretViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            keys=','.join(data.data.keys() if data.data else []),
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class SecretDetailModel(SecretViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
+    type: str = field(default_factory=str, metadata={"title": "Type"})
+    data: dict = field(default_factory=dict, metadata={"title": "Data"})
+
+    @classmethod
+    def clean(cls, data: V1Secret) -> "SecretDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'type': data.type,
             'data': data.data
         })
         return cls(**base)

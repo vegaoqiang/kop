@@ -312,3 +312,32 @@ class KbsEndpoint(KbsAuthLoader):
     def create_config_map(self, namespace: str, body: dict, **kwargs):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.create_namespaced_config_map(namespace=namespace, body=body, **kwargs)
+
+    def list_secrets(self, namespace: str |None = None):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_secret(namespace)
+        return endpoint.list_secret_for_all_namespaces()
+    
+    def delete_secrets(self, name: str,
+                       namespace: str = 'default', 
+                       watch: bool = False, 
+                       async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.delete_namespaced_secret(name=name, namespace=namespace, async_req=async_req)
+    
+    def patch_secret(self, name: str,
+                     namespace: str = 'default',
+                     body: dict | None = None,
+                     async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.patch_namespaced_secret(
+            name=name,
+            namespace=namespace,
+            body=body or {},
+            async_req=async_req,
+        )
+    
+    def create_secret(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_secret(namespace=namespace, body=body, **kwargs)
