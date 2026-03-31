@@ -1,0 +1,23 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: new-cronjob
+  labels:
+    app: new-cronjob
+spec:
+  schedule: '*/5 * * * *'
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: new-cronjob
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: main
+              image: busybox:latest
+              command:
+                - sh
+                - -c
+                - date; echo cronjob from kop

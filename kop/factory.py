@@ -1,5 +1,8 @@
 from typing import List
 from abc import ABC, abstractmethod
+from pathlib import Path
+from copy import copy, deepcopy
+from yaml import safe_load
 from kop.registry import ResourceRegistry
 from kop.renderers.table import TableRenderer
 from kop.renderers.details import DetailModalRenderer
@@ -18,7 +21,6 @@ from kop.models import (PodViewModel,
                     CronJobDetailModel,
                     ActionModel)
 from kop import models
-from copy import copy
 
 
 
@@ -67,6 +69,26 @@ class BaseFactory(ABC):
     def create_detail_renderer(self, data):
         """create renderer from detail models"""
         raise NotImplementedError
+
+    def create(self, namespace: str = "default", **kwargs):
+        """create resource"""
+        raise NotImplementedError(f"{self.__class__.__name__} does not support create")
+
+    def load_template(self, namespace: str | None = None) -> dict:
+        """load new resource template from file"""
+        template_path = Path(__file__).resolve().parent / "templates" / "resource" / f"{self.resource_type}.yaml"
+        if not template_path.exists():
+            raise FileExistsError(
+                f"{self.__class__.__name__} template not found: {template_path}"
+            )
+
+        with template_path.open("r", encoding="utf-8") as f:
+            template = safe_load(f) or {}
+        template = deepcopy(template)
+
+        metadata = template.setdefault("metadata", {})
+        metadata["namespace"] = namespace or "default"
+        return template
     
 
 class PodFacotry(BaseFactory):
@@ -114,6 +136,10 @@ class PodFacotry(BaseFactory):
     
     def update(self, name, namespace: str = "default", **kwargs):
         return self.endpoint.patch_pod(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_pod(namespace=namespace, body=body, **kwargs)
         
     def clean(self, raw) -> List[PodViewModel]:
         return [PodViewModel.clean(pod) for pod in raw.items]
@@ -229,6 +255,10 @@ class DeploymentFactory(BaseFactory):
     def update(self, name, namespace: str = "default", **kwargs):
         return self.endpoint.patch_deployment(name=name, namespace=namespace, **kwargs)
 
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_deployment(namespace=namespace, body=body, **kwargs)
+
     def clean(self, raw) -> List[DeploymentViewModel]:
         return [DeploymentViewModel.clean(dep) for dep in raw.items]
     
@@ -320,6 +350,10 @@ class DaemonSetFactory(BaseFactory):
     def update(self, name, namespace: str = "default", **kwargs):
         return self.endpoint.patch_daemon_set(name=name, namespace=namespace, **kwargs)
 
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_daemon_set(namespace=namespace, body=body, **kwargs)
+
     def clean(self, raw) -> List[DaemonSetViewModel]:
         return [DaemonSetViewModel.clean(dep) for dep in raw.items]
     
@@ -379,6 +413,10 @@ class StatefulSetFactory(BaseFactory):
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_stateful_sets(name=name, namespace=namespace)
 
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_stateful_set(namespace=namespace, body=body, **kwargs)
+
     def clean(self, raw) -> List[StatefulSetViewModel]:
         return [StatefulSetViewModel.clean(dep) for dep in raw.items]
     
@@ -425,6 +463,10 @@ class JobFactory(BaseFactory):
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_jobs(name=name, namespace=namespace)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_job(namespace=namespace, body=body, **kwargs)
     
     def clean(self, raw) -> List[JobViewModel]:
         return [JobViewModel.clean(dep) for dep in raw.items]
@@ -486,6 +528,10 @@ class CronJobFactory(BaseFactory):
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_cron_jobs(name=name, namespace=namespace)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_cron_job(namespace=namespace, body=body, **kwargs)
     
     def clean(self, raw) -> List[CronJobViewModel]:
         return [CronJobViewModel.clean(dep) for dep in raw.items]
@@ -538,6 +584,10 @@ class ConfigMapFactory(BaseFactory):
 
     def update(self, name, namespace: str = "default", **kwargs):
         return self.endpoint.patch_config_map(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_config_map(namespace=namespace, body=body, **kwargs)
     
     def clean(self, raw) -> List[models.ConfigMapViewModel]:
         return [models.ConfigMapViewModel.clean(dep) for dep in raw.items]

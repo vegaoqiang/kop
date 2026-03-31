@@ -149,6 +149,10 @@ class KbsEndpoint(KbsAuthLoader):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.patch_namespaced_pod(name=name, namespace=namespace, body=body, **kwargs)
 
+    def create_pod(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_pod(namespace=namespace, body=body, **kwargs)
+
     def list_pods(self, namespace: str | None = None, 
                   watch: bool = False, 
                   async_req: bool = False):
@@ -195,6 +199,10 @@ class KbsEndpoint(KbsAuthLoader):
         endpoint = client.AppsV1Api(api_client=self.api_client)
         return endpoint.patch_namespaced_deployment(name=name, namespace=namespace, body=body, **kwargs)
 
+    def create_deployment(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_deployment(namespace=namespace, body=body, **kwargs)
+
     def list_daemon_sets(self, namespace: str | None = None, 
                          watch: bool = False, 
                          async_req: bool = False):
@@ -211,6 +219,10 @@ class KbsEndpoint(KbsAuthLoader):
         endpoint = client.AppsV1Api(api_client=self.api_client)
         return endpoint.patch_namespaced_daemon_set(name=name, namespace=namespace, body=body, **kwargs)
 
+    def create_daemon_set(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_daemon_set(namespace=namespace, body=body, **kwargs)
+
     def list_stateful_sets(self, 
                            namespace: str | None = None, 
                            watch: bool = False, 
@@ -226,6 +238,10 @@ class KbsEndpoint(KbsAuthLoader):
                              async_req: bool = False):
         endpoint = client.AppsV1Api(api_client=self.api_client)
         return endpoint.delete_namespaced_stateful_set(name=name, namespace=namespace, async_req=async_req)
+
+    def create_stateful_set(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.AppsV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_stateful_set(namespace=namespace, body=body, **kwargs)
     
     def list_jobs(self, namespace: str | None = None, 
                   watch: bool = False, 
@@ -241,6 +257,10 @@ class KbsEndpoint(KbsAuthLoader):
                     async_req: bool = False):
         endpoint = client.BatchV1Api(api_client=self.api_client)
         return endpoint.delete_namespaced_job(name=name, namespace=namespace, async_req=async_req)
+
+    def create_job(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.BatchV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_job(namespace=namespace, body=body, **kwargs)
     
     def list_cron_jobs(self, namespace: str | None = None, 
                        watch: bool = False, 
@@ -256,6 +276,10 @@ class KbsEndpoint(KbsAuthLoader):
                          async_req: bool = False):
         endpoint = client.BatchV1Api(api_client=self.api_client)
         return endpoint.delete_namespaced_cron_job(name=name, namespace=namespace, async_req=async_req)
+
+    def create_cron_job(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.BatchV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_cron_job(namespace=namespace, body=body, **kwargs)
     
 
     def list_config_maps(self, namespace: str | None = None, 
@@ -284,3 +308,7 @@ class KbsEndpoint(KbsAuthLoader):
             body=body or {},
             async_req=async_req,
         )
+
+    def create_config_map(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_config_map(namespace=namespace, body=body, **kwargs)

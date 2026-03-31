@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: new-job
+  labels:
+    app: new-job
+spec:
+  template:
+    metadata:
+      labels:
+        app: new-job
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: main
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - echo hello from kop

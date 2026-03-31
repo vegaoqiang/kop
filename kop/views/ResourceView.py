@@ -2,12 +2,13 @@ from textual.events import Key
 from textual.screen import Screen
 from textual.app import ComposeResult, App
 from textual.containers import Vertical
-from textual.widgets import Footer, Header
+from textual.widgets import Footer, Header, Input
 from kop.widgets.SideMenu import SideMenu
 from kop.widgets.Panel import ResourcePanel
 from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.provider.client import KbsEndpoint
+from kop.views.EditView import ResourceEditScreen
 
 
 
@@ -40,7 +41,11 @@ class ResourceView(Screen):
         }
     """
 
-    FACTORY_CACHE: BaseFactory
+    BINDINGS = [
+        ("c", "new_resource", "Create new"),
+    ]
+
+    FACTORY_CACHE: BaseFactory | None = None
 
     table: TableRenderer | None = None
 
@@ -62,6 +67,7 @@ class ResourceView(Screen):
         self.config_file = config_file
         self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file)
         self.namespace = None
+        self.resource_type: str | None = None
 
     def compose(self) -> ComposeResult: 
             yield SideMenu(id="side_menu")
@@ -132,6 +138,49 @@ class ResourceView(Screen):
                 self.query_one("#search_menu").focus()
             else:
                 self.query_one("#search_input").focus()
+
+    def action_new_resource(self) -> None:
+        """
+        handle action create new resource
+        """
+        if isinstance(self.app.focused, Input):
+            return
+
+        if not self.resource_type:
+            self.notify("Please select a resource type first", severity="warning")
+            return
+
+        factory = self.FACTORY_CACHE
+        if not factory or factory.resource_type != self.resource_type:
+            factory_cls = ResourceRegistry.get_factory(self.resource_type)
+            if not factory_cls:
+                self.notify(f"Create is not supported for {self.resource_type}", severity="warning")
+                return
+            self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
+
+        default_namespace = self.namespace or "default"
+        try:
+            template = factory.load_template(namespace=default_namespace)
+        except FileExistsError as e:
+            self.notify(str(e), severity="warning")
+            template = {}
+
+        def fetcher() -> dict:
+            return template
+
+        def creator(name: str, namespace: str = "default", **kwargs):
+            res = factory.create(namespace=namespace, **kwargs)
+            if hasattr(self, "_update_resource"):
+                self._update_resource()
+            self.notify(
+                f"Create {self.resource_type} {name} success",
+                severity="information",
+            )
+            return res
+
+        self.app.push_screen(
+            ResourceEditScreen(fetcher=fetcher, updater=creator)
+        )
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
         # open detail screen
