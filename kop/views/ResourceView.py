@@ -1,9 +1,11 @@
+from textual import work
 from textual.events import Key
 from textual.screen import Screen
 from textual.binding import Binding
 from textual.app import ComposeResult, App
 from textual.containers import Vertical
-from textual.widgets import Footer, Header, Input
+from textual.widgets import Footer, Header, Input, LoadingIndicator
+from textual.worker import get_current_worker
 from kop.widgets.SideMenu import SideMenu
 from kop.widgets.Panel import ResourcePanel
 from kop.registry import ResourceRegistry
@@ -56,7 +58,12 @@ class ResourceView(Screen):
     keyword: str | None = None
 
     # fetched resource
-    data: list | None = None
+    data: object | None = None
+
+    # request sequence to ignore stale worker results
+    _resource_request_id: int = 0
+    # the resource type currently mounted in table
+    _table_resource_type: str | None = None
 
     # 1s interval timer
     fast_timer = None
@@ -80,38 +87,97 @@ class ResourceView(Screen):
     
     def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
         self.resource_type = resource_type = event.menu_id
-        self._render_resource(resource_type)
+        self._set_loading(True)
+        self._load_resource(resource_type=resource_type, show_loading=False)
         self.call_after_refresh(self._update_resource_panel, event.menu_name)
 
         if hasattr(self, "timer"):
             self.timer.resume()
 
-    def _render_resource(self, resource_type: str, renderered: TableRenderer | None = None) -> None:
+    def _fetch_resource(self, resource_type: str, namespace: str | None, keyword: str | None) -> tuple[BaseFactory | None, object | None, list]:
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
+            return None, None, []
+        factory = factory_cls(self.endpoint)
+        data = factory.fetch(namespace=namespace)
+        if keyword:
+            data = factory.filter(data, keyword)
+        cleaned = factory.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return factory, data, cleaned
+
+    def _set_loading(self, is_loading: bool) -> None:
+        if not self.panel:
             return
-        self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
-        self.data = data = factory.fetch(namespace=self.namespace)
-        if self.keyword:
-            data = factory.filter(data, self.keyword)
-        if not renderered:
+        resource_container = self.query_one("#resource_container", Vertical)
+        loading = next(iter(resource_container.query("#resource_loading")), None)
+        if is_loading:
+            if self.table:
+                self.table.display = False
+            if not loading:
+                resource_container.mount(
+                    LoadingIndicator(id="resource_loading"),
+                    after=self.panel,
+                )
+            self.panel.resource_count = 0
+            return
+        if loading:
+            loading.remove()
+        if self.table:
+            self.table.display = True
+
+    def _apply_resource(self, request_id: int, resource_type: str, factory: BaseFactory | None, data: object | None, cleaned: list) -> None:
+        if request_id != self._resource_request_id:
+            return
+        self._set_loading(False)
+        if not factory or data is None:
+            return
+
+        self.FACTORY_CACHE = factory
+        self.data = data
+        if not self.table or self._table_resource_type != resource_type:
             self.table = table = factory.create_renderer(data)
-            resource_container = self.query_one("#resource_container")
+            self._table_resource_type = resource_type
+            resource_container = self.query_one("#resource_container", Vertical)
             resource_container.remove_children(TableRenderer)
             resource_container.mount(table, after=self.panel)
         else:
-            renderered.raw_data = data.items
-            cleaned = factory.clean(data)
-            cleaned.sort(key=lambda vm: vm.name)
-            renderered.data = cleaned
+            self.table.raw_data = data.items
+            self.table.data = cleaned
 
         self.panel.resource_count = len(data.items)
+
+    def _handle_resource_error(self, request_id: int, exc: Exception) -> None:
+        if request_id != self._resource_request_id:
+            return
+        self._set_loading(False)
+        self.notify(f"Load {self.resource_type} failed: {exc}", severity="error")
+
+    @work(thread=True, exclusive=True)
+    def _load_resource_worker(self, request_id: int, resource_type: str, namespace: str | None, keyword: str | None) -> None:
+        worker = get_current_worker()
+        try:
+            factory, data, cleaned = self._fetch_resource(resource_type, namespace, keyword)
+        except Exception as e:
+            if not worker.is_cancelled:
+                self.app.call_from_thread(self._handle_resource_error, request_id, e)
+            return
+        if worker.is_cancelled:
+            return
+        self.app.call_from_thread(self._apply_resource, request_id, resource_type, factory, data, cleaned)
+
+    def _load_resource(self, resource_type: str, show_loading: bool = False) -> None:
+        self._resource_request_id += 1
+        request_id = self._resource_request_id
+        if show_loading:
+            self._set_loading(True)
+        self._load_resource_worker(request_id, resource_type, self.namespace, self.keyword)
         
     
     def _update_resource(self) -> None:
         if not self.resource_type:
             return
-        self._render_resource(self.resource_type, self.table)
+        self._load_resource(self.resource_type, show_loading=False)
 
     def on_mount(self) -> None:
         self.timer = self.set_interval(
@@ -238,7 +304,8 @@ class ResourceView(Screen):
         if selected_namespace == event._sender.ALL_NAMESPACE:
             selected_namespace = None
         self.namespace = selected_namespace
-        self._render_resource(self.resource_type, self.table)
+        if self.resource_type:
+            self._load_resource(self.resource_type, show_loading=True)
 
     async def on_resource_panel_search_resource(self, event: ResourcePanel.SearchResource) -> None:
         event.stop()
