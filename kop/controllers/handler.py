@@ -694,3 +694,51 @@ class ConfigMapActionHandler(BaseActionHandlerMixin):
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
 
     
+class SecretActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for Secret resource"""
+    resource_type = [models.SecretViewModel, models.SecretDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.SecretViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for Secret, {e}", severity="error")
+
+    @staticmethod
+    def edit(action, resource: models.SecretViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                secret = endpoint.read_namespaced_secret(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            secret = app.endpoint.api_client.sanitize_for_serialization(secret)
+            return secret
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_secret(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update secret {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.SecretViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
