@@ -535,6 +535,9 @@ class ConfigMapFactory(BaseFactory):
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_config_maps(name=name, namespace=namespace)
+
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_config_map(name=name, namespace=namespace, **kwargs)
     
     def clean(self, raw) -> List[models.ConfigMapViewModel]:
         return [models.ConfigMapViewModel.clean(dep) for dep in raw.items]

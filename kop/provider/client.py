@@ -272,3 +272,15 @@ class KbsEndpoint(KbsAuthLoader):
                            async_req: bool = False):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.delete_namespaced_config_map(name=name, namespace=namespace, async_req=async_req)
+
+    def patch_config_map(self, name: str,
+                         namespace: str = 'default',
+                         body: dict | None = None,
+                         async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.patch_namespaced_config_map(
+            name=name,
+            namespace=namespace,
+            body=body or {},
+            async_req=async_req,
+        )

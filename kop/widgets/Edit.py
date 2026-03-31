@@ -103,15 +103,43 @@ class DataEdit(Static):
         }
     """
 
-    def __init__(self, language: str = "yaml", resource=None, **kwargs):
+    def __init__(self, language: str|None = "yaml", resource=None, data_key: str = "", **kwargs):
         super().__init__(**kwargs)
         self.language = language
         self.resource = resource if resource is not None else ""
+        self.data_key = data_key
+        self._initial_text = "" # initial text saved by on_mount
+        self._hydrating = True  # hydrating changed by on_mount
 
     def compose(self) -> ComposeResult:
         yield TextArea.code_editor(language=self.language, id="resource")
-        yield Button(label="Save", variant="default", id="save")
+        yield Button(label="Save", variant="default", id="save", disabled=True)
     
     def on_mount(self) -> None:
-        self.query_one(TextArea).text = self.resource
+        resource_text = self.resource if isinstance(self.resource, str) else str(self.resource)
+        self._initial_text = resource_text
+        self._hydrating = True
 
+        self.query_one("#resource", TextArea).text = resource_text
+        self._hydrating = False
+
+    @on(TextArea.Changed, "#resource")
+    def on_resource_changed(self, event: TextArea.Changed) -> None:
+        if self._hydrating:
+            return
+        current_text = event.text_area.text
+        self.query_one("#save", Button).disabled = current_text == self._initial_text
+
+    @on(Button.Pressed, "#save")
+    def action_save(self, event: Button.Pressed) -> None:
+        event.stop()
+        text = self.query_one("#resource", TextArea).text
+        self.post_message(self.DataUpdate(data_key=self.data_key, value=text))
+        self._initial_text = text
+        event.button.disabled = True
+
+    class DataUpdate(Message):
+        def __init__(self, data_key: str, value: str, **kwargs):
+            super().__init__(**kwargs)
+            self.data_key = data_key
+            self.value = value

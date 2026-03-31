@@ -150,7 +150,7 @@ def render_podfailurepolicy(title: str, desc: dict) -> ComposeResult:
 
 @RendererRegistry.register_renderer('data')
 def render_configmap_data(title: str, desc: dict) -> ComposeResult:
-    def guess_data_language(key: str, value) -> str:
+    def guess_data_language(key: str, value) -> str|None:
         if not isinstance(value, str):
             return "yaml"
 
@@ -177,11 +177,18 @@ def render_configmap_data(title: str, desc: dict) -> ComposeResult:
                     return "yaml"
             except Exception:
                 pass
-
-        return "text"
+        # pure plain text format language set None
+        return None
 
     for key, value in desc.items():
-        yield Row(title=Title(key, expand=True), desc=DataEdit(language=guess_data_language(key, value), resource=value))
+        yield Row(
+            title=Title(key, expand=True),
+            desc=DataEdit(
+                language=guess_data_language(key, value),
+                resource=value,
+                data_key=key,
+            ),
+        )
         yield DetailRule()
 
 
@@ -259,3 +266,32 @@ class DetailModalRenderer(ModalScreen):
             event.context,
             self.app
         )
+
+    def on_data_edit_data_update(self, event: DataEdit.DataUpdate) -> None:
+        event.stop()
+        if not hasattr(self.data, "data") or not hasattr(self.data, "name") or not hasattr(self.data, "namespace"):
+            self.notify("Current resource does not support data update", severity="error")
+            return
+
+        view = getattr(self.app, "view", None)
+        if not view or not hasattr(view, "FACTORY_CACHE"):
+            self.notify("No available resource factory to update", severity="error")
+            return
+
+        updater = getattr(view.FACTORY_CACHE, "update", None)
+        if not callable(updater):
+            self.notify("Current resource factory does not support update", severity="error")
+            return
+
+        try:
+            updater(
+                name=self.data.name,
+                namespace=self.data.namespace,
+                body={"data": {event.data_key: event.value}},
+            )
+            self.data.data[event.data_key] = event.value
+            if hasattr(view, "_update_resource"):
+                view._update_resource()
+            self.notify(f"Update {event.data_key} success", severity="information")
+        except Exception as e:
+            self.notify(f"Update {event.data_key} failed: {e}", severity="error")
