@@ -1,5 +1,6 @@
 from textual.events import Key
 from textual.screen import Screen
+from textual.binding import Binding
 from textual.app import ComposeResult, App
 from textual.containers import Vertical
 from textual.widgets import Footer, Header, Input
@@ -42,7 +43,7 @@ class ResourceView(Screen):
     """
 
     BINDINGS = [
-        ("c", "new_resource", "Create new"),
+        Binding(key="c", action="new_resource", description="Create new", show=True),
     ]
 
     FACTORY_CACHE: BaseFactory | None = None
@@ -161,7 +162,7 @@ class ResourceView(Screen):
         default_namespace = self.namespace or "default"
         try:
             template = factory.load_template(namespace=default_namespace)
-        except FileExistsError as e:
+        except (FileNotFoundError, NotImplementedError, ValueError) as e:
             self.notify(str(e), severity="warning")
             template = {}
 
