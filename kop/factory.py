@@ -668,3 +668,60 @@ class SecretFactory(BaseFactory):
             data=self.clean_detail(data),
             actions=self.actions
         )
+    
+
+class ServiceFactory(BaseFactory):
+    """factory for services"""
+    resource_type = "services"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit Service", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete Service", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_services(namespace=namespace)
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_services(name=name, namespace=namespace)
+
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_service(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_service(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.ServiceViewModel]:
+        return [models.ServiceViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> models.ServiceDetailModel:
+        return models.ServiceDetailModel.clean(raw)
+        
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.ServiceViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.ServiceDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions
+        )

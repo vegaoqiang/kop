@@ -17,6 +17,12 @@ from kubernetes.client.models import (
     V1CronJob,
     V1ConfigMap,
     V1Secret,
+    V1Service,
+    V1ServiceStatus,
+    V1ServicePort,
+    V1LoadBalancerStatus,
+    V1LoadBalancerIngress,
+    V1PortStatus,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -675,5 +681,62 @@ class SecretDetailModel(SecretViewModel):
             'labels': data.metadata.labels,
             'type': data.type,
             'data': data.data
+        })
+        return cls(**base)
+    
+
+@dataclass
+class ServiceViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 20})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    type: str = field(metadata={"title": "Type", "width": 10})
+    clusterip: str = field(metadata={"title": "Cluster IP", "width": 10})
+    externalip: str = field(metadata={"title": "External IP", "width": 10})
+    ports: list[V1ServicePort] = field(metadata={"title": "Ports", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+    status: str = field(metadata={"title": "Status", "width": 10})
+
+    @classmethod
+    def clean(cls, data: V1Service) -> "ServiceViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            type=data.spec.type,
+            clusterip=data.spec.cluster_ip if data.spec.cluster_ip else "",
+            externalip=cls._get_externalip(data.status.load_balancer),
+            ports=data.spec.ports,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+            status=""
+        )
+
+    @staticmethod
+    def _get_externalip(data: V1LoadBalancerStatus) -> str:
+        if data.ingress:
+            return ','.join([i.ip for i in data.ingress])
+        return ""
+
+@dataclass
+class ServiceDetailModel(ServiceViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
+    selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
+    clusterips: list = field(default_factory=list, metadata={"title": "Cluster IPs"})
+    externalips: list = field(default_factory=list, metadata={"title": "External IPs"})
+    sessionaffinity: str = field(default_factory=str, metadata={"title": "Session Affinity"})
+
+    @classmethod
+    def clean(cls, data: V1Service) -> "ServiceDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'finalizers': data.metadata.finalizers,
+            'selector': data.spec.selector,
+            'clusterips': data.spec.cluster_ip,
+            'externalips': data.status.load_balancer.ingress,
+            'sessionaffinity': data.spec.session_affinity
         })
         return cls(**base)

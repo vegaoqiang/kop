@@ -341,3 +341,35 @@ class KbsEndpoint(KbsAuthLoader):
     def create_secret(self, namespace: str, body: dict, **kwargs):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.create_namespaced_secret(namespace=namespace, body=body, **kwargs)
+    
+    def list_services(self, namespace: str | None = None, 
+                      watch: bool = False, 
+                      async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_service(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_service_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def delete_services(self, name: str,
+                        namespace: str = 'default', 
+                        watch: bool = False, 
+                        async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.delete_namespaced_service(name=name, namespace=namespace, async_req=async_req)
+    
+    def patch_service(self, name: str,
+                      namespace: str = 'default',
+                      body: dict | None = None,
+                      async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.patch_namespaced_service(
+            name=name,
+            namespace=namespace,
+            body=body or {},
+            async_req=async_req,
+        )
+    
+    def create_service(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_service(namespace=namespace, body=body, **kwargs)
+    
