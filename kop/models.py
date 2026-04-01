@@ -26,7 +26,9 @@ from kubernetes.client.models import (
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
-from kop.renderers.fields import pod_status_renderer, deployment_conditions_renderer
+from kop.renderers import fields
+
+
 
 
 @dataclass
@@ -282,7 +284,7 @@ class PodViewModel(ViewModel):
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 9})
     qos: str = field(metadata={"title": "QoS", "width": 9})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
-    status: str = field(metadata={"title": "Status", "width": 8, "renderer": pod_status_renderer})
+    status: str = field(metadata={"title": "Status", "width": 8, "renderer": fields.pod_status_renderer})
 
     @classmethod
     def clean(cls, data: V1Pod) -> "PodViewModel":
@@ -388,7 +390,7 @@ class DeploymentViewModel(ViewModel):
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
     conditions: list[V1Condition] = field(
         default_factory=list,
-        metadata={"title": "Conditions", "width": 20, "renderer": deployment_conditions_renderer},
+        metadata={"title": "Conditions", "width": 20, "renderer": fields.deployment_conditions_renderer},
     )
 
     @classmethod
@@ -692,7 +694,7 @@ class ServiceViewModel(ViewModel):
     type: str = field(metadata={"title": "Type", "width": 10})
     clusterip: str = field(metadata={"title": "Cluster IP", "width": 10})
     externalip: str = field(metadata={"title": "External IP", "width": 10})
-    ports: list[V1ServicePort] = field(metadata={"title": "Ports", "width": 10})
+    ports: list[V1ServicePort] = field(metadata={"title": "Ports", "width": 10, "renderer": fields.service_ports_renderer})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     status: str = field(metadata={"title": "Status", "width": 10})
 

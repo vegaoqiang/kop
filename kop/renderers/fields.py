@@ -61,3 +61,9 @@ def deployment_conditions_renderer(value):
             # add space to word end
             rendered.append(" ")
     return rendered
+
+
+def service_ports_renderer(value):
+    if not value:
+        return ""
+    return ", ".join([f"{item.port}:{item.protocol}" for item in value])
