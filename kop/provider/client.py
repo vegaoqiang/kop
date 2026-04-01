@@ -372,4 +372,28 @@ class KbsEndpoint(KbsAuthLoader):
     def create_service(self, namespace: str, body: dict, **kwargs):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.create_namespaced_service(namespace=namespace, body=body, **kwargs)
+
+    def list_endpoints(
+        self,
+        namespace: str | None = None,
+        watch: bool = False,
+        async_req: bool = False,
+        field_selector: str | None = None,
+        label_selector: str | None = None,
+    ):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_endpoints(
+                namespace=namespace,
+                watch=watch,
+                async_req=async_req,
+                field_selector=field_selector,
+                label_selector=label_selector,
+            )
+        return endpoint.list_endpoints_for_all_namespaces(
+            watch=watch,
+            async_req=async_req,
+            field_selector=field_selector,
+            label_selector=label_selector,
+        )
     

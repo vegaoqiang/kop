@@ -707,7 +707,6 @@ class ServiceViewModel(ViewModel):
             externalip=cls._get_externalip(data.status.load_balancer),
             ports=data.spec.ports,
             age=cls.get_age_text(data.metadata.creation_timestamp),
-            status=""
         )
 
     @staticmethod

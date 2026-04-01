@@ -14,6 +14,7 @@ from kop.widgets.Forward import DescPorts
 from kop.widgets.Edit import DataEdit
 from kop.controllers.handler import ActionRegistry
 from kop.provider.events import EventService
+from kop.widgets.Endpoint import ServiceEndpoints
 
 
 
@@ -237,13 +238,19 @@ class DetailModalRenderer(ModalScreen):
                 yield DetailRule()
 
     def on_mount(self) -> None:
-        self.call_after_refresh(self._make_event_service)
+        self.call_after_refresh(self._mount_lazy_sections)
 
     def on_unmount(self) -> None:
         if self.event_service and self.event_service._started:
             self.event_service.stop()
     
-    def _make_event_service(self):
+    def _mount_lazy_sections(self):
+        detail = self.query_one("#detail", VerticalScroll)
+        if self.data.__class__.__name__ == "ServiceDetailModel":
+            detail.mount(ServiceEndpoints(data=self.data))
+        self._make_event_service(detail)
+
+    def _make_event_service(self, detail: VerticalScroll | None = None):
         service = getattr(self.app, "event_service", None)
         if service:
             self.event_service = service
@@ -252,7 +259,8 @@ class DetailModalRenderer(ModalScreen):
             if endpoint:
                 self.event_service = EventService(api_client=endpoint.api_client)
                 setattr(self.app, "event_service", self.event_service)
-        self.query_one("#detail", VerticalScroll).mount(ResourceEvents(event_service=self.event_service, data=self.data))
+        target = detail if detail else self.query_one("#detail", VerticalScroll)
+        target.mount(ResourceEvents(event_service=self.event_service, data=self.data))
 
     def action_close(self):
         """
