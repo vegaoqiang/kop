@@ -66,4 +66,10 @@ def deployment_conditions_renderer(value):
 def service_ports_renderer(value):
     if not value:
         return ""
-    return ", ".join([f"{item.port}:{item.protocol}" for item in value])
+    text = []
+    for item in value:
+        if item.node_port:
+            text.append(f"{item.port}:{item.node_port}/{item.protocol}")
+        else:
+            text.append(f"{item.port}/{item.protocol}")
+    return ",".join(text)
