@@ -4,6 +4,7 @@ from textual.app import ComposeResult
 from textual.widgets import ListView, ListItem, Link, Button, Static
 from kop.widgets.Modals import PortForward
 from kop.provider.forward import PortForwardSpec, PodPortForwardManager
+from kubernetes.client.models import V1ContainerPort, V1ServicePort
 from typing import Any
 
 
@@ -59,6 +60,19 @@ class PortItem(ListItem):
         self.query_one("#stop_forward").remove_class("-hidden")
 
 
+class ServicePortItem(PortItem):
+    
+    @property
+    def remote_port(self) -> int:
+        return int(self.item.port)
+
+    @property
+    def base_text(self) -> str:
+        if self.item.node_port is None:
+            return f"{self.item.port}/{self.item.protocol}"
+        return f"{self.item.port}:{self.item.node_port}/{self.item.protocol}"
+
+
 class DescPorts(Static):
     """
     Specifically designed for rendering Container Port layouts
@@ -88,7 +102,10 @@ class DescPorts(Static):
     def compose(self) -> ComposeResult:
         with ListView():
             for item in self.desc:
-                yield PortItem(item)
+                if isinstance(item, V1ServicePort):
+                    yield ServicePortItem(item)
+                elif isinstance(item, V1ContainerPort):
+                    yield PortItem(item)
 
     def on_mount(self) -> None:
         self.call_after_refresh(self._sync_forward_state)
