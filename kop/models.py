@@ -692,9 +692,9 @@ class ServiceViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     type: str = field(metadata={"title": "Type", "width": 10})
-    clusterip: str = field(metadata={"title": "Cluster IP", "width": 10})
-    externalip: str = field(metadata={"title": "External IP", "width": 10})
-    ports: list[V1ServicePort] = field(metadata={"title": "Ports", "width": 15, "renderer": f.service_ports_renderer})
+    clusterip: str = field(metadata={"title": "Cluster IP", "width": 10, "detail": False})
+    externalip: str = field(metadata={"title": "External IP", "width": 10, "detail": False})
+    ports: list[V1ServicePort] = field(metadata={"title": "Ports", "width": 15, "after": "selector", "renderer": f.service_ports_renderer})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     status: str = field(metadata={"title": "Status", "width": 10})
 
@@ -738,7 +738,7 @@ class ServiceDetailModel(ServiceViewModel):
             'finalizers': data.metadata.finalizers,
             'selector': data.spec.selector,
             'clusterips': data.spec.cluster_ip,
-            'externalips': data.status.load_balancer.ingress,
+            'externalips': cls._get_externalip(data.status.load_balancer),
             'sessionaffinity': data.spec.session_affinity
         })
         return cls(**base)
