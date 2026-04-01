@@ -696,7 +696,6 @@ class ServiceViewModel(ViewModel):
     externalip: str = field(metadata={"title": "External IP", "width": 10, "detail": False})
     ports: list[V1ServicePort] = field(metadata={"title": "Ports", "width": 15, "after": "selector", "renderer": f.service_ports_renderer})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
-    status: str = field(metadata={"title": "Status", "width": 10})
 
     @classmethod
     def clean(cls, data: V1Service) -> "ServiceViewModel":
