@@ -148,10 +148,20 @@ def ports_formatter(desc):
 
 def selector_formatter(desc):
     match_labels = desc.match_labels
-    if not match_labels:
-        return DEFAULT_CHAR
-    key, value = next(iter(match_labels.items()))
-    return f"{key}={value}"
+    match_expressions = desc.match_expressions
+    text = []
+    if match_labels:
+       for k, v in match_labels.items():
+            text.append(f"{k}={v}")
+    if match_expressions:
+        for exp in match_expressions:
+            text.append(f"{exp.key} {exp.operator} {exp.values}")
+
+    # not match_labels and match_expressions, will be service selector,
+    if not match_labels and not match_expressions:
+        for k, v in desc.to_dict().items():
+            text.append(f"{k}={v}")
+    return "\n".join(text) if text else DEFAULT_CHAR
 
 
 def strategy_formatter(desc):
