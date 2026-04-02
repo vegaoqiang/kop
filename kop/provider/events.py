@@ -23,7 +23,7 @@ class EventService:
         # self._cache = deque(maxlen=cache_size)
 
         self._kind_index: Dict[str, deque] = defaultdict(lambda: deque(maxlen=cache_size))
-        self._name_index: Dict[str, deque] = defaultdict(lambda: deque(maxlen=cache_size))
+        self._name_index: Dict[Optional[tuple], deque] = defaultdict(lambda: deque(maxlen=cache_size))
         # save cached event keys
         self._cached: deque = deque(maxlen=cache_size)
 
@@ -175,7 +175,6 @@ class EventService:
                 time.sleep(1)
 
     def _enqueue_event(self, event):
-        print('event in _enqueue_event:', event)
         try:
             self._queue.put_nowait(event)
         except Exception:
@@ -202,15 +201,16 @@ class EventService:
         name = involved.name
 
         key = (event.metadata.uid, involved.resource_version, event.reason)
+        cache_key = (name, kind)
 
         with self._lock:
             # self._cache.append(event)
             if key not in self._cached:
                 self._cached.append(key)
-                if kind:
-                    self._kind_index[kind].append(event)
+                # if kind:
+                #     self._kind_index[kind].append(event)
                 if name:
-                    self._name_index[name].append(event)
+                    self._name_index[cache_key].append(event)
 
         self._notify(event)
 
@@ -230,8 +230,8 @@ class EventService:
 
         # replay cache
         with self._lock:
-            if name:
-                cached = self._name_index.get(name, [])
+            if name and kind:
+                cached = self._name_index.get((name, kind), [])
                 # retrieve event data from the cache and put it back into the queue.
                 for e in cached:
                     self._enqueue_event(e)
