@@ -38,10 +38,11 @@ class ResourceEvents(Static):
 
     event_data: Reactive[list] = Reactive(list)
     
-    def __init__(self, event_service, data, **kwargs):
+    def __init__(self, event_service, data, kind, **kwargs):
         super().__init__(**kwargs)
         self.event_service = event_service
         self.data = data
+        self.kind = kind
         self.container: Optional[Vertical] = None
 
     class UpdateEvents(Message, bubble=False):
@@ -59,7 +60,8 @@ class ResourceEvents(Static):
     def on_mount(self):
         self.event_service.subscribe(self._event_callback, 
                                      namespace=self.data.namespace, 
-                                     name=self.data.name)
+                                     name=self.data.name,
+                                     kind=self.kind)
 
     def on_unmount(self):
         self.event_service.unsubscribe(self._event_callback)

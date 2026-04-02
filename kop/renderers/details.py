@@ -217,7 +217,7 @@ class DetailModalRenderer(ModalScreen):
 
     event_service: EventService | None = None
 
-    def __init__(self, columns: list, data, actions: list, **kwargs):
+    def __init__(self, columns: list, data, actions: list, kind: str | None = None, **kwargs):
         """
         :param data: PodDetailModel
         """
@@ -225,6 +225,7 @@ class DetailModalRenderer(ModalScreen):
         self.columns = columns
         self.data = data
         self.actions = actions
+        self.kind = kind
 
     def compose(self) -> ComposeResult:
         with VerticalScroll(id="detail"):
@@ -260,7 +261,10 @@ class DetailModalRenderer(ModalScreen):
                 self.event_service = EventService(api_client=endpoint.api_client)
                 setattr(self.app, "event_service", self.event_service)
         target = detail if detail else self.query_one("#detail", VerticalScroll)
-        target.mount(ResourceEvents(event_service=self.event_service, data=self.data))
+
+        kind = self.kind
+        if kind:
+            target.mount(ResourceEvents(event_service=self.event_service, data=self.data, kind=kind))
 
     def action_close(self):
         """

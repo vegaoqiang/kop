@@ -29,6 +29,7 @@ class BaseFactory(ABC):
     """abstract base class for resource factories"""
 
     resource_type: str  # e.g. "pods"
+    resource_kind: str  # e.g. "Pod"
     _client: KubeClient # save multiple kube cluster client
 
     def __init_subclass__(cls, **kwargs):
@@ -94,6 +95,7 @@ class BaseFactory(ABC):
 class PodFacotry(BaseFactory):
     """factory for pods"""
     resource_type = "pods"
+    resource_kind = "Pod"
 
     actions: List[ActionModel] = [
         ActionModel(name="shell", 
@@ -161,7 +163,8 @@ class PodFacotry(BaseFactory):
         return DetailModalRenderer(
             columns=PodDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
-            actions=self.actions
+            actions=self.actions,
+            kind=self.resource_kind,
         )
     
     def filter(self, raw, query: str):
@@ -219,6 +222,7 @@ class PodFacotry(BaseFactory):
 class DeploymentFactory(BaseFactory):
     """factory for deployments"""
     resource_type = "deployments"
+    resource_kind = "Deployment"
 
     actions: List[ActionModel] = [
         ActionModel(name="scale", 
@@ -280,7 +284,8 @@ class DeploymentFactory(BaseFactory):
         return DetailModalRenderer(
             columns=DeploymentDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
-            actions=self.actions
+            actions=self.actions,
+            kind=self.resource_kind,
         )
     
     def filter(self, raw, query: str):
@@ -320,6 +325,7 @@ class DeploymentFactory(BaseFactory):
 class DaemonSetFactory(BaseFactory):
     """factory for daemonsets"""
     resource_type = "daemonsets"
+    resource_kind = "DaemonSet"
 
     actions: List[ActionModel] = [
         ActionModel(name="restart", 
@@ -373,13 +379,15 @@ class DaemonSetFactory(BaseFactory):
         return DetailModalRenderer(
             columns=DaemonSetDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
-            actions=self.actions
+            actions=self.actions,
+            kind=self.resource_kind,
         )
     
 
 class StatefulSetFactory(BaseFactory):
     """factory for statefulsets"""
     resource_type = "statefulsets"
+    resource_kind = "StatefulSet"
 
     actions: List[ActionModel] = [
         ActionModel(name="scale", 
@@ -436,13 +444,15 @@ class StatefulSetFactory(BaseFactory):
         return DetailModalRenderer(
             columns=StatefulSetDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
-            actions=self.actions
+            actions=self.actions,
+            kind=self.resource_kind,
         )
 
 
 class JobFactory(BaseFactory):
     """factory for jobs"""
     resource_type = "jobs"
+    resource_kind = "Job"
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -489,13 +499,15 @@ class JobFactory(BaseFactory):
         return DetailModalRenderer(
             columns=JobDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
-            actions=self.actions
+            actions=self.actions,
+            kind=self.resource_kind,
         )
     
 
 class CronJobFactory(BaseFactory):
     """factory for cronjobs"""
     resource_type = "cronjobs"
+    resource_kind = "CronJob"
 
     actions: List[ActionModel] = [
         ActionModel(name="trigger", 
@@ -554,13 +566,15 @@ class CronJobFactory(BaseFactory):
         return DetailModalRenderer(
             columns=CronJobDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
-            actions=self.actions
+            actions=self.actions,
+            kind=self.resource_kind,
         )
     
 
 class ConfigMapFactory(BaseFactory):
     """factory for configmaps"""
     resource_type = "configmaps"
+    resource_kind = "ConfigMap"
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -610,13 +624,15 @@ class ConfigMapFactory(BaseFactory):
         return DetailModalRenderer(
             columns=models.ConfigMapDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
-            actions=self.actions
+            actions=self.actions,
+            kind=self.resource_kind,
         )
 
 
 class SecretFactory(BaseFactory):
     """factory for secrets"""
     resource_type = "secrets"
+    resource_kind = "Secret"
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -666,13 +682,15 @@ class SecretFactory(BaseFactory):
         return DetailModalRenderer(
             columns=models.SecretDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
-            actions=self.actions
+            actions=self.actions,
+            kind=self.resource_kind,
         )
     
 
 class ServiceFactory(BaseFactory):
     """factory for services"""
     resource_type = "services"
+    resource_kind = "Service"
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -723,5 +741,6 @@ class ServiceFactory(BaseFactory):
         return DetailModalRenderer(
             columns=models.ServiceDetailModel.get_detail_columns(),
             data=self.clean_detail(data),
-            actions=self.actions
+            actions=self.actions,
+            kind=self.resource_kind,
         )

@@ -216,7 +216,8 @@ class EventService:
 
     def subscribe(self, callback: Callable, 
                   namespace: Optional[str] = None, 
-                  name: Optional[str] = None):
+                  name: Optional[str] = None, 
+                  kind: Optional[str] = None):
 
         if callback in self._subscribers:
             return
@@ -225,7 +226,7 @@ class EventService:
         
         # lazy start
         if not self._started:
-            self.start(namespace=namespace, name=name)
+            self.start(namespace=namespace, name=name, kind=kind)
 
         # replay cache
         with self._lock:
