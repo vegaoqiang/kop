@@ -18,11 +18,9 @@ from kubernetes.client.models import (
     V1ConfigMap,
     V1Secret,
     V1Service,
-    V1ServiceStatus,
     V1ServicePort,
     V1LoadBalancerStatus,
-    V1LoadBalancerIngress,
-    V1PortStatus,
+    V1Endpoints,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -738,5 +736,39 @@ class ServiceDetailModel(ServiceViewModel):
             'clusterips': data.spec.cluster_ip,
             'externalips': cls._get_externalip(data.status.load_balancer),
             'sessionaffinity': data.spec.session_affinity
+        })
+        return cls(**base)
+    
+
+@dataclass
+class EndpointViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    endpoints: list = field(metadata={"title": "Endpoints", "width": 15, "renderer": f.endpoints_renderer})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1Endpoints) -> "EndpointViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            endpoints=data.subsets,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class EndpointDetailModel(EndpointViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
+    subsets: list = field(default_factory=list, metadata={"title": "Subsets"})
+
+    @classmethod
+    def clean(cls, data: V1Endpoints) -> "EndpointDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'subsets': data.subsets
         })
         return cls(**base)
