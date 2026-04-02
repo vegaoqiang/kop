@@ -744,3 +744,62 @@ class ServiceFactory(BaseFactory):
             actions=self.actions,
             kind=self.resource_kind,
         )
+
+
+class EndpointFactory(BaseFactory):
+    """factory for endpoints"""
+    resource_type = "endpoints"
+    resource_kind = "Endpoint"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit Endpoint", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete Endpoint", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_endpoints(namespace=namespace)
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_endpoints(name=name, namespace=namespace)
+
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_endpoint(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_endpoint(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.EndpointViewModel]:
+        return [models.EndpointViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> models.EndpointDetailModel:
+        return models.EndpointDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.EndpointViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.EndpointDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions,
+            kind=self.resource_kind,
+        )
+    

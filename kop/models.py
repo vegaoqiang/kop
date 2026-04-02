@@ -21,6 +21,7 @@ from kubernetes.client.models import (
     V1ServicePort,
     V1LoadBalancerStatus,
     V1Endpoints,
+    V1EndpointSubset,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -744,7 +745,7 @@ class ServiceDetailModel(ServiceViewModel):
 class EndpointViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    endpoints: list = field(metadata={"title": "Endpoints", "width": 15, "renderer": f.endpoints_renderer})
+    endpoints: str = field(metadata={"title": "Endpoints", "width": 15})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
 
     @classmethod
@@ -752,16 +753,31 @@ class EndpointViewModel(ViewModel):
         return cls(
             name=data.metadata.name,
             namespace=data.metadata.namespace,
-            endpoints=data.subsets,
+            endpoints=cls._get_endpoints(data.subsets),
             age=cls.get_age_text(data.metadata.creation_timestamp),
         )
     
+    @staticmethod
+    def _get_endpoints(data: list[V1EndpointSubset]) -> str:
+        if not data:
+            return ""
+        endpoints = []
+        for subset in data:
+            ips = []
+            ports = []
+            if subset.addresses:
+                ips.extend(i.ip for i in subset.addresses)
+            if subset.ports:
+                ports.extend(i.port for i in subset.ports)
+            endpoints.append(f"{','.join(ips)}:{','.join(map(str, ports))}")
+        return ",".join(endpoints)
+
 
 @dataclass
 class EndpointDetailModel(EndpointViewModel):
     created: str = field(default_factory=str, metadata={"title": "Created"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
-    subsets: list = field(default_factory=list, metadata={"title": "Subsets"})
+    subsets: list[V1EndpointSubset] = field(default_factory=list, metadata={"title": "Subsets"})
 
     @classmethod
     def clean(cls, data: V1Endpoints) -> "EndpointDetailModel":
