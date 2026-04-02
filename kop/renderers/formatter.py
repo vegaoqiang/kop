@@ -221,10 +221,14 @@ def subsets_formatter(desc):
     ports.add_column("Protocol", justify="left")
     for item in desc:
         for addr in item.addresses:
-            addresses.add_row(addr.ip, addr.node_name, addr.target_ref.name)
+            addresses.add_row(addr.ip, 
+                              addr.node_name or DEFAULT_CHAR, 
+                              addr.target_ref.name if addr.target_ref else DEFAULT_CHAR)
         if item.not_ready_addresses:
             for addr in item.not_ready_addresses:
-                addresses.add_row(f"{addr.ip}(not ready)", addr.node_name, addr.target_ref.name)
+                addresses.add_row(f"{addr.ip}(not ready)", 
+                                  addr.node_name or DEFAULT_CHAR, 
+                                  addr.target_ref.name if addr.target_ref else DEFAULT_CHAR)
         for port in item.ports:
             ports.add_row(str(port.port), port.name, port.protocol)
 
