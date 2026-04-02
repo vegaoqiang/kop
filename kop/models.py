@@ -745,7 +745,7 @@ class ServiceDetailModel(ServiceViewModel):
 class EndpointViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    endpoints: str = field(metadata={"title": "Endpoints", "width": 15})
+    endpoints: str = field(metadata={"title": "Endpoints", "width": 15, "detail": False})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
 
     @classmethod

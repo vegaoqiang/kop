@@ -2,6 +2,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.panel import Panel
 from rich.columns import Columns
+from rich.console import Group
 
 
 
@@ -204,3 +205,27 @@ def events_formatter(desc):
                   f"{desc.source.component} {desc.source.host}" 
                   if (desc.source.component and desc.source.host) else DEFAULT_CHAR)
     return table
+
+
+def subsets_formatter(desc):
+    if not desc:
+        return
+    addresses = Table(title="Addresses", expand=True)
+    addresses.add_column("IP", justify="left")
+    addresses.add_column("Node", justify="left")
+    addresses.add_column("Pod", justify="left")
+
+    ports = Table(title="Ports", expand=True)
+    ports.add_column("Port", justify="left")
+    ports.add_column("Name", justify="left")
+    ports.add_column("Protocol", justify="left")
+    for item in desc:
+        for addr in item.addresses:
+            addresses.add_row(addr.ip, addr.node_name, addr.target_ref.name)
+        if item.not_ready_addresses:
+            for addr in item.not_ready_addresses:
+                addresses.add_row(f"{addr.ip}(not ready)", addr.node_name, addr.target_ref.name)
+        for port in item.ports:
+            ports.add_row(str(port.port), port.name, port.protocol)
+
+    return Group(addresses, ports)

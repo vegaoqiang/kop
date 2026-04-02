@@ -193,6 +193,11 @@ def render_configmap_data(title: str, desc: dict) -> ComposeResult:
         yield DetailRule()
 
 
+@RendererRegistry.register_renderer('subsets')
+def render_subsets(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.subsets_formatter))
+
+
 class DetailModalRenderer(ModalScreen):
 
     DEFAULT_CSS = """
