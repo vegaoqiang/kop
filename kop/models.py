@@ -834,8 +834,17 @@ class IngressDetailModel(IngressViewModel):
             'created': cls.get_created_text(data.metadata.creation_timestamp),
             'labels': data.metadata.labels,
             'annotations': data.metadata.annotations,
-            'tls': data.spec.tls,
+            'tls': cls._get_tls_secrets(data.spec.tls),
             'defaultbackend': data.spec.default_backend.resource.name if data.spec.default_backend else "",
             'loadbalancers': data.status.load_balancer,
         })
         return cls(**base)
+    
+    @staticmethod
+    def _get_tls_secrets(data: list[V1IngressTLS]) -> str:
+        if not data:
+            return ""
+        secret_names = []
+        for tls in data:
+            secret_names.append(tls.secret_name)
+        return ",".join(secret_names)
