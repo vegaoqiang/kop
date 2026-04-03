@@ -844,3 +844,101 @@ class IngressActionHandler(BaseActionHandlerMixin):
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
 
     
+class IngressClassActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for IngressClass resource"""
+    resource_type = [models.IngressClassViewModel, models.IngressClassDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.IngressClassViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for IngressClass, {e}", severity="error")
+
+    @staticmethod
+    def set_default(action, resource: models.IngressClassViewModel, app):
+        def set_default_callback(data: models.IngressClassViewModel | None) -> None:
+            if data is None:
+                return
+
+            key = "ingressclass.kubernetes.io/is-default-class"
+            try:
+                endpoint = client.NetworkingV1Api(api_client=app.endpoint.api_client)
+                classes = endpoint.list_ingress_class().items
+
+                for ingress_class in classes:
+                    name = ingress_class.metadata.name
+                    annotations = ingress_class.metadata.annotations or {}
+                    current_default = annotations.get(key) == "true"
+                    target_default = name == data.name
+
+                    if current_default == target_default:
+                        continue
+
+                    endpoint.patch_ingress_class(
+                        name=name,
+                        body={"metadata": {"annotations": {key: "true" if target_default else "false"}}},
+                    )
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(f"Set ingressclass {data.name} as default success", severity="information")
+            except Exception as e:
+                app.notify(f"Set ingressclass {data.name} as default failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name="Set Default"), callback=set_default_callback)
+
+    @staticmethod
+    def edit(action, resource: models.IngressClassViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.NetworkingV1Api(api_client=app.endpoint.api_client)
+                ingress_class = endpoint.read_ingress_class(
+                    name=resource.name,
+                )
+            except Exception:
+                return
+
+            ingress_class = app.endpoint.api_client.sanitize_for_serialization(ingress_class)
+            metadata = ingress_class.setdefault("metadata", {})
+            metadata.setdefault("namespace", "default")
+            return ingress_class
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.NetworkingV1Api(api_client=app.endpoint.api_client)
+            body = kwargs.get("body")
+            if isinstance(body, dict):
+                body_metadata = body.get("metadata")
+                if isinstance(body_metadata, dict):
+                    body_metadata.pop("namespace", None)
+
+            res = endpoint.patch_ingress_class(
+                name=name,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update ingressclass {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.IngressClassViewModel, app):
+        def delete_callback(data: models.IngressClassViewModel | None) -> None:
+            if data is None:
+                return
+            try:
+                endpoint = client.NetworkingV1Api(api_client=app.endpoint.api_client)
+                endpoint.delete_ingress_class(name=data.name)
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+                app.notify(f"Delete ingressclass {data.name} success", severity="information")
+            except Exception as e:
+                app.notify(f"Delete ingressclass {data.name} failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+    
+    

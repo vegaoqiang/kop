@@ -868,6 +868,12 @@ class IngressClassFactory(BaseFactory):
     resource_kind = "IngressClass"
 
     actions: List[ActionModel] = [
+        ActionModel(name="set_default", 
+                    label="Set Default", 
+                    variant="default", 
+                    tooltip="Set IngressClass as default", 
+                    action="set_default",
+                    key="s"),
         ActionModel(name="edit", 
                     label="Edit", 
                     variant="default", 
