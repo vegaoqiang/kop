@@ -824,7 +824,7 @@ class IngressDetailModel(IngressViewModel):
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     tls: list[V1IngressTLS] = field(default_factory=list, metadata={"title": "TLS"})
-    defaultbackend: V1IngressBackend = field(default_factory=V1IngressBackend, metadata={"title": "Default Backend"})
+    defaultbackend: str = field(default_factory=str, metadata={"title": "Default Backend"})
     loadbalancers: V1IngressLoadBalancerStatus = field(default_factory=V1IngressLoadBalancerStatus, metadata={"title": "Load Balancers"})
 
     @classmethod
@@ -835,7 +835,7 @@ class IngressDetailModel(IngressViewModel):
             'labels': data.metadata.labels,
             'annotations': data.metadata.annotations,
             'tls': data.spec.tls,
-            'defaultbackend': data.spec.default_backend,
+            'defaultbackend': data.spec.default_backend.resource.name if data.spec.default_backend else "",
             'loadbalancers': data.status.load_balancer,
         })
         return cls(**base)
