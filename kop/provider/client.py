@@ -405,3 +405,10 @@ class KbsEndpoint(KbsAuthLoader):
         if namespace:
             return endpoint.list_namespaced_ingress(namespace, watch=watch, async_req=async_req)
         return endpoint.list_ingress_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def delete_ingresses(self, name: str,
+                         namespace: str = 'default', 
+                         watch: bool = False, 
+                         async_req: bool = False):
+        endpoint = client.NetworkingV1Api(api_client=self.api_client)
+        return endpoint.delete_namespaced_ingress(name=name, namespace=namespace, async_req=async_req)
