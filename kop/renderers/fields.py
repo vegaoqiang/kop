@@ -73,3 +73,12 @@ def service_ports_renderer(value):
         else:
             text.append(f"{item.port}/{item.protocol}")
     return ",".join(text)
+
+
+def ingress_rules_renderer(value):
+    if not value:
+        return ""
+    text = []
+    for rule in value:
+        text.append(f"{rule.host}")
+    return ",".join(text)

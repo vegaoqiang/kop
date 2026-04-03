@@ -397,3 +397,11 @@ class KbsEndpoint(KbsAuthLoader):
             label_selector=label_selector,
         )
     
+
+    def list_ingresses(self, namespace: str | None = None, 
+                       watch: bool = False, 
+                       async_req: bool = False):
+        endpoint = client.NetworkingV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_ingress(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_ingress_for_all_namespaces(watch=watch, async_req=async_req)
