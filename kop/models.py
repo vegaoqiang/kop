@@ -24,12 +24,10 @@ from kubernetes.client.models import (
     V1EndpointSubset,
     V1Ingress,
     V1IngressSpec,
-    V1IngressRule,
-    V1IngressStatus,
     V1IngressBackend,
     V1IngressLoadBalancerStatus,
-    V1IngressLoadBalancerIngress,
     V1IngressTLS,
+    V1IngressClass,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -859,3 +857,43 @@ class IngressDetailModel(IngressViewModel):
         for tls in data:
             secret_names.append(tls.secret_name)
         return ",".join(secret_names)
+    
+
+@dataclass
+class IngressClassViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    default: str = field(metadata={"title": "Default", "width": 5})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    controller: str = field(metadata={"title": "Controller", "width": 20})
+    scope: str = field(metadata={"title": "Scope", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1IngressClass) -> "IngressClassViewModel":
+        return cls(
+            name=data.metadata.name,
+            default="✔️" if data.metadata.annotations.get('ingressclass.kubernetes.io/is-default-class') == "true" else "",
+            namespace=data.spec.parameters.namespace if data.spec.parameters and data.spec.parameters.scope == "Namespace" else "",
+            controller=data.spec.controller,
+            scope=data.spec.parameters.scope if data.spec.parameters else "",
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class IngressClassDetailModel(IngressClassViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    parameters: dict = field(default_factory=dict, metadata={"title": "Parameters"})
+
+    @classmethod
+    def clean(cls, data: V1IngressClass) -> "IngressClassDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'parameters': data.spec.parameters
+        })
+        return cls(**base)
