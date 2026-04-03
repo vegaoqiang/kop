@@ -203,6 +203,11 @@ def render_rules(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.rules_formatter))
 
 
+@RendererRegistry.register_renderer('loadbalancers')
+def render_loadbalancers(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.loadbalancers_formatter))
+
+
 class DetailModalRenderer(ModalScreen):
 
     DEFAULT_CSS = """

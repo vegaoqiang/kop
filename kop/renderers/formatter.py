@@ -236,6 +236,9 @@ def subsets_formatter(desc):
 
 
 def rules_formatter(desc):
+    """
+    desc: V1IngressSpec
+    """
     if not desc:
         return
     rules = desc.rules
@@ -270,3 +273,21 @@ def rules_formatter(desc):
                           backend)
         group.append(table)
     return Group(*group)
+
+
+def loadbalancers_formatter(desc):
+    """
+    desc: V1IngressLoadBalancerStatus
+    """
+    if not desc:
+        return
+    table = Table(title="LoadBalancers", expand=True)
+    table.add_column("HostName", justify="left")
+    table.add_column("IP", justify="left")
+    table.add_column("Port", justify="left")
+    
+    for item in desc.ingress or []:
+        table.add_row(item.hostname or DEFAULT_CHAR, 
+                      item.ip or DEFAULT_CHAR, 
+                      f"{','.join([f'{port.port}/{port.protocol}' for port in item.ports])}" if item.ports else DEFAULT_CHAR)
+    return table
