@@ -198,6 +198,11 @@ def render_subsets(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.subsets_formatter))
 
 
+@RendererRegistry.register_renderer('rules')
+def render_rules(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.rules_formatter))
+
+
 class DetailModalRenderer(ModalScreen):
 
     DEFAULT_CSS = """

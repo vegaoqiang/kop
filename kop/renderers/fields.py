@@ -78,7 +78,10 @@ def service_ports_renderer(value):
 def ingress_rules_renderer(value):
     if not value:
         return ""
+    rules = value.rules
+    if not rules:
+        return ""
     text = []
-    for rule in value:
-        text.append(f"{rule.host}")
+    for rule in rules:
+        text.append(f"{rule.host or ''}")
     return ",".join(text)

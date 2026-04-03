@@ -233,3 +233,40 @@ def subsets_formatter(desc):
             ports.add_row(str(port.port), port.name, port.protocol)
 
     return Group(addresses, ports)
+
+
+def rules_formatter(desc):
+    if not desc:
+        return
+    rules = desc.rules
+    if not rules:
+        return
+
+    tls_hosts = []
+    for tls in desc.tls or []:
+        tls_hosts.extend(tls.hosts)
+
+    group = []
+    for rule in rules:
+        if rule.host in tls_hosts:
+            protocol = "https"
+        else:
+            protocol = "http"
+        table = Table(title=f"{rule.host}" or DEFAULT_CHAR, expand=True)
+        table.add_column("Path", justify="left")
+        table.add_column("Link", justify="left")
+        table.add_column("Type", justify="left")
+        table.add_column("Backend", justify="left")
+        for path in rule.http.paths:
+            if path.backend.service:
+                backend = f"{path.backend.service.name}:{path.backend.service.port.number}"
+            elif path.backend.resource:
+                backend = path.backend.resource.name
+            else:
+                backend = DEFAULT_CHAR
+
+            table.add_row(path.path, 
+                          f"{protocol}://{rule.host or DEFAULT_CHAR}{path.path}", path.path_type, 
+                          backend)
+        group.append(table)
+    return Group(*group)
