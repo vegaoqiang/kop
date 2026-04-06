@@ -301,7 +301,10 @@ def parameters_formatter(desc):
     table.add_column(justify="left")
 
     for k, v in desc.attribute_map.items():
+        attr = getattr(desc, k, None)
+        if not attr:
+            continue
         table.add_row(
             Text(v.capitalize(), style="bold"), 
-            getattr(desc, k) or DEFAULT_CHAR)
+            attr)
     return table
