@@ -291,3 +291,17 @@ def loadbalancers_formatter(desc):
                       item.ip or DEFAULT_CHAR, 
                       f"{','.join([f'{port.port}/{port.protocol}' for port in item.ports])}" if item.ports else DEFAULT_CHAR)
     return table
+
+
+def parameters_formatter(desc):
+    if not desc:
+        return
+    table = Table.grid(padding=(0, 1), expand=True)
+    table.add_column(justify="left")
+    table.add_column(justify="left")
+
+    for k, v in desc.attribute_map.items():
+        table.add_row(
+            Text(v.capitalize(), style="bold"), 
+            getattr(desc, k) or DEFAULT_CHAR)
+    return table
