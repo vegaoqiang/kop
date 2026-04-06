@@ -30,7 +30,8 @@ from kubernetes.client.models import (
     V1IngressClass,
     V1NetworkPolicy,
     V1NetworkPolicyIngressRule,
-    V1NetworkPolicyEgressRule
+    V1NetworkPolicyEgressRule,
+    V1LabelSelector,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -923,7 +924,7 @@ class NetworkPolicyViewModel(ViewModel):
 class NetworkPolicyDetailModel(NetworkPolicyViewModel):
     created: str = field(default_factory=str, metadata={"title": "Created"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
-    podselector: dict = field(default_factory=dict, metadata={"title": "Pod Selector"})
+    podselector: V1LabelSelector = field(default_factory=V1LabelSelector, metadata={"title": "Pod Selector"})
     ingress: list[V1NetworkPolicyIngressRule] = field(default_factory=list, metadata={"title": "Ingress"})
     egress: list[V1NetworkPolicyEgressRule] = field(default_factory=list, metadata={"title": "Egress"})
 

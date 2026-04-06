@@ -213,6 +213,21 @@ def renderer_parameters(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.parameters_formatter))
 
 
+@RendererRegistry.register_renderer('podselector')
+def render_podselector(title: str, desc: dict) -> ComposeResult:
+    yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.podselector_formatter))
+
+
+@RendererRegistry.register_renderer('ingress')
+def renderer_ingress(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.ingress_formatter))
+
+
+@RendererRegistry.register_renderer('egress')
+def renderer_egress(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.ingress_formatter))
+
+
 class DetailModalRenderer(ModalScreen):
 
     DEFAULT_CSS = """

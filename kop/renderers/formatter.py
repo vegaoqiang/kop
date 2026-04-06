@@ -3,6 +3,7 @@ from rich.text import Text
 from rich.panel import Panel
 from rich.columns import Columns
 from rich.console import Group
+from rich.padding import Padding
 
 
 
@@ -308,3 +309,131 @@ def parameters_formatter(desc):
             Text(v.capitalize(), style="bold"), 
             attr)
     return table
+
+
+def podselector_formatter(desc):
+    if not desc:
+        return
+    table = Table.grid(padding=(0, 1), expand=True)
+    table.add_column(justify="left")
+    table.add_column(justify="left")
+    for k, v in desc.attribute_map.items():
+        attr = getattr(desc, k, None)
+        if not attr:
+            continue
+        if isinstance(attr, dict):
+            attr = '\n'.join(f"{label}={value}" for label, value in attr.items())
+        if isinstance(attr, list):
+            attr = '\n'.join(f"{item.key} {item.operator} {','.join(item.values)}" for item in attr)
+        table.add_row(
+            Text(v.capitalize(), style="bold"), 
+            attr
+        )
+    return table
+
+
+def ingress_formatter(desc):
+    # desc: list[V1NetworkPolicyEgressRule] | list[V1NetworkPolicyIngressRule]
+    if not desc:
+        return DEFAULT_CHAR
+
+    def _format_ports(ports: list) -> str:
+        if not ports:
+            return DEFAULT_CHAR
+        values: list[str] = []
+        for port in ports:
+            protocol = getattr(port, "protocol", None) or "TCP"
+            port_value = getattr(port, "port", None)
+            end_port = getattr(port, "end_port", None)
+            if port_value is None:
+                values.append(protocol)
+                continue
+            if end_port is not None and end_port != port_value:
+                values.append(f"{protocol}:{port_value}-{end_port}")
+                continue
+            values.append(f"{protocol}:{port_value}")
+        return ", ".join(values)
+
+    def _format_selector(selector, with_bullet: bool = False) -> str:
+        if not selector:
+            return DEFAULT_CHAR
+        rows: list[str] = []
+        match_labels = getattr(selector, "match_labels", None) or {}
+        match_expressions = getattr(selector, "match_expressions", None) or []
+
+        for key, value in match_labels.items():
+            rows.append(f"{key}: {value}")
+        for exp in match_expressions:
+            key = getattr(exp, "key", None) or DEFAULT_CHAR
+            operator = getattr(exp, "operator", None) or DEFAULT_CHAR
+            values = getattr(exp, "values", None) or []
+            if values:
+                rows.append(f"{key} {operator} ({','.join(values)})")
+            else:
+                rows.append(f"{key} {operator}")
+        if not rows:
+            return DEFAULT_CHAR
+        prefix = "• " if with_bullet else ""
+        return "\n".join(f"{prefix}{row}" for row in rows)
+
+    def _format_ip_block(ip_block) -> str:
+        if not ip_block:
+            return DEFAULT_CHAR
+        cidr = getattr(ip_block, "cidr", None) or DEFAULT_CHAR
+        except_list = getattr(ip_block, "_except", None) or []
+        if except_list:
+            return f"cidr: {cidr}, except: {','.join(except_list)}"
+        return f"cidr: {cidr}"
+
+    def _peer_rows(peers: list) -> list[tuple[str, str]]:
+        rows: list[tuple[str, str]] = []
+        if not peers:
+            return rows
+        for peer in peers:
+            ip_block = getattr(peer, "ip_block", None)
+            namespace_selector = getattr(peer, "namespace_selector", None)
+            pod_selector = getattr(peer, "pod_selector", None)
+            if ip_block:
+                rows.append(("ipBlock", _format_ip_block(ip_block)))
+            if namespace_selector:
+                rows.append(("namespaceSelector", _format_selector(namespace_selector, with_bullet=True)))
+            if pod_selector:
+                rows.append(("podSelector", _format_selector(pod_selector, with_bullet=True)))
+        return rows
+
+    tables: list[Table] = []
+    for index, gress in enumerate(desc, start=1):
+        is_ingress = "_from" in getattr(gress, "attribute_map", {})
+        peers_title = "From" if is_ingress else "To"
+        peers = getattr(gress, "_from", None) if is_ingress else getattr(gress, "to", None)
+
+        port_table = Table.grid(expand=True)
+        port_table.add_column(justify="left")
+        port_table.add_row(
+            Padding(Text("Ports", style="bold"), 1), 
+            Padding(
+                _format_ports(getattr(gress, "ports", None)), 1
+                )
+        )
+
+        peers_table = Table(
+            title=Padding(Text(peers_title, style="bold"), (0, 1)), 
+            expand=True, 
+            title_justify="left", 
+            show_header=False)
+        peers_table.add_column(justify="left")
+        peers_table.add_column(justify="left")
+
+        peer_rows = _peer_rows(peers)
+        if not peer_rows:
+            peers_table.add_row(DEFAULT_CHAR, DEFAULT_CHAR)
+        else:
+            for name, value in peer_rows:
+                peers_table.add_row(name, value)
+
+        tables.append(port_table)
+        tables.append(peers_table)
+
+    if len(tables) == 1:
+        return tables[0]
+    return Group(*tables)
