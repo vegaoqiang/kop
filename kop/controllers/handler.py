@@ -942,3 +942,64 @@ class IngressClassActionHandler(BaseActionHandlerMixin):
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
     
     
+class NetworkPolicyActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for NetworkPolicy resource"""
+    resource_type = [models.NetworkPolicyViewModel, models.NetworkPolicyDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.NetworkPolicyViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for NetworkPolicy, {e}", severity="error")
+
+    @staticmethod
+    def edit(action, resource: models.NetworkPolicyViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.NetworkingV1Api(api_client=app.endpoint.api_client)
+                network_policy = endpoint.read_namespaced_network_policy(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            network_policy = app.endpoint.api_client.sanitize_for_serialization(network_policy)
+            return network_policy
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.NetworkingV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_network_policy(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update networkpolicy {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.NetworkPolicyViewModel, app):
+        def delete_callback(data: models.NetworkPolicyViewModel | None) -> None:
+            if data is None:
+                return
+            try:
+                endpoint = client.NetworkingV1Api(api_client=app.endpoint.api_client)
+                endpoint.delete_namespaced_network_policy(
+                    name=data.name,
+                    namespace=data.namespace,
+                )
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+                app.notify(f"Delete networkpolicy {data.name} success", severity="information")
+            except Exception as e:
+                app.notify(f"Delete networkpolicy {data.name} failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+    
