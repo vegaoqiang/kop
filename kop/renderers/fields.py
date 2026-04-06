@@ -85,3 +85,9 @@ def ingress_rules_renderer(value):
     for rule in rules:
         text.append(f"{rule.host or ''}")
     return ",".join(text)
+
+
+def networkpolicy_policytypes_renderer(value):
+    if not value:
+        return ""
+    return ",".join(value)

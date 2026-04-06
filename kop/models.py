@@ -28,6 +28,9 @@ from kubernetes.client.models import (
     V1IngressLoadBalancerStatus,
     V1IngressTLS,
     V1IngressClass,
+    V1NetworkPolicy,
+    V1NetworkPolicyIngressRule,
+    V1NetworkPolicyEgressRule
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -895,5 +898,43 @@ class IngressClassDetailModel(IngressClassViewModel):
             'labels': data.metadata.labels,
             'annotations': data.metadata.annotations,
             'parameters': data.spec.parameters
+        })
+        return cls(**base)
+    
+
+@dataclass
+class NetworkPolicyViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    policytypes: list[str] = field(metadata={"title": "Policy Types", "width": 20, "renderer": f.networkpolicy_policytypes_renderer})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1NetworkPolicy) -> "NetworkPolicyViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            policytypes=data.spec.policy_types,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class NetworkPolicyDetailModel(NetworkPolicyViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    podselector: dict = field(default_factory=dict, metadata={"title": "Pod Selector"})
+    ingress: list[V1NetworkPolicyIngressRule] = field(default_factory=list, metadata={"title": "Ingress"})
+    egress: list[V1NetworkPolicyEgressRule] = field(default_factory=list, metadata={"title": "Egress"})
+
+    @classmethod
+    def clean(cls, data: V1NetworkPolicy) -> "NetworkPolicyDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'annotations': data.metadata.annotations,
+            'podselector': data.spec.pod_selector,
+            'ingress': data.spec.ingress,
+            'egress': data.spec.egress,
         })
         return cls(**base)
