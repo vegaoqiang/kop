@@ -220,12 +220,12 @@ def render_podselector(title: str, desc: dict) -> ComposeResult:
 
 @RendererRegistry.register_renderer('ingress')
 def renderer_ingress(title: str, desc: list) -> ComposeResult:
-    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.ingress_formatter))
+    yield Row(title=Title(title, expand=True, color="green"), desc=Desc(desc=desc, formatter=formatter.ingress_formatter))
 
 
 @RendererRegistry.register_renderer('egress')
 def renderer_egress(title: str, desc: list) -> ComposeResult:
-    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.ingress_formatter))
+    yield Row(title=Title(title, expand=True, color="green"), desc=Desc(desc=desc, formatter=formatter.ingress_formatter))
 
 
 class DetailModalRenderer(ModalScreen):
