@@ -946,11 +946,11 @@ class NetworkPolicyDetailModel(NetworkPolicyViewModel):
 class PersistentVolumeViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     storageclass: str = field(metadata={"title": "Storage Class", "width": 10})
-    capacity: str = field(metadata={"title": "Capacity", "width": 10})
+    capacity: str = field(metadata={"title": "Capacity", "width": 5})
     claim: str = field(metadata={"title": "Claim", "width": 15})
-    accessmodes: list[str] = field(metadata={"title": "Access Modes", "width": 10})
+    accessmodes: list[str] = field(metadata={"title": "Access Modes", "width": 10, "renderer": f.pv_accessmodes_renderer})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
-    status: str = field(metadata={"title": "Status", "width": 5})
+    status: str = field(metadata={"title": "Status", "width": 5, "renderer": f.pv_status_renderer})
 
     @classmethod
     def clean(cls, data: V1PersistentVolume) -> "PersistentVolumeViewModel":

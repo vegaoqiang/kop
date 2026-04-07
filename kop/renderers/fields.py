@@ -91,3 +91,24 @@ def networkpolicy_policytypes_renderer(value):
     if not value:
         return ""
     return ",".join(value)
+
+
+def pv_accessmodes_renderer(value):
+    if not value:
+        return ""
+    return ",".join(value)
+
+
+def pv_status_renderer(value):
+    if not value:
+        return ""
+    color_map = {
+        "Available": "green",
+        "Bound": "green",
+        "Released": "green",
+        "Failed": "red",
+        "Terminating": "magenta",
+        "Pending": "yellow",
+    }
+    color = color_map.get(value, "yellow")
+    return Text(value, style=color)
