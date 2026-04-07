@@ -59,7 +59,7 @@ class ResourceEvents(Static):
 
     def on_mount(self):
         self.event_service.subscribe(self._event_callback, 
-                                     namespace=self.data.namespace, 
+                                     namespace=getattr(self.data, "namespace", None), 
                                      name=self.data.name,
                                      kind=self.kind)
 
