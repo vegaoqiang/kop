@@ -139,12 +139,13 @@ class DescAnnotations(Static):
 
 
 class DescAffinity(Static):
-    def __init__(self, desc: Any):
+    def __init__(self, title: str, desc: Any):
         super().__init__()
+        self.title = title
         self.desc = desc
 
     def compose(self) -> ComposeResult:
-        with Collapsible(title="Affinity"):
+        with Collapsible(title=self.title):
             yield Static(Syntax(self.desc, "yaml"))
 
 
