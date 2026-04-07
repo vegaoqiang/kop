@@ -1131,7 +1131,7 @@ class PersistentVolumeClaimActionHandler(BaseActionHandlerMixin):
 class StorageClassActionHandler(BaseActionHandlerMixin):
 
     """Action handler for StorageClass resource"""
-    resource_type = [models.StorageClassViewModel]
+    resource_type = [models.StorageClassViewModel, models.StorageClassDetailModel]
 
     @classmethod
     def handle(cls, action, resource: models.StorageClassViewModel, app):
@@ -1188,5 +1188,69 @@ class StorageClassActionHandler(BaseActionHandlerMixin):
                 app.notify(f"Delete storageclass {data.name} success", severity="information")
             except Exception as e:
                 app.notify(f"Delete storageclass {data.name} failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+class NamespaceActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for Namespace resource"""
+    resource_type = [models.NamespaceViewModel, models.NamespaceDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.NamespaceViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for Namespace, {e}", severity="error")
+    
+    @staticmethod
+    def edit(action, resource: models.NamespaceViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                namespace = endpoint.read_namespace(
+                    name=resource.name,
+                )
+            except Exception:
+                return
+
+            namespace = app.endpoint.api_client.sanitize_for_serialization(namespace)
+            metadata = namespace.setdefault("metadata", {})
+            metadata.setdefault("namespace", "default")
+            return namespace
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+            body = kwargs.get("body")
+            if isinstance(body, dict):
+                body_metadata = body.get("metadata")
+                if isinstance(body_metadata, dict):
+                    body_metadata.pop("namespace", None)
+
+            res = endpoint.patch_namespace(
+                name=name,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update namespace {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.NamespaceViewModel, app):
+        def delete_callback(data: models.NamespaceViewModel | None) -> None:
+            if data is None:
+                return
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                endpoint.delete_namespace(name=data.name)
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+                app.notify(f"Delete namespace {data.name} success", severity="information")
+            except Exception as e:
+                app.notify(f"Delete namespace {data.name} failed: {e}", severity="error")
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)

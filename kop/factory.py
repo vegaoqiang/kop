@@ -1156,3 +1156,62 @@ class StorageClassFactory(BaseFactory):
             actions=self.actions,
             kind=self.resource_kind,
         )
+    
+
+class NamespaceFactory(BaseFactory):
+    """factory for namespace"""
+    resource_type = "namespaces"
+    resource_kind = "Namespace"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit Namespace", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete Namespace", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_namespaces()
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_namespaces(name=name, namespace=namespace)
+
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_namespace(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_namespace(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.NamespaceViewModel]:
+        return [models.NamespaceViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw):
+        return models.NamespaceDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.NamespaceViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.NamespaceDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions,
+            kind=self.resource_kind,
+        )
+    

@@ -35,6 +35,7 @@ from kubernetes.client.models import (
     V1PersistentVolume,
     V1PersistentVolumeClaim,
     V1StorageClass,
+    V1Namespace,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -1087,5 +1088,39 @@ class StorageClassDetailModel(StorageClassViewModel):
             'volumebindingmode': data.volume_binding_mode,
             'mountoptions': data.mount_options,
             'allowvolumeexpansion': str(data.allow_volume_expansion or 'True')
+        })
+        return cls(**base)
+    
+
+@dataclass
+class NamespaceViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+    status: str = field(metadata={"title": "Status", "width": 5, "renderer": f.namespace_status_renderer})
+
+    @classmethod
+    def clean(cls, data: V1Namespace) -> "NamespaceViewModel":
+        return cls(
+            name=data.metadata.name,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+            status=data.status.phase,
+        )
+
+
+@dataclass
+class NamespaceDetailModel(NamespaceViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
+
+    @classmethod
+    def clean(cls, data: V1Namespace) -> "NamespaceDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'finalizers': data.metadata.finalizers,
         })
         return cls(**base)

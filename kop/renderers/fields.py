@@ -112,3 +112,14 @@ def pv_status_renderer(value):
     }
     color = color_map.get(value, "yellow")
     return Text(value, style=color)
+
+
+def namespace_status_renderer(value):
+    if not value:
+        return ""
+    color_map = {
+        "Active": "green",
+        "Terminating": "magenta",
+    }
+    color = color_map.get(value, "yellow")
+    return Text(value, style=color)
