@@ -966,13 +966,14 @@ class PersistentVolumeViewModel(ViewModel):
     
 
 @dataclass
-class PersistentVolumeDetailModel(ViewModel):
+class PersistentVolumeDetailModel(PersistentVolumeViewModel):
     created: str = field(default_factory=str, metadata={"title": "Created"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
     reclaimpolicy: str = field(default_factory=str, metadata={"title": "Reclaim Policy"})
     volumemode: str = field(default_factory=str, metadata={"title": "Volume Mode"})
-    nodeAffinity: dict = field(default_factory=dict, metadata={"title": "Node Affinity"})
+    localpath: str = field(default_factory=str, metadata={"title": "Local Path"})
+    affinities: dict = field(default_factory=dict, metadata={"title": "Node Affinity"})
 
     @classmethod
     def clean(cls, data: V1PersistentVolume) -> "PersistentVolumeDetailModel":
@@ -983,6 +984,7 @@ class PersistentVolumeDetailModel(ViewModel):
             'finalizers': data.metadata.finalizers,
             'reclaimpolicy': data.spec.persistent_volume_reclaim_policy,
             'volumemode': data.spec.volume_mode,
-            'nodeAffinity': data.spec.node_affinity
+            'localpath': data.spec.local.path if data.spec.local else "",
+            'affinities': data.spec.node_affinity
         })
         return cls(**base)

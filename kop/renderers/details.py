@@ -129,6 +129,7 @@ def render_affinities(title: str, desc: list) -> ComposeResult:
     from yaml import safe_dump
     api_client = ApiClient()
     yield DescAffinity(
+        title=title,
         desc=safe_dump(
             api_client.sanitize_for_serialization(desc), 
             allow_unicode=True, 
