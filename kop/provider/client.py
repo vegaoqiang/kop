@@ -426,3 +426,9 @@ class KbsEndpoint(KbsAuthLoader):
         if namespace:
             return endpoint.list_namespaced_network_policy(namespace, watch=watch, async_req=async_req)
         return endpoint.list_network_policy_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def list_persistentvolumes(self, namespace: str | None = None, 
+                               watch: bool = False, 
+                               async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.list_persistent_volume(watch=watch, async_req=async_req)

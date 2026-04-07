@@ -982,3 +982,61 @@ class NetworkPolicyFactory(BaseFactory):
             actions=self.actions,
             kind=self.resource_kind,
         )
+    
+
+class PersistentVolumeFactory(BaseFactory):
+    """factory for persistentvolume"""
+    resource_type = "persistentvolumes"
+    resource_kind = "PersistentVolume"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit PersistentVolume", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete PersistentVolume", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_persistentvolumes()
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_persistentvolumes(name=name, namespace=namespace)
+
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_persistentvolume(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_persistentvolume(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.PersistentVolumeViewModel]:
+        return [models.PersistentVolumeViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> models.PersistentVolumeDetailModel:
+        return models.PersistentVolumeDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.PersistentVolumeViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.PersistentVolumeDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions,
+            kind=self.resource_kind,
+        )

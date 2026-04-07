@@ -32,6 +32,7 @@ from kubernetes.client.models import (
     V1NetworkPolicyIngressRule,
     V1NetworkPolicyEgressRule,
     V1LabelSelector,
+    V1PersistentVolume,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -937,5 +938,51 @@ class NetworkPolicyDetailModel(NetworkPolicyViewModel):
             'podselector': data.spec.pod_selector,
             'ingress': data.spec.ingress,
             'egress': data.spec.egress,
+        })
+        return cls(**base)
+    
+
+@dataclass
+class PersistentVolumeViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 20})
+    storageclass: str = field(metadata={"title": "Storage Class", "width": 10})
+    capacity: str = field(metadata={"title": "Capacity", "width": 10})
+    claim: str = field(metadata={"title": "Claim", "width": 15})
+    accessmodes: list[str] = field(metadata={"title": "Access Modes", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+    status: str = field(metadata={"title": "Status", "width": 5})
+
+    @classmethod
+    def clean(cls, data: V1PersistentVolume) -> "PersistentVolumeViewModel":
+        return cls(
+            name=data.metadata.name,
+            storageclass=data.spec.storage_class_name,
+            capacity=data.spec.capacity['storage'] if data.spec.capacity else "",
+            claim=data.spec.claim_ref.name if data.spec.claim_ref else "",
+            status=data.status.phase,
+            accessmodes=data.spec.access_modes,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class PersistentVolumeDetailModel(ViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
+    reclaimpolicy: str = field(default_factory=str, metadata={"title": "Reclaim Policy"})
+    volumemode: str = field(default_factory=str, metadata={"title": "Volume Mode"})
+    nodeAffinity: dict = field(default_factory=dict, metadata={"title": "Node Affinity"})
+
+    @classmethod
+    def clean(cls, data: V1PersistentVolume) -> "PersistentVolumeDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'annotations': data.metadata.annotations,
+            'finalizers': data.metadata.finalizers,
+            'reclaimpolicy': data.spec.persistent_volume_reclaim_policy,
+            'volumemode': data.spec.volume_mode,
+            'nodeAffinity': data.spec.node_affinity
         })
         return cls(**base)
