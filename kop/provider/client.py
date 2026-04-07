@@ -440,3 +440,9 @@ class KbsEndpoint(KbsAuthLoader):
         if namespace:
             return endpoint.list_namespaced_persistent_volume_claim(namespace, watch=watch, async_req=async_req)
         return endpoint.list_persistent_volume_claim_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def list_storageclasses(self, namespace: str | None = None, 
+                            watch: bool = False, 
+                            async_req: bool = False):
+        endpoint = client.StorageV1Api(api_client=self.api_client)
+        return endpoint.list_storage_class(watch=watch, async_req=async_req)

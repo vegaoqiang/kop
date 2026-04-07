@@ -1127,3 +1127,66 @@ class PersistentVolumeClaimActionHandler(BaseActionHandlerMixin):
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
             
+
+class StorageClassActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for StorageClass resource"""
+    resource_type = [models.StorageClassViewModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.StorageClassViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for StorageClass, {e}", severity="error")
+    
+    @staticmethod
+    def edit(action, resource: models.StorageClassViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.StorageV1Api(api_client=app.endpoint.api_client)
+                storage_class = endpoint.read_storage_class(
+                    name=resource.name,
+                )
+            except Exception:
+                return
+
+            storage_class = app.endpoint.api_client.sanitize_for_serialization(storage_class)
+            metadata = storage_class.setdefault("metadata", {})
+            metadata.setdefault("namespace", "default")
+            return storage_class
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.StorageV1Api(api_client=app.endpoint.api_client)
+            body = kwargs.get("body")
+            if isinstance(body, dict):
+                body_metadata = body.get("metadata")
+                if isinstance(body_metadata, dict):
+                    body_metadata.pop("namespace", None)
+
+            res = endpoint.patch_storage_class(
+                name=name,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update storageclass {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.StorageClassViewModel, app):
+        def delete_callback(data: models.StorageClassViewModel | None) -> None:
+            if data is None:
+                return
+            try:
+                endpoint = client.StorageV1Api(api_client=app.endpoint.api_client)
+                endpoint.delete_storage_class(name=data.name)
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+                app.notify(f"Delete storageclass {data.name} success", severity="information")
+            except Exception as e:
+                app.notify(f"Delete storageclass {data.name} failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)

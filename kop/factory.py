@@ -1098,3 +1098,61 @@ class PersistentVolumeClaimFactory(BaseFactory):
             actions=self.actions,
             kind=self.resource_kind,
         )
+
+
+class StorageClassFactory(BaseFactory):
+    """factory for storageclass"""
+    resource_type = "storageclasses"
+    resource_kind = "StorageClass"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit StorageClass", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete StorageClass", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_storageclasses()
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_storageclasses(name=name, namespace=namespace)
+
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_storageclass(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_storageclass(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.StorageClassViewModel]:
+        return [models.StorageClassViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> models.StorageClassDetailModel:
+        return models.StorageClassDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.StorageClassViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.StorageClassDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions,
+            kind=self.resource_kind,
+        )

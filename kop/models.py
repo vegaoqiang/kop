@@ -34,6 +34,7 @@ from kubernetes.client.models import (
     V1LabelSelector,
     V1PersistentVolume,
     V1PersistentVolumeClaim,
+    V1StorageClass,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -1036,5 +1037,55 @@ class PersistentVolumeClaimDetailModel(PersistentVolumeClaimViewModel):
             'accessmodes': data.spec.access_modes,
             'volumename': data.spec.volume_name,
             'volumemode': data.spec.volume_mode
+        })
+        return cls(**base)
+
+
+@dataclass
+class StorageClassViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    default: str = field(metadata={"title": "Default", "width": 5})
+    provisioner: str = field(metadata={"title": "Provisioner", "width": 15})
+    reclaimpolicy: str = field(metadata={"title": "Reclaim Policy", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1StorageClass) -> "StorageClassViewModel":
+        return cls(
+            name=data.metadata.name,
+            default=cls._get_default(data),
+            provisioner=data.provisioner,
+            reclaimpolicy=data.reclaim_policy,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+    @staticmethod
+    def _get_default(data: V1StorageClass) -> str:
+        if data.metadata.annotations.get('storageclass.kubernetes.io/is-default-class') == 'true':
+            return '✔️'
+        return ''
+
+
+@dataclass
+class StorageClassDetailModel(StorageClassViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    providerparameters: dict = field(default_factory=dict, metadata={"title": "Parameters"})
+    volumebindingmode: str = field(default_factory=str, metadata={"title": "Binding Mode"})
+    mountoptions: list = field(default_factory=list, metadata={"title": "Mount Options"})
+    allowvolumeexpansion: str = field(default_factory=str, metadata={"title": "Allow Expansion"})
+
+    @classmethod
+    def clean(cls, data: V1StorageClass) -> "StorageClassDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'providerparameters': data.parameters,
+            'volumebindingmode': data.volume_binding_mode,
+            'mountoptions': data.mount_options,
+            'allowvolumeexpansion': str(data.allow_volume_expansion or 'True')
         })
         return cls(**base)
