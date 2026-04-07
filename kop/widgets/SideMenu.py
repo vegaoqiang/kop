@@ -28,6 +28,7 @@ MENU: List[SimpleNamespace] = [
     SimpleNamespace(id='persistentvolumes', name="Persistent Volumes"),
     SimpleNamespace(id='persistentvolumeclaims', name="Persistent Volume Claims"),
     SimpleNamespace(id='storageclasses', name="Storage Classes"),
+    SimpleNamespace(id='namespaces', name="Namespaces"),
     SimpleNamespace(id='serviceaccounts', name="Service Accounts"),
     SimpleNamespace(id='roles', name="Roles"),
     SimpleNamespace(id='rolebindings', name="Role Bindings"),
