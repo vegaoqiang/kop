@@ -1254,3 +1254,64 @@ class NamespaceActionHandler(BaseActionHandlerMixin):
                 app.notify(f"Delete namespace {data.name} failed: {e}", severity="error")
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+class ServiceAccountActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for ServiceAccount resource"""
+    resource_type = [models.ServiceAccountViewModel, models.ServiceAccountDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.ServiceAccountViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for ServiceAccount, {e}", severity="error")
+    
+    @staticmethod
+    def edit(action, resource: models.ServiceAccountViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                service_account = endpoint.read_namespaced_service_account(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            service_account = app.endpoint.api_client.sanitize_for_serialization(service_account)
+            return service_account
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_service_account(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update serviceaccount {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.ServiceAccountViewModel, app):
+        def delete_callback(data: models.ServiceAccountViewModel | None) -> None:
+            if data is None:
+                return
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                endpoint.delete_namespaced_service_account(
+                    name=data.name,
+                    namespace=data.namespace,
+                )
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+                app.notify(f"Delete serviceaccount {data.name} success", severity="information")
+            except Exception as e:
+                app.notify(f"Delete serviceaccount {data.name} failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)

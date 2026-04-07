@@ -36,6 +36,7 @@ from kubernetes.client.models import (
     V1PersistentVolumeClaim,
     V1StorageClass,
     V1Namespace,
+    V1ServiceAccount,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -1124,3 +1125,49 @@ class NamespaceDetailModel(NamespaceViewModel):
             'finalizers': data.metadata.finalizers,
         })
         return cls(**base)
+    
+
+@dataclass
+class ServiceAccountViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1ServiceAccount) -> "ServiceAccountViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class ServiceAccountDetailModel(ServiceAccountViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    ownerreferences: list = field(default_factory=list, metadata={"title": "Owner References"})
+    secrets: list = field(default_factory=list, metadata={"title": "Secrets"})
+    automounttokens: str = field(default_factory=str, metadata={"title": "AutoMount Tokens"})
+    imagepullsecrets: list = field(default_factory=list, metadata={"title": "Image Pull Secrets"})
+
+    @classmethod
+    def clean(cls, data: V1ServiceAccount) -> "ServiceAccountDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'ownerreferences': cls._get_ownerreferences(data.metadata.owner_references),
+            'secrets': data.secrets,
+            'automounttokens': str(data.automount_service_account_token),
+            'imagepullsecrets': data.image_pull_secrets
+        })
+        return cls(**base)
+    
+    @staticmethod
+    def _get_ownerreferences(data) -> list:
+        if not data:
+            return []
+        return [f"{x.kind}/{x.name}" for x in data]

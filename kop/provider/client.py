@@ -446,3 +446,11 @@ class KbsEndpoint(KbsAuthLoader):
                             async_req: bool = False):
         endpoint = client.StorageV1Api(api_client=self.api_client)
         return endpoint.list_storage_class(watch=watch, async_req=async_req)
+    
+    def list_serviceaccounts(self, namespace: str | None = None, 
+                             watch: bool = False, 
+                             async_req: bool = False):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_service_account(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_service_account_for_all_namespaces(watch=watch, async_req=async_req)
