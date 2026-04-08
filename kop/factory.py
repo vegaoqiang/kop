@@ -1446,3 +1446,61 @@ class RoleBindingFactory(BaseFactory):
             actions=self.actions,
             kind=self.resource_kind,
         )
+    
+
+class ClusterRoleBindingFactory(BaseFactory):
+    """factory for clusterrolebinding"""
+    resource_type = "clusterrolebindings"
+    resource_kind = "ClusterRoleBinding"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit ClusterRoleBinding", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete ClusterRoleBinding", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_cluster_role_bindings()
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_cluster_role_bindings(name=name, namespace=namespace)
+    
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_cluster_role_binding(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_cluster_role_binding(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.ClusterRoleBindingViewModel]:
+        return [models.ClusterRoleBindingViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw):
+        return models.ClusterRoleBindingDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.ClusterRoleBindingViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.ClusterRoleBindingDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions,
+            kind=self.resource_kind,
+        )

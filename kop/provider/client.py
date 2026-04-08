@@ -476,3 +476,9 @@ class KbsEndpoint(KbsAuthLoader):
         if namespace:
             return endpoint.list_namespaced_role_binding(namespace, watch=watch, async_req=async_req)
         return endpoint.list_role_binding_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def list_cluster_role_bindings(self, namespace: str | None = None, 
+                                   watch: bool = False, 
+                                   async_req: bool = False):
+        endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
+        return endpoint.list_cluster_role_binding(watch=watch, async_req=async_req)

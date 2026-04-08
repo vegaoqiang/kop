@@ -39,7 +39,8 @@ from kubernetes.client.models import (
     V1ServiceAccount,
     V1Role,
     V1ClusterRole,
-    V1RoleBinding
+    V1RoleBinding,
+    V1ClusterRoleBinding,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -1268,6 +1269,40 @@ class RoleBindingDetailModel(RoleBindingViewModel):
 
     @classmethod
     def clean(cls, data: V1RoleBinding) -> "RoleBindingDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'roleref': data.role_ref,
+        })
+        return cls(**base)
+    
+
+@dataclass
+class ClusterRoleBindingViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    bindings: list = field(metadata={"title": "Bindings", "width": 10, "renderer": f.rolebinding_bindings_renderer, "after": "roleref"})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1ClusterRoleBinding) -> "ClusterRoleBindingViewModel":
+        return cls(
+            name=data.metadata.name,
+            bindings=data.subjects,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class ClusterRoleBindingDetailModel(ClusterRoleBindingViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    roleref: dict = field(default_factory=dict, metadata={"title": "Role Reference"})
+
+    @classmethod
+    def clean(cls, data: V1ClusterRoleBinding) -> "ClusterRoleBindingDetailModel":
         base = super().clean(data).__dict__
         base.update({
             'created': cls.get_created_text(data.metadata.creation_timestamp),
