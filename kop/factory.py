@@ -1330,3 +1330,65 @@ class RoleFactory(BaseFactory):
             actions=self.actions,
             kind=self.resource_kind,
         )
+    
+
+class ClusterRoleFactory(BaseFactory):
+    """factory for clusterrole"""
+    resource_type = "clusterroles"
+    resource_kind = "ClusterRole"
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit ClusterRole", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete ClusterRole", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: str | None = None):
+        return self.endpoint.list_cluster_roles()
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_cluster_roles(name=name, namespace=namespace)
+    
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_cluster_role(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_cluster_role(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.ClusterRoleViewModel]:
+        return [models.ClusterRoleViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw):
+        return models.ClusterRoleDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.ClusterRoleViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.ClusterRoleDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions,
+            kind=self.resource_kind,
+        )
+
+
+
+    

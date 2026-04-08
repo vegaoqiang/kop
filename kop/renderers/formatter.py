@@ -446,15 +446,15 @@ def rolerules_formatter(desc):
 
     for rule in desc:
         table = Table.grid(expand=True)
-        table.add_column(justify="left")
-        table.add_column(justify="left")
+        table.add_column(justify="left", ratio=30)
+        table.add_column(justify="left", ratio=70)
         for k, v in rule.attribute_map.items():
             value = getattr(rule, k, None)
             if not value:
                 continue
             table.add_row(
                 Text(v.capitalize(), style="bold"),
-                ','.join(f"'{x}'" if x == '' else x for x in value)
+                Text(', '.join(f"'{x}'" if x == '' else x for x in value), overflow="fold"),
             )
 
             tables.append(Panel(table))

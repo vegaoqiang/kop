@@ -1377,3 +1377,67 @@ class RoleActionHandler(BaseActionHandlerMixin):
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
             
+
+class ClusterRoleActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for ClusterRole resource"""
+    resource_type = [models.ClusterRoleViewModel, models.ClusterRoleDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.ClusterRoleViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for ClusterRole, {e}", severity="error")
+
+    @staticmethod
+    def edit(action, resource: models.ClusterRoleViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.RbacAuthorizationV1Api(api_client=app.endpoint.api_client)
+                cluster_role = endpoint.read_cluster_role(
+                    name=resource.name,
+                )
+            except Exception:
+                return
+
+            cluster_role = app.endpoint.api_client.sanitize_for_serialization(cluster_role)
+            metadata = cluster_role.setdefault("metadata", {})
+            metadata.setdefault("namespace", "default")
+            return cluster_role
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.RbacAuthorizationV1Api(api_client=app.endpoint.api_client)
+            body = kwargs.get("body")
+            if isinstance(body, dict):
+                body_metadata = body.get("metadata")
+                if isinstance(body_metadata, dict):
+                    body_metadata.pop("namespace", None)
+
+            res = endpoint.patch_cluster_role(
+                name=name,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update clusterrole {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.ClusterRoleViewModel, app):
+        def delete_callback(data: models.ClusterRoleViewModel | None) -> None:
+            if data is None:
+                return
+            try:
+                endpoint = client.RbacAuthorizationV1Api(api_client=app.endpoint.api_client)
+                endpoint.delete_cluster_role(name=data.name)
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+                app.notify(f"Delete clusterrole {data.name} success", severity="information")
+            except Exception as e:
+                app.notify(f"Delete clusterrole {data.name} failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+            
