@@ -454,3 +454,11 @@ class KbsEndpoint(KbsAuthLoader):
         if namespace:
             return endpoint.list_namespaced_service_account(namespace, watch=watch, async_req=async_req)
         return endpoint.list_service_account_for_all_namespaces(watch=watch, async_req=async_req)
+    
+    def list_roles(self, namespace: str | None = None, 
+                   watch: bool = False, 
+                   async_req: bool = False):
+        endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_role(namespace, watch=watch, async_req=async_req)
+        return endpoint.list_role_for_all_namespaces(watch=watch, async_req=async_req)

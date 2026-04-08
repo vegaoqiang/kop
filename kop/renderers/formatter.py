@@ -437,3 +437,25 @@ def ingress_formatter(desc):
     if len(tables) == 1:
         return tables[0]
     return Group(*tables)
+
+
+def rolerules_formatter(desc):
+    if not desc:
+        return DEFAULT_CHAR
+    tables: list[Panel] = []
+
+    for rule in desc:
+        table = Table.grid(expand=True)
+        table.add_column(justify="left")
+        table.add_column(justify="left")
+        for k, v in rule.attribute_map.items():
+            value = getattr(rule, k, None)
+            if not value:
+                continue
+            table.add_row(
+                Text(v.capitalize(), style="bold"),
+                ','.join(f"'{x}'" if x == '' else x for x in value)
+            )
+
+            tables.append(Panel(table))
+    return Group(*tables)

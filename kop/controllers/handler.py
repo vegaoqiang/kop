@@ -1315,3 +1315,65 @@ class ServiceAccountActionHandler(BaseActionHandlerMixin):
                 app.notify(f"Delete serviceaccount {data.name} failed: {e}", severity="error")
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+class RoleActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for Role resource"""
+    resource_type = [models.RoleViewModel, models.RoleDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.RoleViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for Role, {e}", severity="error")
+
+    @staticmethod
+    def edit(action, resource: models.RoleViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.RbacAuthorizationV1Api(api_client=app.endpoint.api_client)
+                role = endpoint.read_namespaced_role(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            role = app.endpoint.api_client.sanitize_for_serialization(role)
+            return role
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.RbacAuthorizationV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_role(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update role {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.RoleViewModel, app):
+        def delete_callback(data: models.RoleViewModel | None) -> None:
+            if data is None:
+                return
+            try:
+                endpoint = client.RbacAuthorizationV1Api(api_client=app.endpoint.api_client)
+                endpoint.delete_namespaced_role(
+                    name=data.name,
+                    namespace=data.namespace,
+                )
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+                app.notify(f"Delete role {data.name} success", severity="information")
+            except Exception as e:
+                app.notify(f"Delete role {data.name} failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+            

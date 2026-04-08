@@ -37,6 +37,7 @@ from kubernetes.client.models import (
     V1StorageClass,
     V1Namespace,
     V1ServiceAccount,
+    V1Role,
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -1171,3 +1172,37 @@ class ServiceAccountDetailModel(ServiceAccountViewModel):
         if not data:
             return []
         return [f"{x.kind}/{x.name}" for x in data]
+    
+
+@dataclass
+class RoleViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1Role) -> "RoleViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class RoleDetailModel(RoleViewModel):
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    rolerules: list = field(default_factory=list, metadata={"title": "Rules"})
+
+    @classmethod
+    def clean(cls, data: V1Role) -> "RoleDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'rolerules': data.rules,
+        })
+        return cls(**base)

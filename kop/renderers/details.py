@@ -230,6 +230,11 @@ def renderer_egress(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title, expand=True, color="green"), desc=Desc(desc=desc, formatter=formatter.ingress_formatter))
 
 
+@RendererRegistry.register_renderer('rolerules')
+def renderer_rolerules(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.rolerules_formatter))
+
+
 class DetailModalRenderer(ModalScreen):
 
     DEFAULT_CSS = """
