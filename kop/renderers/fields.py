@@ -123,3 +123,9 @@ def namespace_status_renderer(value):
     }
     color = color_map.get(value, "yellow")
     return Text(value, style=color)
+
+
+def rolebinding_bindings_renderer(value):
+    if not value:
+        return ""
+    return ",".join([x.name for x in value])

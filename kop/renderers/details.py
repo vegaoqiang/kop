@@ -235,6 +235,16 @@ def renderer_rolerules(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.rolerules_formatter))
 
 
+@RendererRegistry.register_renderer('bindings')
+def renderer_bindings(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.bindings_formatter))
+
+
+@RendererRegistry.register_renderer('roleref')
+def renderer_roleref(title: str, desc: dict) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.roleref_formatter))
+
+
 class DetailModalRenderer(ModalScreen):
 
     DEFAULT_CSS = """

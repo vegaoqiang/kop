@@ -459,3 +459,27 @@ def rolerules_formatter(desc):
 
             tables.append(Panel(table))
     return Group(*tables)
+
+
+def bindings_formatter(desc):
+    if not desc:
+        return DEFAULT_CHAR
+    table = Table(expand=True)
+    table.add_column("Kind", justify="left")
+    table.add_column("Name", justify="left")
+    table.add_column("Namespace", justify="left")
+    table.add_column("apiGroup", justify="left")
+    for item in desc:
+        table.add_row(item.kind, item.name, item.namespace or DEFAULT_CHAR, item.api_group or DEFAULT_CHAR)
+    return table
+
+
+def roleref_formatter(desc):
+    if not desc:
+        return DEFAULT_CHAR
+    table = Table()
+    table.add_column("Kind", justify="left")
+    table.add_column("Name", justify="left")
+    table.add_column("apiGroup", justify="left")
+    table.add_row(desc.kind, desc.name, desc.api_group)
+    return table

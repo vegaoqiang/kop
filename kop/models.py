@@ -39,6 +39,7 @@ from kubernetes.client.models import (
     V1ServiceAccount,
     V1Role,
     V1ClusterRole,
+    V1RoleBinding
     )
 from datetime import datetime
 from typing import List, Any, Callable, Optional
@@ -1237,5 +1238,41 @@ class ClusterRoleDetailModel(ClusterRoleViewModel):
             'labels': data.metadata.labels,
             'annotations': data.metadata.annotations,
             'rolerules': data.rules,
+        })
+        return cls(**base)
+    
+
+@dataclass
+class RoleBindingViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    bindings: list = field(metadata={"title": "Bindings", "width": 10, "renderer": f.rolebinding_bindings_renderer, "after": "roleref"})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1RoleBinding) -> "RoleBindingViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            bindings=data.subjects,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+
+@dataclass
+class RoleBindingDetailModel(RoleBindingViewModel): 
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    roleref: dict = field(default_factory=dict, metadata={"title": "Role Reference"})
+
+    @classmethod
+    def clean(cls, data: V1RoleBinding) -> "RoleBindingDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'roleref': data.role_ref,
         })
         return cls(**base)

@@ -1441,3 +1441,64 @@ class ClusterRoleActionHandler(BaseActionHandlerMixin):
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
             
+
+class RoleBindingActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for RoleBinding resource"""
+    resource_type = [models.RoleBindingViewModel, models.RoleBindingDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.RoleBindingViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for RoleBinding, {e}", severity="error")
+
+    @staticmethod
+    def edit(action, resource: models.RoleBindingViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.RbacAuthorizationV1Api(api_client=app.endpoint.api_client)
+                role_binding = endpoint.read_namespaced_role_binding(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            role_binding = app.endpoint.api_client.sanitize_for_serialization(role_binding)
+            return role_binding
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.RbacAuthorizationV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_role_binding(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update rolebinding {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.RoleBindingViewModel, app):
+        def delete_callback(data: models.RoleBindingViewModel | None) -> None:
+            if data is None:
+                return
+            try:
+                endpoint = client.RbacAuthorizationV1Api(api_client=app.endpoint.api_client)
+                endpoint.delete_namespaced_role_binding(
+                    name=data.name,
+                    namespace=data.namespace,
+                )
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+                app.notify(f"Delete rolebinding {data.name} success", severity="information")
+            except Exception as e:
+                app.notify(f"Delete rolebinding {data.name} failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+    
