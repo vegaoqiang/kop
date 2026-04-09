@@ -724,6 +724,12 @@ class ServiceFactory(BaseFactory):
     """factory for services"""
     resource_type = "services"
     resource_kind = "Service"
+    filter_fields = ("metadata.name", 
+                     "metadata.namespace",
+                     "spec.type",
+                     "spec.cluster_ip",
+                     "spec.ports",
+                     "status.load_balancer.ingress")
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -783,6 +789,12 @@ class EndpointFactory(BaseFactory):
     """factory for endpoints"""
     resource_type = "endpoints"
     resource_kind = "Endpoint"
+    filter_fields = (
+        "metadata.name", 
+        "metadata.namespace",
+        "subsets"
+    )
+
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -841,6 +853,12 @@ class IngressFactory(BaseFactory):
     """factory for ingresses"""
     resource_type = "ingresses"
     resource_kind = "Ingress"
+    filter_fields = (
+        "metadata.name", 
+        "metadata.namespace",
+        "spec.ingress_class_name",
+        "spec.rules"
+    )
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -899,6 +917,12 @@ class IngressClassFactory(BaseFactory):
     """factory for ingressclasses"""
     resource_type = "ingressclasses"
     resource_kind = "IngressClass"
+    filter_fields = (
+        "metadata.name", 
+        "metadata.namespace",
+        "spec.controller",
+        "spec.parameters.scope"
+    )
 
     actions: List[ActionModel] = [
         ActionModel(name="set_default", 
@@ -963,6 +987,11 @@ class NetworkPolicyFactory(BaseFactory):
     """factory for networkpolicies"""
     resource_type = "networkpolicies"
     resource_kind = "NetworkPolicy"
+    filter_fields = (
+        "metadata.name", 
+        "metadata.namespace",
+        "spec.policy_types"
+    )
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -1021,6 +1050,13 @@ class PersistentVolumeFactory(BaseFactory):
     """factory for persistentvolume"""
     resource_type = "persistentvolumes"
     resource_kind = "PersistentVolume"
+    filter_fields = (
+        "metadata.name",
+        "spec.storage_class_name",
+        "spec.claim_ref.name",
+        "spec.access_modes"
+    )
+
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -1079,6 +1115,14 @@ class PersistentVolumeClaimFactory(BaseFactory):
     """factory for persistentvolumeclaim"""
     resource_type = "persistentvolumeclaims"
     resource_kind = "PersistentVolumeClaim"
+    filter_fields = (
+        "metadata.name",
+        "metadata.namespace",
+        "spec.storage_class_name",
+        "spec.resources.requests",
+        "status.phase"
+    )
+
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
@@ -1137,6 +1181,11 @@ class StorageClassFactory(BaseFactory):
     """factory for storageclass"""
     resource_type = "storageclasses"
     resource_kind = "StorageClass"
+    filter_fields = (
+        "metadata.name",
+        "provisioner",
+        "reclaim_policy",
+    )
 
     actions: List[ActionModel] = [
         ActionModel(name="edit", 
