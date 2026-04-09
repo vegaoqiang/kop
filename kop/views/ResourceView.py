@@ -226,13 +226,14 @@ class ResourceView(Screen):
             self.FACTORY_CACHE = factory = factory_cls(self.endpoint)
 
         default_namespace = self.namespace or "default"
-        try:
-            template = factory.load_template(namespace=default_namespace)
-        except (FileNotFoundError, NotImplementedError, ValueError) as e:
-            self.notify(str(e), severity="warning")
-            template = {}
 
         def fetcher() -> dict:
+            try:
+                template = factory.load_template(namespace=default_namespace)
+            except (FileNotFoundError, FileExistsError, NotImplementedError, ValueError) as e:
+                # self.notify(str(e), severity="warning")
+                self.log(e, severity="warning")
+                template = {"apiVersion": None}
             return template
 
         def creator(name: str, namespace: str = "default", **kwargs):
