@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, List
 from abc import ABC, abstractmethod
 from pathlib import Path
 from copy import copy, deepcopy
@@ -31,6 +31,8 @@ class BaseFactory(ABC):
     resource_type: str  # e.g. "pods"
     resource_kind: str  # e.g. "Pod"
     _client: KubeClient # save multiple kube cluster client
+    # attribute paths used by default filter, e.g. "metadata.name"
+    filter_fields: tuple[str, ...] = ("metadata.name", "metadata.namespace")
 
     def __init_subclass__(cls, **kwargs):
         """auto register subclass"""
@@ -90,12 +92,87 @@ class BaseFactory(ABC):
         metadata = template.setdefault("metadata", {})
         metadata["namespace"] = namespace or "default"
         return template
+
+    def filter(self, raw, query: str):
+        """
+        Generic filter for kubernetes list response.
+        Subclasses can customize `filter_fields` and `extra_filter`.
+        """
+        query = (query or "").strip().lower()
+        if not query:
+            return raw
+
+        filtered = [item for item in raw.items if self._matches_filter(item, query)]
+        # copy origin raw object keep its immutability
+        new_raw = copy(raw)
+        new_raw.items = filtered
+        return new_raw
+
+    def _matches_filter(self, item: Any, query: str) -> bool:
+        for field in self.filter_fields:
+            value = self._get_attr_by_path(item, field)
+            if self._value_contains_query(value, query):
+                return True
+        return self.extra_filter(item, query)
+
+    def extra_filter(self, item: Any, query: str) -> bool:
+        """
+        Hook for special matching rules that are hard to represent by field path.
+        """
+        return False
+
+    def _get_attr_by_path(self, obj: Any, path: str) -> Any:
+        current = obj
+        for part in path.split("."):
+            if current is None:
+                return None
+            if isinstance(current, dict):
+                current = current.get(part)
+            else:
+                current = getattr(current, part, None)
+        return current
+
+    def _value_contains_query(self, value: Any, query: str) -> bool:
+        for text in self._flatten_filter_values(value):
+            if query in text.lower():
+                return True
+        return False
+
+    def _flatten_filter_values(self, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, str):
+            return [value]
+        if isinstance(value, (int, float, bool)):
+            return [str(value)]
+        if isinstance(value, dict):
+            values: list[str] = []
+            for k, v in value.items():
+                values.extend(self._flatten_filter_values(k))
+                values.extend(self._flatten_filter_values(v))
+                values.append(f"{k}={v}")
+                values.append(f"{k}:{v}")
+            return values
+        if isinstance(value, (list, tuple, set)):
+            values: list[str] = []
+            for item in value:
+                values.extend(self._flatten_filter_values(item))
+            return values
+        return [str(value)]
     
 
 class PodFacotry(BaseFactory):
     """factory for pods"""
     resource_type = "pods"
     resource_kind = "Pod"
+    filter_fields = (
+        "metadata.name",
+        "metadata.namespace",
+        "status.phase",
+        "status.qos_class",
+        "spec.node_name",
+        "metadata.labels",
+    )
 
     actions: List[ActionModel] = [
         ActionModel(name="shell", 
@@ -167,41 +244,14 @@ class PodFacotry(BaseFactory):
             kind=self.resource_kind,
         )
     
-    def filter(self, raw, query: str):
-        """
-        raw: V1PodList
-        return: V1PodList. filtered pods
-        """
-        query = query.lower()
-        filtered = []
-        for item in raw.items:
-            if query in item.metadata.name.lower():
-                filtered.append(item)
-                continue
-            if query in item.metadata.namespace.lower():
-                filtered.append(item)
-                continue
-            if query in item.status.phase.lower():
-                filtered.append(item)
-                continue
-            if query in item.status.qos_class.lower():
-                filtered.append(item)
-                continue
-            if query in item.spec.node_name.lower():
-                filtered.append(item)
-                continue
-            owner_references_kind  = item.metadata.owner_references[0].kind if item.metadata.owner_references else ''
-            if query in owner_references_kind.lower():
-                filtered.append(item)
-                continue
-            if item.metadata.labels:
-                labels = [f"{k}={v} {k}:{v}" for k, v in item.metadata.labels.items()]
-                if any(query in label.lower() for label in labels):
-                    filtered.append(item)
-        # copy origin raw object keep its immutability
-        new_raw = copy(raw)
-        new_raw.items = filtered
-        return new_raw
+    def extra_filter(self, item: Any, query: str) -> bool:
+        # owner references is a list of objects, keep it as a hook for special matching
+        owner_references = getattr(getattr(item, "metadata", None), "owner_references", None) or []
+        for ref in owner_references:
+            kind = getattr(ref, "kind", "")
+            if kind and query in kind.lower():
+                return True
+        return False
     
     @property
     def bindings(self) -> list[dict]:
@@ -223,6 +273,11 @@ class DeploymentFactory(BaseFactory):
     """factory for deployments"""
     resource_type = "deployments"
     resource_kind = "Deployment"
+    filter_fields = (
+        "metadata.name",
+        "metadata.namespace",
+        "metadata.labels",
+    )
 
     actions: List[ActionModel] = [
         ActionModel(name="scale", 
@@ -287,28 +342,6 @@ class DeploymentFactory(BaseFactory):
             actions=self.actions,
             kind=self.resource_kind,
         )
-    
-    def filter(self, raw, query: str):
-        """
-        raw: V1DeploymentList
-        return: V1DeploymentList. filtered Deployments
-        """
-        query = query.lower()
-        filtered = []
-        for item in raw.items:
-            if query in item.metadata.name.lower():
-                filtered.append(item)
-                continue
-            if query in item.metadata.namespace.lower():
-                filtered.append(item)
-                continue
-            labels = [f"{k}={v} {k}:{v}" for k, v in item.metadata.labels.items()]
-            if any(query in label.lower() for label in labels):
-                filtered.append(item)
-        # copy origin raw object keep its immutability
-        new_raw = copy(raw)
-        new_raw.items = filtered
-        return new_raw
     
     @property
     def bindings(self) -> list[dict]:
