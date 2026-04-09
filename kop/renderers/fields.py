@@ -12,7 +12,7 @@ from rich.text import Text
 
 def pod_status_renderer(value: str):
     color_map = {
-        "Running": "green",
+        "Running": "rgb(0,255,0)",
         "Pending": "yellow",
         "Failed": "red",
         "Succeeded": "blue",
@@ -24,13 +24,13 @@ def pod_status_renderer(value: str):
     color = color_map.get(value)
     if not color:
         return value
-
-    return Text(value, style=color)
+    text = Text()
+    return text.append(value, style=color)
 
 
 def deployment_conditions_renderer(value):
     color_map = {
-        "Available": "green",
+        "Available": "rgb(0,255,0)",
         "ReplicaFailure": "red",
         "Progressing": "blue",
     }
@@ -104,9 +104,9 @@ def pv_status_renderer(value):
     if not value:
         return ""
     color_map = {
-        "Available": "green",
-        "Bound": "green",
-        "Released": "green",
+        "Available": "rgb(0,255,0)",
+        "Bound": "rgb(0,255,0)",
+        "Released": "rgb(0,255,0)",
         "Failed": "red",
         "Terminating": "magenta",
         "Pending": "yellow",
@@ -119,7 +119,7 @@ def namespace_status_renderer(value):
     if not value:
         return ""
     color_map = {
-        "Active": "green",
+        "Active": "rgb(0,255,0)",
         "Terminating": "magenta",
     }
     color = color_map.get(value, "yellow")
