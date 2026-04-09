@@ -31,7 +31,7 @@ class ResourceEdit(Static):
             padding-left: 1;
         }
         #save, #cancel {
-            width: auto;
+            width: 1fr;
             margin-right: 1;
         }
     """
