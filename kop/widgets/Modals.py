@@ -218,7 +218,7 @@ class PortForward(ModalScreen):
             border: thick $background 80%;
             background: $surface;
         }
-        Button {
+        #cancel, #start {
             width: 100%;
         }
     """

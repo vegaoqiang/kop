@@ -58,7 +58,6 @@ class DetailActionsView(ActionsViewMixin):
             for action in self.actions:
                 yield Button(
                     label=action.label,
-                    id=action.name,
                     variant=action.variant,
                     tooltip=action.tooltip,
                 )
@@ -67,7 +66,7 @@ class DetailActionsView(ActionsViewMixin):
     def on_action_pressed(self, event: Button.Pressed) -> None:
         """Unified event exit point, all actions are handled here"""
         action = next(
-            a for a in self.actions if a.name == event.button.id
+            a for a in self.actions if a.label == event.button.label
         )
         self.trigger_action(action)
 
