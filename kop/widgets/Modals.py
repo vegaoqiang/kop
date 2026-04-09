@@ -108,7 +108,7 @@ class Confirm(ModalScreen):
         }
 
         #cancel, #confirm {
-            width: 100%;
+            width: 1fr;
         }
     """
 
@@ -168,8 +168,8 @@ class Delete(ModalScreen):
             text-style: bold;
         }
 
-        Button {
-            width: 100%;
+        #cancel, #delete {
+            width: 1fr;
         }
     """
 
