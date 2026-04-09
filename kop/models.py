@@ -416,7 +416,7 @@ class DeploymentViewModel(ViewModel):
         return cls(
             name=data.metadata.name,
             namespace=data.metadata.namespace,
-            pods="/".join([str(data.status.ready_replicas), str(data.status.replicas)]),
+            pods="/".join([str(data.status.ready_replicas or 0), str(data.status.replicas or 0)]),
             replicas=str(data.spec.replicas),
             age=cls.get_age_text(data.metadata.creation_timestamp),
             created=f"{cls.get_created_text(data.metadata.creation_timestamp)}",

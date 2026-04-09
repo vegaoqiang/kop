@@ -31,6 +31,7 @@ def pod_status_renderer(value: str):
 def deployment_conditions_renderer(value):
     color_map = {
         "Available": "green",
+        "ReplicaFailure": "red",
         "Progressing": "blue",
     }
 
