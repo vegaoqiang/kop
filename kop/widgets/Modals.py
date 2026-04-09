@@ -223,6 +223,10 @@ class PortForward(ModalScreen):
         }
     """
 
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+    ]
+
     def __init__(self, dest_port: int):
         super().__init__()
         self.dest_port = str(dest_port)
@@ -241,6 +245,9 @@ class PortForward(ModalScreen):
             Button("Start", variant="primary", id="start", disabled=False),
             id="dialog"
         )
+
+    def action_close(self):
+        self.app.pop_screen()
 
     @on(Button.Pressed, "#cancel")
     def on_cancel_press(self, event: Button.Pressed) -> None:
