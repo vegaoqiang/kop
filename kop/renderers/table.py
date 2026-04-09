@@ -61,11 +61,11 @@ class BaseRow(ListItem):
             width: 100%;
             align-vertical: middle;
         }
-        BaseRow {
-            height: 2;
-            width: 1fr;
-            border-bottom: solid $block-hover-background;
-        }
+        # BaseRow {
+        #     height: 2;
+        #     width: 1fr;
+        #     border-bottom: solid $block-hover-background;
+        # }
     """
 
     row_data = reactive(dict)
@@ -116,7 +116,7 @@ class TableRenderer(Vertical):
               background: $surface;
           }
           BaseRow {
-                height: 2;
+                height: 1;
                 width: 1fr;
                 content-align: left middle;
             }
@@ -198,12 +198,13 @@ class TableRenderer(Vertical):
                 if self.picked_row is row:
                     self.picked_row = None
 
-                await self.row_map[name].remove()
+                # await self.row_map[name].remove()
+                await list_view.pop(row_index)
                 del self.row_map[name]
 
                 # update the ListView index if deleted row before current ListView index
-                if list_view.index > row_index:
-                    list_view.index -= 1
+                # if list_view.index > row_index:
+                #     list_view.index -= 1
         
         # add new row if it is not in self.row_map
         # update row if it is in self.row_map
@@ -243,27 +244,15 @@ class TableRenderer(Vertical):
         selected  = item.row_data.name
         self.post_message(self.RowSelectedEvent(raw_data=self.raw_data_map[selected]))
 
-        self._style_row(prev_row=self.picked_row, next_row=item)
+        # self._style_row(prev_row=self.picked_row, next_row=item)
         self.picked_row = item
 
     @on(ListView.Highlighted)
     def handle_highlighted(self, event: ListView.Highlighted):
         event.stop()
         item: BaseRow = event.item
-        self._style_row(prev_row=self.picked_row, next_row=item)
+        # self._style_row(prev_row=self.picked_row, next_row=item)
         self.picked_row = item
-
-    def _style_row(self, prev_row: BaseRow|None, next_row: BaseRow) -> None:
-        """
-        set the row height to 3 and the vertical position of the content to middle.
-        """
-        if prev_row:
-            prev_row.styles.height = next_row.styles.height
-            prev_row.styles.border_bottom = next_row.styles.border_bottom
-            prev_row.styles.content_align_vertical = next_row.styles.content_align_vertical
-        next_row.styles.height = 3
-        next_row.styles.border_bottom = ("hidden", Color(0, 0, 0, a=0.3))
-        next_row.styles.content_align_vertical = "middle"
     
     def action_dispatch(self, action_name: str) -> None:
         """
