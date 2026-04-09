@@ -273,7 +273,8 @@ class DetailModalRenderer(ModalScreen):
         """
         :param data: PodDetailModel
         """
-        super().__init__(**kwargs)
+        # pass self.__class__.__name__ to super class name as modal name
+        super().__init__(name=self.__class__.__name__, **kwargs)
         self.columns = columns
         self.data = data
         self.actions = actions
