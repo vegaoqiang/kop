@@ -3,7 +3,7 @@ from textual.events import Key
 from textual.screen import Screen
 from textual.binding import Binding
 from textual.app import ComposeResult, App
-from textual.containers import Vertical
+from textual.containers import Vertical, Horizontal
 from textual.widgets import Footer, Header, Input, LoadingIndicator
 from textual.worker import get_current_worker
 from kop.widgets.SideMenu import SideMenu
@@ -38,6 +38,9 @@ class ResourceView(Screen):
             display: block;
             width: 1fr;
             height: 3;
+        }
+        Header {
+            dock: top;
         }
         Footer {
             dock: bottom;
@@ -78,10 +81,12 @@ class ResourceView(Screen):
         self.resource_type: str | None = None
 
     def compose(self) -> ComposeResult: 
-            yield SideMenu(id="side_menu")
-            with Vertical(id="resource_container"):
-                self.panel = ResourcePanel(id="resource_panel")
-                yield self.panel
+            yield Header()
+            with Horizontal():
+                yield SideMenu(id="side_menu")
+                with Vertical(id="resource_container"):
+                    self.panel = ResourcePanel(id="resource_panel")
+                    yield self.panel
             yield Footer(id="footer")
     
     
@@ -330,17 +335,17 @@ class ResourceView(Screen):
 
 class ResApp(App):
   
-  def __init__(self, config_file: str, **kwargs):
-      super().__init__(**kwargs)
-      self.config_file = config_file
-      self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file)
+    def __init__(self, config_file: str, **kwargs):
+        super().__init__(**kwargs)
+        self.config_file = config_file
+        self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file)
 
-  def on_mount(self) -> None:
-      """
-      cache the view instance, call after on handler
-      """
-      self.view = view = ResourceView(config_file=self.config_file)
-      self.push_screen(view)
+    def on_mount(self) -> None:
+        """
+        cache the view instance, call after on handler
+        """
+        self.view = view = ResourceView(config_file=self.config_file)
+        self.push_screen(view)
 
 
 if __name__ == "__main__":
