@@ -136,16 +136,19 @@ class SideMenu(Static):
         item.add_class("-cursor-border")
         self.highlight_item = item
 
-    def watch_display_menu(self, menu: List[SimpleNamespace]) -> None:
-        # hide all menu
-        self.query(ListItem).set(display=False)
-        # display menu again where menu.id is in menu
+    async def watch_display_menu(self, menu: List[SimpleNamespace]) -> None:
+        # clear all menu
+        side_menu = self.query_one("#side_menu", ListView)
+        await side_menu.clear()
+        # re-create menu
         for index, m in enumerate(menu):
-            item = self.query_one(f"#{m.id}", ListItem)
-            item.display = True
+            item = ListItem(Label(m.name), id=m.id, name=m.name)
+            await side_menu.append(item)
             # only highlight the filtered first item
             if index == 0 and self.is_filtered:
                 self._highlight_filtered_item(item)
+        # sync filtered highlight and ListView highlight
+        side_menu.index = 0
 
     def watch_is_filtered(self, is_filtered: bool) -> None:
         # when menu is not filtered, do not highlight and reset cursor index
