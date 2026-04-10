@@ -1,9 +1,10 @@
 from textual import on
 from textual.events import Key, Mount
 from textual.message import Message
-from textual.app import App, ComposeResult
+from textual.binding import Binding
+from textual.app import ComposeResult
 from textual.reactive import Reactive, var
-from textual.widgets import Footer, ListItem, ListView, Label, Input, Static
+from textual.widgets import ListItem, ListView, Label, Input, Static
 from typing import List
 from types import SimpleNamespace
 
@@ -54,6 +55,10 @@ class SideMenu(Static):
         }
     """
 
+    BINDINGS = [
+        Binding("escape", "cancel_search", "Cancel", show=False),
+    ]
+
     display_menu = Reactive(List[SimpleNamespace])
 
     # current display menu is not filtered
@@ -63,6 +68,9 @@ class SideMenu(Static):
     debounce_time: float = 0.3
     # highlighted item
     highlight_item: ListItem | None = None
+
+    # selected item
+    selected_item_id: str | None = None
 
     # the cursor index of the highlighted item
     cursor_index: var[int] = var(0)
@@ -112,6 +120,8 @@ class SideMenu(Static):
         side_menu.focus()
         if self.highlight_item:
             index = side_menu.children.index(self.highlight_item)
+            # save selected item
+            self.selected_item_id = self.highlight_item.id
             self.is_filtered = False
         else:
             index = 0
@@ -148,7 +158,10 @@ class SideMenu(Static):
             if index == 0 and self.is_filtered:
                 self._highlight_filtered_item(item)
         # sync filtered highlight and ListView highlight
-        side_menu.index = 0
+        if self.selected_item_id:
+            side_menu.index = next((i for i, m in enumerate(menu) if m.id == self.selected_item_id), 0)
+        else: 
+            side_menu.index = 0
 
     def watch_is_filtered(self, is_filtered: bool) -> None:
         # when menu is not filtered, do not highlight and reset cursor index
@@ -184,6 +197,9 @@ class SideMenu(Static):
         # send event
         self.post_message(self.ResourceEvent(menu_id, menu_name))
 
+    def action_cancel_search(self):
+        self.query_one("#search_menu", Input).clear()
+        self.is_filtered = False
     
     class ResourceEvent(Message):
         """event for menu item select and click"""
