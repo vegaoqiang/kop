@@ -234,7 +234,7 @@ class PortForward(ModalScreen):
     def compose(self) -> ComposeResult:
         yield Grid(
             Label("Local Port"),
-            Input(placeholder="1000 ~ 65535 or RANDOM", 
+            Input(placeholder="1000 ~ 65535", 
                   validators=[Number(minimum=1000, maximum=65535)],
                   id="local_port"),
             Label("Remote Port"),
