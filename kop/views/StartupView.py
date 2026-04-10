@@ -196,6 +196,7 @@ class ConfigScreen(Screen):
     DEFAULT_CSS = """
         ConfigScreen {
             align: center middle;
+            hatch: right $panel;
         }
         #button_group {
             margin-top: 1;
