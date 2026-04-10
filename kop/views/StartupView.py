@@ -231,7 +231,7 @@ class ConfigScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Label("Kubernetes Clusters - Choose one to connect", id="title")
+        yield Label("Kubernetes Clusters - Press ↑ ↓ ← → to select", id="title")
         yield ConfigView(kube_config=self.kube_config)
         yield Horizontal(
             Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
