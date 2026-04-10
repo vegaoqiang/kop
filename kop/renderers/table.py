@@ -225,6 +225,10 @@ class TableRenderer(Vertical):
                 # new row is inserted into the table based on its list position.
                 await list_view.insert(new_index, [row])
                 # update the ListView index if new row inserted before current ListView index
+                if not list_view.index:
+                    # if user switch to namespace and namespace has no resource, then ListView index is None
+                    # after namespace switch to another one and cantains resource, ListView index should be reset to 0
+                    list_view.index = 0
                 if list_view.index >= new_index:
                     list_view.index += 1
 
