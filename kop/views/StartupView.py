@@ -111,7 +111,11 @@ class ConfigView(VerticalScroll):
             return
         self.app.push_screen(ResourceView(self.selected.path))
 
-    
+    @work
+    async def action_add(self):
+        config_model = await self.app.push_screen_wait(AddClusterScreen())
+        self.query_one(ConfigView).update_kube_config(config_model)
+
     def on_key(self, event):
         if event.key not in ("up", "down", "left", "right", "tab"):
             return
@@ -232,6 +236,11 @@ class ConfigScreen(Screen):
         }
     """
 
+    BINDINGS = [
+        Binding(key='a', action='add', description='Add New Cluster'),
+        Binding(key='c', action='connect', description='Connect Cluster'),
+    ]
+
     def __init__(self, kube_config: list[ConfigModel], **kwargs):
         super().__init__(**kwargs)
         self.kube_config = kube_config
@@ -249,25 +258,15 @@ class ConfigScreen(Screen):
         yield Footer()
     
     @on(Button.Pressed, "#add")
-    @work
     async def action_add(self):
-        config_model = await self.app.push_screen_wait(AddClusterScreen())
-        self.query_one(ConfigView).update_kube_config(config_model)
+        self.query_one(ConfigView).action_add()
 
     @on(Button.Pressed, "#connect")
     def action_connect(self) -> None:
         """
         To connect current selected ConfigItem when user click The Connect Button
         """
-        if not hasattr(self, "selected_path"):
-            return
-        self.app.push_screen(ResourceView(config_file=self.selected_path))
-
-    def on_config_item_selected(self, event: ConfigItem.Selected) -> None:
-        """
-        Save user current selected ConfigItem
-        """
-        self.selected_path = event.selected_path
+        self.query_one(ConfigView).action_connect()
 
 
 class AddClusterScreen(Screen):
