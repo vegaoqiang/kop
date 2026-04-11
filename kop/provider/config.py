@@ -79,8 +79,13 @@ class Config:
             version=cluster.get("version", ""), 
             path=str(path))
         
-    def update_config(self):
-        ...
+    def update_config(self, config: ConfigModel, yaml_obj: dict):
+        path = config.path
+        if not path or not Path(path).is_file():
+            raise FileNotFoundError
+        with Path(path).open("w") as f:
+            yaml.safe_dump(yaml_obj, f)
+        return ConfigModel.from_yaml(yaml_obj, Path(path))
 
     def update_cluster_name(self, yaml_obj: dict, cluster_name: str):
         """

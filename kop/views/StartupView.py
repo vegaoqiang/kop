@@ -156,8 +156,15 @@ class ConfigView(Screen):
     @on(Button.Pressed, "#edit")
     @work
     async def action_edit(self):
+        if not self.selected:
+            self.notify("Please select a cluster to edit", severity="error", timeout=3, markup=False)
+            return
         config_model = await self.app.push_screen_wait(AddClusterScreen(config=self.selected))
-        self.update_kube_config(config_model)
+        if not config_model:
+            return
+        idx = self.KubeConfig.index(self.selected)
+        self.KubeConfig[idx] = config_model
+        self.mutate_reactive(ConfigView.KubeConfig)
 
     def on_key(self, event):
         if event.key not in ("up", "down", "left", "right", "tab"):
@@ -334,8 +341,11 @@ class AddClusterScreen(Screen):
                 obj = Config().update_cluster_name(yaml_obj=valid, cluster_name=cluster_name)
             else:
                 obj = valid
-            path = Config().save_config(yaml_obj=obj)
-            config_model = ConfigModel.from_yaml(valid, path)
+            if not self.config:
+                path = Config().save_config(yaml_obj=obj)
+                config_model = ConfigModel.from_yaml(valid, path)
+            else:
+                config_model = Config().update_config(self.config, yaml_obj=obj)
             self.dismiss(config_model)
 
 
