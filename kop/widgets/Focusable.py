@@ -40,7 +40,7 @@ class ConfigItem(Focusable):
         self.config = config
 
     def on_focus(self) -> None:
-        self.post_message(ConfigItem.Selected(self.config))
+        self.post_message(ConfigItem.Selected(self.config).set_sender(self))
         
     class Selected(Message):
         """export selected message."""

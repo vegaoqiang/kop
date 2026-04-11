@@ -96,6 +96,7 @@ class ConfigView(Screen):
         self.set_reactive(ConfigView.KubeConfig, kube_config)
         self.border_title = "Clusters"
         self.selected: ConfigModel | None = None
+        self.selected_item: ConfigItem | None = None
 
 
     def compose(self) -> ComposeResult:
@@ -117,6 +118,13 @@ class ConfigView(Screen):
     def on_mount(self):
         self.query_one(ConfigItem).focus()
 
+    def on_screen_resume(self):
+        """
+        back from previous screen then focus the selected item
+        """
+        if not self.selected_item:
+            return
+        self.selected_item.focus()
 
     def update_kube_config(self, value: ConfigModel) -> None:
         """
@@ -129,7 +137,7 @@ class ConfigView(Screen):
     @work
     async def action_delete(self) -> None:
         if not self.selected:
-            self.notify("Please select a cluster to delete", severity="error", timeout=3, markup=False)
+            self.notify("Please select a cluster to delete", severity="error", markup=False)
             return
         if not await self.app.push_screen_wait(DeleteConfigConfirmScreen(self.selected)):
             return
@@ -143,7 +151,7 @@ class ConfigView(Screen):
         To connect the selected ConfigItem when user pressed then `enter` key
         """
         if not self.selected:
-            self.notify("Please select a cluster to connect", severity="error", timeout=3, markup=False)
+            self.notify("Please select a cluster to connect", severity="error", markup=False)
             return
         self.app.push_screen(ResourceView(self.selected.path))
 
@@ -157,14 +165,16 @@ class ConfigView(Screen):
     @work
     async def action_edit(self):
         if not self.selected:
-            self.notify("Please select a cluster to edit", severity="error", timeout=3, markup=False)
+            self.notify("Please select a cluster to edit", severity="error", markup=False)
             return
         config_model = await self.app.push_screen_wait(AddClusterScreen(config=self.selected))
         if not config_model:
+            self.notify("Cluster edited failed", severity="error", markup=False)
             return
         idx = self.KubeConfig.index(self.selected)
         self.KubeConfig[idx] = config_model
         self.mutate_reactive(ConfigView.KubeConfig)
+        self.notify("Cluster edited successfully", severity="information", markup=True)
 
     def on_key(self, event):
         if event.key not in ("up", "down", "left", "right", "tab"):
@@ -196,6 +206,7 @@ class ConfigView(Screen):
     def on_config_item_selected(self, event: ConfigItem.Selected) -> None:
         event.stop()
         self.selected = event.config
+        self.selected_item = event._sender
         
 
 
