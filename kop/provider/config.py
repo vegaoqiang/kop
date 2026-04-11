@@ -34,6 +34,15 @@ class ConfigModel:
             server=cluster["cluster"]["server"], 
             version=cluster.get("version", ""), 
             path=str(path))
+    
+    def to_str(self, **kwargs) -> str:
+        """
+        load config content from file convert to string
+        """
+        if not self.path or not Path(self.path).is_file():
+            raise FileNotFoundError
+        with Path(self.path).open("r") as f:
+            return f.read()
 
 
 class Config:

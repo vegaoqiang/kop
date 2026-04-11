@@ -154,6 +154,12 @@ class ConfigView(Screen):
         config_model = await self.app.push_screen_wait(AddClusterScreen())
         self.update_kube_config(config_model)
 
+    @on(Button.Pressed, "#edit")
+    @work
+    async def action_edit(self):
+        config_model = await self.app.push_screen_wait(AddClusterScreen(config=self.selected))
+        self.update_kube_config(config_model)
+
     def on_key(self, event):
         if event.key not in ("up", "down", "left", "right", "tab"):
             return
@@ -275,6 +281,10 @@ class AddClusterScreen(Screen):
         ("escape", "close", "Cancel"),
     ]
 
+    def __init__(self, config: ConfigModel|None = None):
+        super().__init__()
+        self.config = config
+
     def compose(self) -> ComposeResult:
         yield Label("Input Your Cluster Name")
         yield Input(
@@ -291,10 +301,23 @@ class AddClusterScreen(Screen):
             Button(label="Save", variant="success", id="save", tooltip="Save cluster config"),
             Button(label="Cancel", variant="default", id="cancel", tooltip="Cancel and go back to previous screen"),
             Button(label="Clear", variant="default", id="clear", tooltip="Clear cluster config content"),
-            Button(label="Sync", variant="default", id="sync", tooltip="Sync cluster from local"),
             id="button_group"
         )
         yield Footer()
+
+    def on_mount(self):
+        if not self.config:
+            return
+        try:
+            text = self.config.to_str()
+        except FileExistsError as e:
+            self.notify(f"Cluster config load from {self.config.path} failed, {e}", severity="error")
+            return
+        textarea = self.query_one(TextArea)
+        textarea.text = text
+
+        input = self.query_one(Input)
+        input.value = self.config.name
 
     @on(Button.Pressed, "#cancel")
     def action_close(self):
