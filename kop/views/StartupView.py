@@ -30,12 +30,7 @@ class ConfigRow(Horizontal):
 
     def compose(self) -> ComposeResult:
         for item in self.config:
-            config_item = ConfigItem(
-                title=item.name, 
-                ctx=item.server, 
-                ) 
-            config_item.path = item.path
-            yield config_item 
+            yield ConfigItem(item)
             
 
 class ConfigView(VerticalScroll):
@@ -73,6 +68,7 @@ class ConfigView(VerticalScroll):
         self.column_length = column_length
         self.set_reactive(ConfigView.KubeConfig, kube_config)
         self.border_title = "Clusters"
+        self.selected: ConfigModel | None = None
 
 
     def compose(self) -> ComposeResult:
@@ -80,6 +76,9 @@ class ConfigView(VerticalScroll):
             return
         for i in range(0, len(self.KubeConfig), self.column_length):
             yield ConfigRow(self.KubeConfig[i:i+self.column_length])
+
+    def on_mount(self):
+        self.query_one(ConfigItem).focus()
 
 
     def update_kube_config(self, value: ConfigModel) -> None:
@@ -91,25 +90,23 @@ class ConfigView(VerticalScroll):
 
     @work
     async def action_delete(self) -> None:
-        if not await self.app.push_screen_wait(DeleteConfigConfirmScreen()):
+        if not self.selected:
+            self.notify("Please select a cluster to delete", severity="error", timeout=3, markup=False)
             return
-        items = list(self.query(ConfigItem))
-        focused = self.app.focused
-        if not focused or focused not in items:
+        if not await self.app.push_screen_wait(DeleteConfigConfirmScreen(self.selected)):
             return
-        idx = items.index(focused)
-        Config().delete_config(config_path=focused.path)
-        self.KubeConfig.pop(idx)
+        Config().delete_config(config_path=self.selected.path)
+        self.KubeConfig.remove(self.selected)
         self.mutate_reactive(ConfigView.KubeConfig)
 
     def action_connect(self):
         """
         To connect the selected ConfigItem when user pressed then `enter` key
         """
-        focused = self.app.focused
-        if not focused:
+        if not self.selected:
+            self.notify("Please select a cluster to connect", severity="error", timeout=3, markup=False)
             return
-        self.app.push_screen(ResourceView(focused.path))
+        self.app.push_screen(ResourceView(self.selected.path))
 
     
     def on_key(self, event):
@@ -117,11 +114,10 @@ class ConfigView(VerticalScroll):
             return
 
         items = list(self.query(ConfigItem))
-        focused = self.app.focused
-        if focused not in items:
+        config_item = self.app.focused
+        if config_item not in items:
             return
-
-        idx = items.index(focused)
+        idx = items.index(config_item)
         row_len = self.column_length
         total = len(items)
         new_idx = idx
@@ -139,9 +135,11 @@ class ConfigView(VerticalScroll):
             items[new_idx].focus()
             self.scroll_to_center(items[new_idx])
             event.stop()
-    
-    # def on_config_item_selected(self, event: ConfigItem.Selected) -> None:
-    #     self.selected_path = event.selected_path
+
+    def on_config_item_selected(self, event: ConfigItem.Selected) -> None:
+        event.stop()
+        self.selected = event.config
+        
 
 
 class DeleteConfigConfirmScreen(ModalScreen):
@@ -173,10 +171,18 @@ class DeleteConfigConfirmScreen(ModalScreen):
             content-align: center middle;
         }
     """
+
+    BINDINGS = [
+        Binding("escape", "cancel", "Dismiss", show=False),
+    ]
+
+    def __init__(self, config: ConfigModel, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.config = config
     
     def compose(self) -> ComposeResult:
         yield Grid(
-            Label("Confirm to delete the cluster?", id="confirm"),
+            Label(f"Delete {self.config.name}?", id="confirm"),
             Button(label="No", variant="error", id="no"),
             Button(label="Yes", variant="success", id="yes"),
             id="dialog"
@@ -187,8 +193,10 @@ class DeleteConfigConfirmScreen(ModalScreen):
             self.dismiss(True)
         elif event.button.id == "no":
             self.dismiss(False)
-    
 
+    def action_cancel(self):
+        self.app.pop_screen()
+    
 
 
 class ConfigScreen(Screen):

@@ -1,6 +1,7 @@
 from textual.widgets import Static
 from textual.message import Message
 from rich.panel import Panel
+from kop.provider.config import ConfigModel
 
 
 class Focusable(Static, can_focus=True):
@@ -32,20 +33,20 @@ class ConfigItem(Focusable):
             text-style: bold;
         }
     """
-    path: str
 
-    def __init__(self, title: str, ctx: str, **kwargs):
-        panel = Panel(f"[b]{title}[/b]\n[cyan]{ctx}", expand=True)
+    def __init__(self, config: ConfigModel, **kwargs):
+        panel = Panel(f"[b]{config.name}[/b]\n[cyan]{config.server}", expand=True)
         super().__init__(panel, **kwargs)
+        self.config = config
 
-    def on_click(self) -> None:
-        self.post_message(ConfigItem.Selected(selected_path=self.path))
+    def on_focus(self) -> None:
+        self.post_message(ConfigItem.Selected(self.config))
         
     class Selected(Message):
         """export selected message."""
 
-        def __init__(self, selected_path: str | None = None, **kwargs) -> None:
+        def __init__(self, config: ConfigModel | None = None, **kwargs) -> None:
             super().__init__(**kwargs)
-            self.selected_path = selected_path
+            self.config = config
 
     
