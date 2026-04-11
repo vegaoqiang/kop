@@ -56,8 +56,11 @@ class ConfigView(VerticalScroll):
     """
 
     BINDINGS = [
-        Binding(key='d', action='delete', description='Delete Cluster'),
+        Binding(key='a', action='add', description='Add New Cluster'),
         Binding(key='c', action='connect', description='Connect Cluster'),
+        Binding(key='d', action='delete', description='Delete Cluster'),
+        Binding(key='e', action='edit', description='Edit Cluster'),
+        Binding(key="s", action="sync", description="Sync Local Cluster"),
         Binding(key='enter', action='connect', description='Connect Cluster')
     ]
 
@@ -228,11 +231,6 @@ class ConfigScreen(Screen):
             text-align: center;
         }
     """
-
-    BINDINGS = [
-        Binding(key="s", action="sync", description="Sync Local Cluster"),
-        Binding(key='a', action='add', description='Add New Cluster'),
-    ]
 
     def __init__(self, kube_config: list[ConfigModel], **kwargs):
         super().__init__(**kwargs)
