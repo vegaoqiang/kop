@@ -1,5 +1,5 @@
 from textual import on, work
-from textual.events import Callback
+from textual.binding import Binding
 from textual.reactive import Reactive
 from textual.app import App, ComposeResult
 from textual.screen import Screen, ModalScreen
@@ -61,9 +61,9 @@ class ConfigView(VerticalScroll):
     """
 
     BINDINGS = [
-        ('d', 'delete', 'Delete Cluster'),
-        ('c', 'connect', 'Connect Cluster'),
-        ('enter', 'connect', 'Connect Cluster')
+        Binding(key='d', action='delete', description='Delete Cluster'),
+        Binding(key='c', action='connect', description='Connect Cluster'),
+        Binding(key='enter', action='connect', description='Connect Cluster')
     ]
 
     KubeConfig: Reactive[list[ConfigModel]] = Reactive([], recompose=True)
@@ -177,8 +177,8 @@ class DeleteConfigConfirmScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         yield Grid(
             Label("Confirm to delete the cluster?", id="confirm"),
-            Button(label="Yes", variant="success", id="yes"),
             Button(label="No", variant="error", id="no"),
+            Button(label="Yes", variant="success", id="yes"),
             id="dialog"
         )
 
@@ -222,7 +222,8 @@ class ConfigScreen(Screen):
     """
 
     BINDINGS = [
-        ('a', 'add', 'Add New Cluster'),
+        Binding(key="s", action="sync", description="Sync Local Cluster"),
+        Binding(key='a', action='add', description='Add New Cluster'),
     ]
 
     def __init__(self, kube_config: list[ConfigModel], **kwargs):
@@ -234,6 +235,7 @@ class ConfigScreen(Screen):
         yield Label("Kubernetes Clusters - Press ↑ ↓ ← → to select", id="title")
         yield ConfigView(kube_config=self.kube_config)
         yield Horizontal(
+            Button(label="Sync", variant="success", id="sync", tooltip="Sync cluster from local"),
             Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
             Button(label="Connect", variant="success", id="connect", tooltip="Connect to cluster"),
             id="button_group"
