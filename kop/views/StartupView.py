@@ -33,12 +33,16 @@ class ConfigRow(Horizontal):
             yield ConfigItem(item)
             
 
-class ConfigView(VerticalScroll):
+class ConfigView(Screen):
     """
     make a VerticalScroll container and set container border
     """
     DEFAULT_CSS = """
         ConfigView {
+            align: center middle;
+            hatch: right $panel;
+        }
+        #config {
             border: round $secondary;
             border-title-align: left;
             border-title-color: white;
@@ -52,6 +56,27 @@ class ConfigView(VerticalScroll):
                 overflow: hidden hidden;
                 width: 1fr;
             }
+        }
+        #button_group {
+            margin-top: 1;
+            margin-bottom: 1;
+            margin-left: 1;
+            width: 70%;
+            height: auto;
+            align: left top;
+        }
+        Button {
+            margin-right: 1;
+        }
+        #title {
+            border: round $secondary;
+            margin-top: 1;
+            margin-bottom: 1;
+            height: auto;
+            width: 70%;
+            height: auto;
+            text-style: bold;
+            text-align: center;
         }
     """
 
@@ -77,8 +102,18 @@ class ConfigView(VerticalScroll):
     def compose(self) -> ComposeResult:
         if not self.KubeConfig:
             return
-        for i in range(0, len(self.KubeConfig), self.column_length):
-            yield ConfigRow(self.KubeConfig[i:i+self.column_length])
+        yield Header()
+        yield Label("Kubernetes Clusters - Press ↑ ↓ ← → to select", id="title")
+        with VerticalScroll(id="config"):
+            for i in range(0, len(self.KubeConfig), self.column_length):
+                yield ConfigRow(self.KubeConfig[i:i+self.column_length])
+        yield Horizontal(
+            Button(label="Sync", variant="success", id="sync", tooltip="Sync cluster from local"),
+            Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
+            Button(label="Connect", variant="success", id="connect", tooltip="Connect to cluster"),
+            id="button_group"
+        )
+        yield Footer()
 
     def on_mount(self):
         self.query_one(ConfigItem).focus()
@@ -91,6 +126,7 @@ class ConfigView(VerticalScroll):
         self.KubeConfig.append(value)
         self.mutate_reactive(ConfigView.KubeConfig)
 
+    @on(Button.Pressed, "#delete")
     @work
     async def action_delete(self) -> None:
         if not self.selected:
@@ -102,6 +138,7 @@ class ConfigView(VerticalScroll):
         self.KubeConfig.remove(self.selected)
         self.mutate_reactive(ConfigView.KubeConfig)
 
+    @on(Button.Pressed, "#connect")
     def action_connect(self):
         """
         To connect the selected ConfigItem when user pressed then `enter` key
@@ -111,6 +148,7 @@ class ConfigView(VerticalScroll):
             return
         self.app.push_screen(ResourceView(self.selected.path))
 
+    @on(Button.Pressed, "#add")
     @work
     async def action_add(self):
         config_model = await self.app.push_screen_wait(AddClusterScreen())
@@ -206,67 +244,67 @@ class DeleteConfigConfirmScreen(ModalScreen):
     
 
 
-class ConfigScreen(Screen):
+# class ConfigScreen(Screen):
 
-    DEFAULT_CSS = """
-        ConfigScreen {
-            align: center middle;
-            hatch: right $panel;
-        }
-        #button_group {
-            margin-top: 1;
-            margin-bottom: 1;
-            margin-left: 1;
-            width: 70%;
-            height: auto;
-            align: left top;
-        }
-        Button {
-            margin-right: 1;
-        }
-        #title {
-            border: round $secondary;
-            margin-top: 1;
-            margin-bottom: 1;
-            height: auto;
-            width: 70%;
-            height: auto;
-            text-style: bold;
-            text-align: center;
-        }
-    """
+#     DEFAULT_CSS = """
+#         ConfigScreen {
+#             align: center middle;
+#             hatch: right $panel;
+#         }
+#         #button_group {
+#             margin-top: 1;
+#             margin-bottom: 1;
+#             margin-left: 1;
+#             width: 70%;
+#             height: auto;
+#             align: left top;
+#         }
+#         Button {
+#             margin-right: 1;
+#         }
+#         #title {
+#             border: round $secondary;
+#             margin-top: 1;
+#             margin-bottom: 1;
+#             height: auto;
+#             width: 70%;
+#             height: auto;
+#             text-style: bold;
+#             text-align: center;
+#         }
+#     """
 
-    BINDINGS = [
-        Binding(key='a', action='add', description='Add New Cluster'),
-        Binding(key='c', action='connect', description='Connect Cluster'),
-    ]
+#     BINDINGS = [
+#         Binding(key='a', action='add', description='Add New Cluster'),
+#         Binding(key='c', action='connect', description='Connect Cluster'),
+#     ]
 
-    def __init__(self, kube_config: list[ConfigModel], **kwargs):
-        super().__init__(**kwargs)
-        self.kube_config = kube_config
+#     def __init__(self, kube_config: list[ConfigModel], **kwargs):
+#         super().__init__(**kwargs)
+#         self.kube_config = kube_config
 
-    def compose(self) -> ComposeResult:
-        yield Header()
-        yield Label("Kubernetes Clusters - Press ↑ ↓ ← → to select", id="title")
-        yield ConfigView(kube_config=self.kube_config)
-        yield Horizontal(
-            Button(label="Sync", variant="success", id="sync", tooltip="Sync cluster from local"),
-            Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
-            Button(label="Connect", variant="success", id="connect", tooltip="Connect to cluster"),
-            id="button_group"
-        )
-        yield Footer()
+#     def compose(self) -> ComposeResult:
+#         yield Header()
+#         yield Label("Kubernetes Clusters - Press ↑ ↓ ← → to select", id="title")
+#         yield ConfigView(kube_config=self.kube_config)
+#         yield Horizontal(
+#             Button(label="Sync", variant="success", id="sync", tooltip="Sync cluster from local"),
+#             Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
+#             Button(label="Connect", variant="success", id="connect", tooltip="Connect to cluster"),
+#             id="button_group"
+#         )
+#         yield Footer()
     
-    @on(Button.Pressed, "#add")
-    async def action_add(self):
-        self.query_one(ConfigView).action_add()
+#     @on(Button.Pressed, "#add")
+#     async def action_add(self):
+#         self.query_one(ConfigView).action_add()
 
-    @on(Button.Pressed, "#connect")
-    def action_connect(self) -> None:
-        """
-        To connect current selected ConfigItem when user click The Connect Button
-        """
-        self.query_one(ConfigView).action_connect()
+#     @on(Button.Pressed, "#connect")
+#     def action_connect(self) -> None:
+#         """
+#         To connect current selected ConfigItem when user click The Connect Button
+#         """
+#         self.query_one(ConfigView).action_connect()
 
 
 class AddClusterScreen(Screen):
@@ -377,7 +415,7 @@ class TestApp(App):
         self.kube_config = kube_config
 
     def on_mount(self) -> None:
-        self.push_screen(ConfigScreen(self.kube_config))
+        self.push_screen(ConfigView(self.kube_config))
  
 
 
