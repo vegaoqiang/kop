@@ -152,7 +152,7 @@ class ConfigView(Screen):
     @work
     async def action_add(self):
         config_model = await self.app.push_screen_wait(AddClusterScreen())
-        self.query_one(ConfigView).update_kube_config(config_model)
+        self.update_kube_config(config_model)
 
     def on_key(self, event):
         if event.key not in ("up", "down", "left", "right", "tab"):
@@ -242,70 +242,6 @@ class DeleteConfigConfirmScreen(ModalScreen):
     def action_cancel(self):
         self.app.pop_screen()
     
-
-
-# class ConfigScreen(Screen):
-
-#     DEFAULT_CSS = """
-#         ConfigScreen {
-#             align: center middle;
-#             hatch: right $panel;
-#         }
-#         #button_group {
-#             margin-top: 1;
-#             margin-bottom: 1;
-#             margin-left: 1;
-#             width: 70%;
-#             height: auto;
-#             align: left top;
-#         }
-#         Button {
-#             margin-right: 1;
-#         }
-#         #title {
-#             border: round $secondary;
-#             margin-top: 1;
-#             margin-bottom: 1;
-#             height: auto;
-#             width: 70%;
-#             height: auto;
-#             text-style: bold;
-#             text-align: center;
-#         }
-#     """
-
-#     BINDINGS = [
-#         Binding(key='a', action='add', description='Add New Cluster'),
-#         Binding(key='c', action='connect', description='Connect Cluster'),
-#     ]
-
-#     def __init__(self, kube_config: list[ConfigModel], **kwargs):
-#         super().__init__(**kwargs)
-#         self.kube_config = kube_config
-
-#     def compose(self) -> ComposeResult:
-#         yield Header()
-#         yield Label("Kubernetes Clusters - Press ↑ ↓ ← → to select", id="title")
-#         yield ConfigView(kube_config=self.kube_config)
-#         yield Horizontal(
-#             Button(label="Sync", variant="success", id="sync", tooltip="Sync cluster from local"),
-#             Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
-#             Button(label="Connect", variant="success", id="connect", tooltip="Connect to cluster"),
-#             id="button_group"
-#         )
-#         yield Footer()
-    
-#     @on(Button.Pressed, "#add")
-#     async def action_add(self):
-#         self.query_one(ConfigView).action_add()
-
-#     @on(Button.Pressed, "#connect")
-#     def action_connect(self) -> None:
-#         """
-#         To connect current selected ConfigItem when user click The Connect Button
-#         """
-#         self.query_one(ConfigView).action_connect()
-
 
 class AddClusterScreen(Screen):
 
