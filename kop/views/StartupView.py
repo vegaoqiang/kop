@@ -137,7 +137,7 @@ class ConfigView(Screen):
     @work
     async def action_delete(self) -> None:
         if not self.selected:
-            self.notify("Please select a cluster to delete", severity="error", markup=False)
+            self.notify("Please select a cluster to delete", severity="error")
             return
         if not await self.app.push_screen_wait(DeleteConfigConfirmScreen(self.selected)):
             return
@@ -151,7 +151,7 @@ class ConfigView(Screen):
         To connect the selected ConfigItem when user pressed then `enter` key
         """
         if not self.selected:
-            self.notify("Please select a cluster to connect", severity="error", markup=False)
+            self.notify("Please select a cluster to connect", severity="error")
             return
         self.app.push_screen(ResourceView(self.selected.path))
 
@@ -165,16 +165,16 @@ class ConfigView(Screen):
     @work
     async def action_edit(self):
         if not self.selected:
-            self.notify("Please select a cluster to edit", severity="error", markup=False)
+            self.notify("Please select a cluster to edit", severity="error")
             return
         config_model = await self.app.push_screen_wait(AddClusterScreen(config=self.selected))
         if not config_model:
-            self.notify("Cluster edited failed", severity="error", markup=False)
+            self.notify("Cluster edited failed", severity="error")
             return
         idx = self.KubeConfig.index(self.selected)
         self.KubeConfig[idx] = config_model
         self.mutate_reactive(ConfigView.KubeConfig)
-        self.notify("Cluster edited successfully", severity="information", markup=True)
+        self.notify("Cluster edited successfully", severity="information")
 
     def on_key(self, event):
         if event.key not in ("up", "down", "left", "right", "tab"):
