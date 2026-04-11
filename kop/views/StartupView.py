@@ -60,13 +60,12 @@ class ConfigView(Screen):
         #button_group {
             margin-top: 1;
             margin-bottom: 1;
-            margin-left: 1;
             width: 70%;
             height: auto;
             align: left top;
         }
         Button {
-            margin-right: 1;
+            margin-left: 1;
         }
         #title {
             border: round $secondary;
