@@ -120,7 +120,11 @@ class ConfigView(Screen):
 
     def on_screen_resume(self):
         """
-        back from previous screen then focus the selected item
+        back from previous screen then focus the selected item.
+
+        self.notify will take focus, example: if user edit config successfully and back to this screen.
+        this on_screen_resume func will take focus to selected_item, but after time self.notify will 
+        pop up a message box indicating that the edit was successful, which will steal focus.
         """
         if not self.selected_item:
             return
