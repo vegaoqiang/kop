@@ -1,14 +1,17 @@
+import asyncio
+from pathlib import Path
 from textual import on, work
 from textual.binding import Binding
 from textual.reactive import Reactive
 from textual.app import App, ComposeResult
 from textual.screen import Screen, ModalScreen
-from textual.containers import VerticalScroll, Horizontal, Grid
-from textual.widgets import Header, Footer, TextArea, Input, Label, Button
+from textual.containers import VerticalScroll, Horizontal, Grid, Container
+from textual.widgets import Header, Footer, TextArea, Input, Label, Button, DirectoryTree
 from kop.validations import ClusterNameValidator, ClusterContentValidator
 from kop.widgets.Focusable import ConfigItem
 from kop.provider.config import Config, ConfigModel
 from kop.views.ResourceView import ResourceView
+from kop.widgets.Directory import CustomDirectoryTree
 
 
 
@@ -179,6 +182,35 @@ class ConfigView(Screen):
         self.KubeConfig[idx] = config_model
         self.mutate_reactive(ConfigView.KubeConfig)
         self.notify("Cluster edited successfully", severity="information")
+
+    @work
+    @on(Button.Pressed, "#sync")
+    async def action_sync(self):
+        path = await self.app.push_screen_wait(SyncClusterScreen())
+        if not path:
+            return
+        configs = await self._sync_configs(path)
+        self.KubeConfig.extend(configs)
+        self.mutate_reactive(ConfigView.KubeConfig)
+        self.notify(f"{len(configs)} kubeconfig synced successfully", severity="information")
+
+    async def _sync_configs(self, path: Path) -> list[ConfigModel]:
+        handler = Config()
+        configs = []
+        def _handle_file(path: Path):
+            valid, data = handler.validate_config(path)
+            if valid:
+                synced = handler.sync_config(path)
+                return ConfigModel.from_yaml(data, synced)
+
+        if path.is_dir():
+            for item in path.iterdir():
+                configs.append(await asyncio.to_thread(_handle_file, item))
+        else:
+            configs.append(await asyncio.to_thread(_handle_file, path))
+        return configs
+            
+
 
     def on_key(self, event):
         if event.key not in ("up", "down", "left", "right", "tab"):
@@ -389,6 +421,71 @@ class AddClusterScreen(Screen):
                 timeout=3,
                 markup=False
                 )
+            
+
+class SyncClusterScreen(ModalScreen):
+    DEFAULT_CSS = """
+        SyncClusterScreen {
+            align: center middle;
+        }
+        #container {
+            height: 80%;
+            width: 50%;
+            border: solid $secondary;
+        }
+        #tree {
+            height: 1fr;
+            width: 1fr
+        }
+    """
+
+    BINDINGS = [
+        Binding(key="escape", action="close", description="Cancel and go back", show=True),
+    ]
+
+    selected: Path | None = None
+
+    def compose(self) -> ComposeResult:
+        with Container(id="container"):
+            yield CustomDirectoryTree(path=Path.home(), id="tree")
+            yield Footer(id="footer")
+
+    def on_mount(self):
+        self.call_after_refresh(self._apply_container_border)
+
+    def _apply_container_border(self) -> None:
+        container = self.query_one("#container", Container)
+        container.border_subtitle = "↑↓ navigate • Enter to select • Space to expand"
+        container.border_title = "Select a directory or file to sync"
+        container.styles.border_title_style = "bold"
+
+    def action_close(self):
+        self.app.pop_screen()
+
+    def _validate_selected(self, selected):
+        if selected is None:
+            self.notify("Please select a directory or file", severity="warning")
+            return
+        kop_dir = Path.home() / ".kop"
+        kube_dir = Path.home() / ".kube"
+        if str(kop_dir) in str(selected):
+            self.notify("Cannot sync kop directory, it kop work directory.", severity="warning")
+            return
+        if str(kube_dir) in str(selected):
+            self.notify("Cannot sync kube directory, it already synced by kop default.", severity="warning")
+            return
+        self.dismiss(selected)
+
+    @on(DirectoryTree.FileSelected)
+    def file_selected(self, event: DirectoryTree.FileSelected) -> None:
+        event.stop()
+        self._validate_selected(event.path)
+
+    @on(DirectoryTree.DirectorySelected)
+    def directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
+        event.stop()
+        self._validate_selected(event.path)
+
 
 
 class TestApp(App):

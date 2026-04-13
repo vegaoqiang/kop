@@ -1,4 +1,5 @@
 import yaml
+import shutil
 import uuid
 from pathlib import Path
 from dataclasses import dataclass
@@ -139,6 +140,31 @@ class Config:
             return
         return self.load_config(self.kube_default_path.joinpath("config"))
     
+        
+    def validate_config(self, path: Path) -> tuple[bool, object | None]:
+        # size of file, in bytes
+        if path.stat().st_size < 20:
+            return False, None
+        if path.stat().st_size > 1024 * 1024:
+            return False, None
+    
+        try:
+            with path.open("r") as f:
+                data = yaml.safe_load(f)
+            if not isinstance(data, dict):
+                return False, None
+            required_keys = {"apiVersion", "clusters", "contexts", "users"}
+            return required_keys.issubset(data.keys()), data
+        except Exception:
+            return False, None
+        
+    def sync_config(self, path: Path) -> Path:
+        target_path = Path(self.kop_default_path).joinpath(uuid.uuid4().hex)
+        if not target_path.parent.is_dir():
+            target_path.parent.mkdir(parents=True)
+        shutil.copy(path, target_path)
+        return target_path
+
 
 if __name__ == "__main__":
     config = Config()
