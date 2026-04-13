@@ -1,6 +1,7 @@
 from textual.widgets import Static
 from textual.message import Message
 from rich.panel import Panel
+from rich.table import Table
 from kop.provider.config import ConfigModel
 
 
@@ -35,12 +36,25 @@ class ConfigItem(Focusable):
     """
 
     def __init__(self, config: ConfigModel, **kwargs):
-        panel = Panel(f"[b]{config.name}[/b]\n[cyan]{config.server}", expand=True)
+        # panel = Panel(f"[b]{config.name}[/b]\n[cyan]{config.server}", expand=True)
+        table = Table.grid(expand=True)
+        table.add_column(justify="left", ratio=30)
+        table.add_column(justify="left", ratio=70)
+        table.add_row(f"[b]Cluster[/b]", f"[cyan]{config.name}")
+        table.add_row(f"[b]Server[/b]", f"[cyan]{config.server}")
+        table.add_row(f"[b]Users[/b]", f"[cyan]{config.user}")
+        panel = Panel(table, expand=True, title="[b]☸[/b]", title_align="right")
         super().__init__(panel, **kwargs)
         self.config = config
 
     def on_focus(self) -> None:
         self.post_message(ConfigItem.Selected(self.config).set_sender(self))
+
+    def on_mount(self) -> None:
+        """
+        load cluster version, set into Panel title
+        """
+        ...
         
     class Selected(Message):
         """export selected message."""
