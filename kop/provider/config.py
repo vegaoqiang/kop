@@ -95,16 +95,21 @@ class Config:
         return ConfigModel.from_yaml(yaml_obj, path)
         
     def update_config(self, config: ConfigModel, yaml_obj: dict):
+        """
+        update to the config file explicitly stated that there is only one cluster
+        in the file, and users are prohibited from adding new clusters.
+        """
         path = config.path
         if not path or not Path(path).is_file():
             raise FileNotFoundError
         with Path(path).open("w") as f:
             yaml.safe_dump(yaml_obj, f)
-        return ConfigModel.from_yaml(yaml_obj, Path(path))
+        return ConfigModel.from_yaml(yaml_obj, Path(path))[0]
 
     def update_cluster_name(self, yaml_obj: dict, cluster_name: str):
         """
-        replace cluster name in config to new cluster name
+        replace cluster name in config to new cluster name, if the config has multiple clusters
+        default to the first cluster
         """
         yaml_obj["contexts"][0]["context"]["cluster"] = cluster_name
         yaml_obj["clusters"][0]["name"] = cluster_name

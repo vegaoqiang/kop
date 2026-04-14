@@ -394,6 +394,10 @@ class AddClusterScreen(Screen):
                 path = Config().save_config(yaml_obj=obj)
                 config_model = ConfigModel.from_yaml(valid, path)
             else:
+                # edit config not allow add new cluster
+                if len(obj["clusters"]) > 1:
+                    self.notify("Edit cluster config not allow add new cluster", severity="error")
+                    return
                 config_model = Config().update_config(self.config, yaml_obj=obj)
             self.dismiss(config_model)
 
