@@ -21,7 +21,7 @@ class ConfigRow(Horizontal):
     """
     DEFAULT_CSS = """
         ConfigItem {
-            height: 4;
+            height: 5;
             width: 25%;
         }
     """
@@ -189,25 +189,27 @@ class ConfigView(Screen):
         path = await self.app.push_screen_wait(SyncClusterScreen())
         if not path:
             return
-        configs = await self._sync_configs(path)
+        configs: list[ConfigModel] = await self._sync_configs(path)
         self.KubeConfig.extend(configs)
         self.mutate_reactive(ConfigView.KubeConfig)
         self.notify(f"{len(configs)} kubeconfig synced successfully", severity="information")
 
     async def _sync_configs(self, path: Path) -> list[ConfigModel]:
         handler = Config()
-        configs = []
-        def _handle_file(path: Path):
+        configs: list[ConfigModel] = []
+
+        def _handle_file(path: Path) -> list[ConfigModel]:
             valid, data = handler.validate_config(path)
             if valid:
-                synced = handler.sync_config(path)
+                synced: Path = handler.sync_config(path)
                 return ConfigModel.from_yaml(data, synced)
+            return []
 
         if path.is_dir():
             for item in path.iterdir():
-                configs.append(await asyncio.to_thread(_handle_file, item))
+                configs.extend(await asyncio.to_thread(_handle_file, item))
         else:
-            configs.append(await asyncio.to_thread(_handle_file, path))
+            configs.extend(await asyncio.to_thread(_handle_file, path))
         return configs
             
 

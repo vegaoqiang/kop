@@ -42,8 +42,8 @@ class ConfigItem(Focusable):
         table.add_column(justify="left", ratio=70)
         table.add_row(f"[b]Cluster[/b]", f"[cyan]{config.name}")
         table.add_row(f"[b]Server[/b]", f"[cyan]{config.server}")
-        table.add_row(f"[b]Users[/b]", f"[cyan]{config.user}")
-        panel = Panel(table, expand=True, title="[b]☸[/b]", title_align="right")
+        table.add_row(f"[b]Users[/b]", f"[cyan]{','.join(config.users)}")
+        panel = Panel(table, expand=True, title="[b]☸[/b] v1.35.1", title_align="right")
         super().__init__(panel, **kwargs)
         self.config = config
 

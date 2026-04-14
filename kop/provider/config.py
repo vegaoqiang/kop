@@ -2,7 +2,7 @@ import yaml
 import shutil
 import uuid
 from pathlib import Path
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 
@@ -13,28 +13,55 @@ class ConfigModel:
     # the kubernetes cluster api-server endpoint
     server: str = ""
     # the kubernetes cluster user
-    user: str = ""
+    contexts: list[str] = field(default_factory=list)
+    # users attached to this cluster via contexts
+    users: list[str] = field(default_factory=list)
     # the kubernetes cluster version, not contain `version` field in config by default, it will add by kop
     version: str = ""
     # the kubernetes config file absolute path
     path: str = ""
 
     @classmethod
-    def from_yaml(cls, yaml_obj: dict, path: Path) -> "ConfigModel":
-        current_context: str = yaml_obj["current-context"]
-        contexts: dict = next(
-            (item for item in yaml_obj["contexts"] if item["name"] == current_context),
-            yaml_obj["contexts"][0]
+    def from_yaml(cls, yaml_obj: dict, path: Path) -> list["ConfigModel"]:
+        contexts = yaml_obj.get("contexts") or []
+        clusters = yaml_obj.get("clusters") or []
+        users = yaml_obj.get("users") or []
+        if not contexts or not clusters or not users:
+            return []
+
+        contexts_by_cluster: dict[str, list[str]] = {}
+        users_by_cluster: dict[str, list[str]] = {}
+        for item in contexts:
+            context_name = item.get("name")
+            context_obj = item.get("context", {})
+            cluster_name = context_obj.get("cluster")
+            user_name = context_obj.get("user")
+            if not cluster_name:
+                continue
+            if context_name:
+                contexts_by_cluster.setdefault(cluster_name, []).append(context_name)
+            if user_name:
+                users_by_cluster.setdefault(cluster_name, [])
+                if user_name not in users_by_cluster[cluster_name]:
+                    users_by_cluster[cluster_name].append(user_name)
+
+        result: list[ConfigModel] = []
+        for cluster in clusters:
+            cluster_name = cluster.get("name")
+            cluster_obj = cluster.get("cluster", {})
+            if not cluster_name:
+                continue
+            result.append(
+                cls(
+                    name=cluster_name,
+                    server=cluster_obj.get("server", ""),
+                    contexts=contexts_by_cluster.get(cluster_name, []),
+                    users=users_by_cluster.get(cluster_name, []),
+                    version=cluster.get("version", ""),
+                    path=str(path),
+                )
             )
-        # if not contexts:
-        #     contexts = yaml_obj["contexts"][0]
-        cluster: dict = next(item for item in yaml_obj["clusters"] if item["name"] == contexts["context"]["cluster"])
-        user: dict = next(item for item in yaml_obj["users"] if item["name"] == contexts["context"]["user"])
-        return cls(
-            name=cluster["name"], 
-            server=cluster["cluster"]["server"], 
-            version=cluster.get("version", ""), 
-            path=str(path))
+        return result
     
     def to_str(self, **kwargs) -> str:
         """
@@ -52,7 +79,7 @@ class Config:
     kube_default_path = Path.home().joinpath(".kube")
 
 
-    def load_config(self, path: Path) -> ConfigModel | None:
+    def load_config(self, path: Path) -> list[ConfigModel]:
         """
         load config file content
         """
@@ -61,24 +88,11 @@ class Config:
             yaml_obj = yaml.safe_load(config_content)
         except yaml.YAMLError as exc:
             print(exc)
-            return
+            return []
         if not yaml_obj.get("contexts") or not yaml_obj.get("clusters") or not yaml_obj.get("users"):
             """kubernetes config file is not valid"""
-            return
-        current_context: str = yaml_obj["current-context"]
-        contexts: dict = next(
-            (item for item in yaml_obj["contexts"] if item["name"] == current_context),
-            yaml_obj["contexts"][0]
-            )
-        # if not contexts:
-        #     contexts = yaml_obj["contexts"][0]
-        cluster: dict = next(item for item in yaml_obj["clusters"] if item["name"] == contexts["context"]["cluster"])
-        user: dict = next(item for item in yaml_obj["users"] if item["name"] == contexts["context"]["user"])
-        return ConfigModel(
-            name=cluster["name"], 
-            server=cluster["cluster"]["server"], 
-            version=cluster.get("version", ""), 
-            path=str(path))
+            return []
+        return ConfigModel.from_yaml(yaml_obj, path)
         
     def update_config(self, config: ConfigModel, yaml_obj: dict):
         path = config.path
@@ -114,34 +128,33 @@ class Config:
             return 
         path.unlink()
 
-    def get_configs(self) -> list[ConfigModel] | None:
+    def get_configs(self) -> list[ConfigModel]:
         """
         get kube configs in kop path
         """
         configs: list[ConfigModel] = []
-        if kube_default_config := self.get_kube_default_config():
-            configs.append(kube_default_config)
+        if kube_default_configs := self.get_kube_default_config():
+            configs.extend(kube_default_configs)
         if not self.kop_default_path.is_dir():
             return configs
         for path in Path.iterdir(self.kop_default_path):
-            if config := self.load_config(path):
-                configs.append(config)
+            configs.extend(self.load_config(path))
         return configs
     
 
-    def get_kube_default_config(self) -> ConfigModel | None:
+    def get_kube_default_config(self) -> list[ConfigModel]:
         """
         get kube default config in user home path .kube
         """
 
         if not self.kube_default_path.is_dir():
-            return 
+            return []
         if not self.kube_default_path.joinpath("config").is_file():
-            return
+            return []
         return self.load_config(self.kube_default_path.joinpath("config"))
     
         
-    def validate_config(self, path: Path) -> tuple[bool, object | None]:
+    def validate_config(self, path: Path) -> tuple[bool, dict | None]:
         # size of file, in bytes
         if path.stat().st_size < 20:
             return False, None
