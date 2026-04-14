@@ -2,11 +2,12 @@ import asyncio
 from pathlib import Path
 from textual import on, work
 from textual.binding import Binding
+from textual.events import Mount
 from textual.reactive import Reactive
 from textual.app import App, ComposeResult
 from textual.screen import Screen, ModalScreen
 from textual.containers import VerticalScroll, Horizontal, Grid, Container
-from textual.widgets import Header, Footer, TextArea, Input, Label, Button, DirectoryTree
+from textual.widgets import Header, Footer, TextArea, Input, Label, Button, DirectoryTree, Select
 from kop.validations import ClusterNameValidator, ClusterContentValidator
 from kop.widgets.Focusable import ConfigItem
 from kop.provider.config import Config, ConfigModel
@@ -160,7 +161,10 @@ class ConfigView(Screen):
         if not self.selected:
             self.notify("Please select a cluster to connect", severity="error")
             return
-        self.app.push_screen(ResourceView(self.selected.path))
+        if len(self.selected.contexts) > 1:
+            self.app.push_screen(SelectContextScreen(self.selected))
+        else:
+            self.app.push_screen(ResourceView(self.selected.path))
 
     @on(Button.Pressed, "#add")
     @work
@@ -492,6 +496,57 @@ class SyncClusterScreen(ModalScreen):
         event.stop()
         self._validate_selected(event.path)
 
+
+class SelectContextScreen(ModalScreen):
+    DEFAULT_CSS = """
+        SelectContextScreen {
+            align: center middle;
+        }
+        #title {
+            text-style: bold;
+            column-span: 2;
+        }
+        #grid {
+            grid-size: 2;
+            grid-gutter: 1 2;
+            grid-rows: 1 3 3;
+            padding: 0 1;
+            width: 60;
+            height: 11;
+            border: solid $secondary;
+        }
+        #select {
+            width: 1fr;
+            column-span: 2;
+        }
+        #cancel, #connect {
+            width: 1fr;
+        }
+    """
+
+    BINDINGS = [
+        Binding(key="escape", action="close", description="Cancel and go back", show=True),
+    ]
+    
+    def __init__(self, config: ConfigModel|None = None):
+        super().__init__()
+        self.config = config
+        self.option = [(x, x) for x in config.contexts]
+
+    def compose(self) -> ComposeResult:
+        with Grid(id="grid"):
+            yield Label("Use the following Context to connect?", id="title")
+            yield Select(options=self.option, value=self.config.current_context, allow_blank=False, id="select")
+            yield Button("Cancel", id="cancel")
+            yield Button("Connect", variant="default", id="connect")
+    
+    def on_mount(self) -> None:
+        grid = self.query_one("#grid", Grid)
+        grid.border_subtitle = "Enter to connect"
+    
+    @on(Button.Pressed, "#cancel")
+    def action_close(self) -> None:
+        self.app.pop_screen()
 
 
 class TestApp(App):

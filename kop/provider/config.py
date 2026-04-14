@@ -14,6 +14,7 @@ class ConfigModel:
     server: str = ""
     # the kubernetes cluster user
     contexts: list[str] = field(default_factory=list)
+    current_context: str = "default"
     # users attached to this cluster via contexts
     users: list[str] = field(default_factory=list)
     # the kubernetes cluster version, not contain `version` field in config by default, it will add by kop
@@ -56,6 +57,7 @@ class ConfigModel:
                     name=cluster_name,
                     server=cluster_obj.get("server", ""),
                     contexts=contexts_by_cluster.get(cluster_name, []),
+                    current_context=yaml_obj.get("currnet-context", "default"),
                     users=users_by_cluster.get(cluster_name, []),
                     version=cluster.get("version", ""),
                     path=str(path),
