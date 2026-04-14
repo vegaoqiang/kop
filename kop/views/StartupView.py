@@ -153,8 +153,9 @@ class ConfigView(Screen):
         self.KubeConfig.remove(self.selected)
         self.mutate_reactive(ConfigView.KubeConfig)
 
+    @work
     @on(Button.Pressed, "#connect")
-    def action_connect(self):
+    async def action_connect(self):
         """
         To connect the selected ConfigItem when user pressed then `enter` key
         """
@@ -162,7 +163,8 @@ class ConfigView(Screen):
             self.notify("Please select a cluster to connect", severity="error")
             return
         if len(self.selected.contexts) > 1:
-            self.app.push_screen(SelectContextScreen(self.selected))
+            context = await self.app.push_screen_wait(SelectContextScreen(self.selected))
+            self.app.push_screen(ResourceView(self.selected.path, context))
         else:
             self.app.push_screen(ResourceView(self.selected.path))
 
@@ -519,13 +521,14 @@ class SelectContextScreen(ModalScreen):
             width: 1fr;
             column-span: 2;
         }
-        #cancel, #connect {
+        #cancel, #confirm {
             width: 1fr;
         }
     """
 
     BINDINGS = [
-        Binding(key="escape", action="close", description="Cancel and go back", show=True),
+        Binding(key="escape", action="close", description="Cancel and go back", show=False),
+        Binding(key="shift+enter", action="confirm", description="Confirm", show=False),
     ]
     
     def __init__(self, config: ConfigModel|None = None):
@@ -537,16 +540,20 @@ class SelectContextScreen(ModalScreen):
         with Grid(id="grid"):
             yield Label("Use the following Context to connect?", id="title")
             yield Select(options=self.option, value=self.config.current_context, allow_blank=False, id="select")
-            yield Button("Cancel", id="cancel")
-            yield Button("Connect", variant="default", id="connect")
+            yield Button("Cancel", variant="default", id="cancel")
+            yield Button("Connect", variant="default", id="confirm")
     
     def on_mount(self) -> None:
         grid = self.query_one("#grid", Grid)
-        grid.border_subtitle = "Enter to connect"
+        grid.border_subtitle = "Enter to select • Shift+Enter to connect"
     
     @on(Button.Pressed, "#cancel")
     def action_close(self) -> None:
         self.app.pop_screen()
+
+    @on(Button.Pressed, "#confirm")
+    def action_confirm(self) -> None:
+        self.dismiss(self.query_one("#select", Select).value)
 
 
 class TestApp(App):

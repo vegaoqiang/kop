@@ -73,10 +73,10 @@ class ResourceView(Screen):
     # flag to resume timer
     resume_timer = None
 
-    def __init__(self, config_file: str, **kwargs) -> None:
+    def __init__(self, config_file: str, context: str = "default", **kwargs) -> None:
         super().__init__(**kwargs)
         self.config_file = config_file
-        self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file)
+        self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file, context=context)
         self.namespace = None
         self.resource_type: str | None = None
 
