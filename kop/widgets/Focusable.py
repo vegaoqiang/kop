@@ -69,8 +69,8 @@ class ConfigItem(Focusable):
     def _build_title(version: str = "") -> str:
         normalized = version.lstrip("v")
         if not normalized:
-            return "[b]☸[/b]"
-        return f"[b]☸[/b] v{normalized}"
+            return "[b][red]☸ NotReady[/b]"
+        return f"[b][green]☸[/b] v{normalized}"
 
     def _update_panel_title(self, version: str) -> None:
         self.config.version = version
