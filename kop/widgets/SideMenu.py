@@ -76,7 +76,7 @@ class SideMenu(Static):
         self.set_reactive(SideMenu.display_menu, MENU)
 
     def compose(self) -> ComposeResult:
-        yield Input(id="search_menu", placeholder="Press / to search menu")
+        yield Input(id="search_menu", placeholder="Press / to search menu", tooltip="ctrl+u clear search")
         with ListView(id="side_menu"):
             for menu in self.display_menu:
                 yield ListItem(Label(menu.name), id=menu.id, name=menu.name)    
@@ -186,7 +186,7 @@ class SideMenu(Static):
         elif event.key == "up" and self.is_filtered:
             self.cursor_index -= 1
             
-    def _on_mount(self, event: Mount) -> None:
+    def on_mount(self, event: Mount) -> None:
         self.query_one(ListView).focus()
 
     async def resource_render(self, menu_id: str, menu_name: str) -> None:
