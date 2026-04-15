@@ -112,9 +112,11 @@ class ConfigView(Screen):
             for i in range(0, len(self.KubeConfigs), self.column_length):
                 yield ConfigRow(self.KubeConfigs[i:i+self.column_length])
         yield Horizontal(
-            Button(label="Sync", variant="success", id="sync", tooltip="Sync cluster from local"),
-            Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
-            Button(label="Connect", variant="success", id="connect", tooltip="Connect to cluster"),
+            Button(label="Add", variant="default", id="add", tooltip="Add new cluster"),
+            Button(label="Connect", variant="default", id="connect", tooltip="Connect to cluster"),
+            Button(label="Delete", variant="default", id="delete", tooltip="Delete cluster"),
+            Button(label="Edit", variant="default", id="edit", tooltip="Edit cluster"),
+            Button(label="Sync", variant="default", id="sync", tooltip="Sync cluster from local"),
             id="button_group"
         )
         yield Footer()
@@ -298,8 +300,8 @@ class DeleteConfigConfirmScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         yield Grid(
             Label(f"Delete {self.config.name}?", id="confirm"),
-            Button(label="No", variant="error", id="no"),
-            Button(label="Yes", variant="success", id="yes"),
+            Button(label="No", variant="default", id="no"),
+            Button(label="Yes", variant="error", id="yes"),
             id="dialog"
         )
 
@@ -362,7 +364,7 @@ class AddClusterScreen(Screen):
         yield Label("Paste Your Cluster Config Content")
         yield TextArea(language="yaml")
         yield Horizontal(
-            Button(label="Save", variant="success", id="save", tooltip="Save cluster config"),
+            Button(label="Save", variant="default", id="save", tooltip="Save cluster config"),
             Button(label="Cancel", variant="default", id="cancel", tooltip="Cancel and go back to previous screen"),
             Button(label="Clear", variant="default", id="clear", tooltip="Clear cluster config content"),
             id="button_group"
