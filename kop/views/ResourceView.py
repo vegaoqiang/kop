@@ -48,7 +48,8 @@ class ResourceView(Screen):
     """
 
     BINDINGS = [
-        Binding(key="c", action="new_resource", description="Create new", show=True),
+        Binding(key="c", action="new_resource", description="Create", show=True),
+        Binding(key="escape", action="close", description="Go back home", show=True),
     ]
 
     FACTORY_CACHE: BaseFactory | None = None
