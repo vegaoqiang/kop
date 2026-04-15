@@ -67,7 +67,6 @@ class PodPty(ScrollView):
     can_focus = True
 
     # definde the PodTerminal max history line
-    # todo: load ScrollBackLines value from settings file
     ScrollBackLines: Reactive[int] = Reactive(1000)
 
     def __init__(self, exec: PodExec):
