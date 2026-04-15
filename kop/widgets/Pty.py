@@ -119,16 +119,13 @@ class PodPty(ScrollView):
 
     
     def _follow_cursor(self):
+        if not self.follow_cursor:
+            return
         if self.virtual_size.height <= self.size.height:
             # screen is not scrollable
             return
-        if self.scroll_y == (self.virtual_size.height - self.size.height):
-            # screen is at the bottom
-            return
-        # move the scroll bar to follow the cursor, follow only if the scroll bar is not at the bottom
-        if (self.scroll_y + self.size.height) < self.virtual_size.height - 1:
-            self.follow_cursor = True
-            self.scroll_end(animate=False)
+        # Keep viewport pinned to bottom whenever follow mode is enabled.
+        self.scroll_end(animate=False)
 
     def _reset_screen(self):
         """
@@ -188,8 +185,7 @@ class PodPty(ScrollView):
                 line = self.te_screen.buffer.get(buffer_y)
 
             if not line:
-                text.append("\n")
-                continue
+                line = {}
 
             # self.cursor_abs_y = (
             #         history_top_len
@@ -230,6 +226,7 @@ class PodPty(ScrollView):
         # why self.te_screen.lines - 1? because the line number start from 0 
         if self.te_screen.cursor.y >= self.te_screen.lines - 1:
             self.follow_cursor = True
+            self._follow_cursor()
     
 
     def feed(self, data: str):
@@ -242,11 +239,12 @@ class PodPty(ScrollView):
         # new_virtual_size_height = total_history_lines if total_history_lines < self.ScrollBackLines else self.ScrollBackLines
         self.virtual_size = self.virtual_size.with_height(height=new_virtual_size_height)
 
+        self.cursor_abs_y = (
+            len(self.te_screen.history.top)
+            + self.te_screen.cursor.y
+        )
+
         if self.follow_cursor:
-            self.cursor_abs_y = (
-                len(self.te_screen.history.top)
-                + self.te_screen.cursor.y
-            )
             # print('self.cursor_abs_y in feed:', self.cursor_abs_y)
             self._follow_cursor()
 
@@ -274,9 +272,6 @@ class PodPty(ScrollView):
                 stdout_data = self.exec.read_stdout(timeout=0.1)
                 if stdout_data:
                     self.app.call_from_thread(self.feed, stdout_data)
-                stderr_data = self.exec.read_stderr(timeout=0.1)
-                if stderr_data:
-                    self.app.call_from_thread(self.feed, stderr_data)
 
             except Exception as e:
                 self.notify(f"Read stdout failed: {e}", severity="error")
