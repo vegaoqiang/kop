@@ -55,10 +55,6 @@ class SideMenu(Static):
         }
     """
 
-    BINDINGS = [
-        Binding("escape", "cancel_search", "Cancel", show=False),
-    ]
-
     display_menu = Reactive(List[SimpleNamespace])
 
     # current display menu is not filtered
@@ -197,9 +193,6 @@ class SideMenu(Static):
         # send event
         self.post_message(self.ResourceEvent(menu_id, menu_name))
 
-    def action_cancel_search(self):
-        self.query_one("#search_menu", Input).clear()
-        self.is_filtered = False
     
     class ResourceEvent(Message):
         """event for menu item select and click"""
