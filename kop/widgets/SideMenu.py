@@ -71,6 +71,9 @@ class SideMenu(Static):
     # the cursor index of the highlighted item
     cursor_index: var[int] = var(0)
 
+    # a timer to update Input placeholder
+    _placeholder_timer = None
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.set_reactive(SideMenu.display_menu, MENU)
@@ -188,11 +191,34 @@ class SideMenu(Static):
             
     def on_mount(self, event: Mount) -> None:
         self.query_one(ListView).focus()
+        self.call_after_refresh(self._update_input_placeholder)
+
+    def on_unmount(self) -> None:
+        if self._placeholder_timer:
+            self._placeholder_timer.stop()
+            self._placeholder_timer = None
 
     async def resource_render(self, menu_id: str, menu_name: str) -> None:
         # send event
         self.post_message(self.ResourceEvent(menu_id, menu_name))
 
+    def _update_input_placeholder(self) -> None:
+        placeholders = ["Press / to search menu", "ctrl+u clear search"]
+        search_menu = self.query_one("#search_menu", Input)
+        
+        _placeholder_index = 0
+
+        def _switch_placeholder():
+            nonlocal _placeholder_index
+            search_menu.placeholder = placeholders[_placeholder_index]
+            _placeholder_index = (_placeholder_index + 1) % len(placeholders)
+
+        # set initial placeholder
+        search_menu.placeholder = placeholders[_placeholder_index]
+        # switch every 3 seconds
+        if self._placeholder_timer:
+            return
+        self._placeholder_timer = self.set_interval(3, _switch_placeholder)
     
     class ResourceEvent(Message):
         """event for menu item select and click"""
