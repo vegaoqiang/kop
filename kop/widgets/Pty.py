@@ -75,6 +75,10 @@ class PodPty(ScrollView):
         # The virtual size (scrollable size) of the Widget. This means how many lines the PodTerminal Widget can scroll.
         self.virtual_size = Size(0, 0)
         self.exec = exec
+        self.resp = None
+        self.te_screen = None
+        self.te_stream = None
+        self.cursor_abs_y = 0
         # self.app.scroll_sensitivity_y = 1
         self.follow_cursor: bool = True
 
@@ -99,7 +103,8 @@ class PodPty(ScrollView):
 
 
     def on_mount(self) -> None:
-        self.call_later(self._connect_with_size)
+        # Wait for the first layout pass so initial terminal size is accurate.
+        self.call_after_refresh(self._connect_with_size)
 
     def on_unmount(self) -> None:
         if self.resp:
@@ -142,8 +147,11 @@ class PodPty(ScrollView):
 
 
     def _connect_with_size(self):
+        width = max(1, self.size.width)
+        height = max(1, self.size.height)
+
         # before connect, reset the cursor position to top
-        self.te_screen = HistoryScreen(lines=self.size.height, columns=self.size.width, history=self.ScrollBackLines)
+        self.te_screen = HistoryScreen(lines=height, columns=width, history=self.ScrollBackLines)
         self.te_stream = Stream(self.te_screen)
         self.te_screen.cursor.x = 0
         self.te_screen.cursor.y = 0
@@ -153,12 +161,14 @@ class PodPty(ScrollView):
         except Exception as e:
             self.notify(f"Connection failed: {e}", severity="error")
             return
-        self.exec.resize(height=self.size.height, width=self.size.width)
+        self.exec.resize(height=height, width=width)
         self.read_loop()
         
 
     def render(self) -> RenderableType:
-        
+        if not self.te_screen:
+            return Text()
+
         text = Text()
 
         history_top_len = len(self.te_screen.history.top)
@@ -243,7 +253,11 @@ class PodPty(ScrollView):
         self.refresh()
 
     async def on_resize(self, event: events.Resize):
+        if not self.te_screen:
+            return
         w, h = event.size
+        w = max(1, w)
+        h = max(1, h)
         self.te_screen.resize(lines=h, columns=w)
         try:
             self.exec.resize(height=h, width=w)

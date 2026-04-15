@@ -74,7 +74,17 @@ class PodExec:
     def resize(self, height: int, width: int):
         if not self.resp:
             raise RuntimeError("Not connected")
-        
+
+        height = max(1, int(height))
+        width = max(1, int(width))
+        payload = json.dumps({"Height": height, "Width": width})
+
+        # Prefer the client API. It keeps channel framing consistent across versions.
+        if hasattr(self.resp, "write_channel"):
+            self.resp.write_channel(4, payload)
+            return
+
+        # Fallback for legacy clients without write_channel.
         try:
             ws = getattr(self.resp, "ws_client", None)
             if ws and hasattr(ws, "sock") and ws.sock:
@@ -84,12 +94,11 @@ class PodExec:
         except Exception as e:
             raise RuntimeError(f"Resize failed: {e}")
 
-        if sock and hasattr(sock, "send"):
-            # channel 4 + JSON payload
-            payload = json.dumps({"Height": height, "Width": width}).encode("utf-8")
-            # byte: 4 (resize channel)
-            frame = bytes([4]) + payload
-            sock.send(frame, opcode=ABNF.OPCODE_BINARY)
+        if not (sock and hasattr(sock, "send")):
+            raise RuntimeError("Resize failed: websocket is unavailable")
+
+        frame = bytes([4]) + payload.encode("utf-8")
+        sock.send(frame, opcode=ABNF.OPCODE_BINARY)
 
 
     def close(self):
