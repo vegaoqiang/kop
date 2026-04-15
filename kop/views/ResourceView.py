@@ -73,10 +73,11 @@ class ResourceView(Screen):
     # flag to resume timer
     resume_timer = None
 
-    def __init__(self, config_file: str, context: str = "default", **kwargs) -> None:
+    def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.config_file = config_file
-        self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file, context=context)
+        # self.config_file = config_file
+        # self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file, context=context)
+        self.endpoint: KbsEndpoint | None = getattr(self.app, "endpoint", None)
         self.namespace = None
         self.resource_type: str | None = None
 
@@ -344,7 +345,7 @@ class ResApp(App):
         """
         cache the view instance, call after on handler
         """
-        self.view = view = ResourceView(config_file=self.config_file)
+        self.view = view = ResourceView()
         self.push_screen(view)
 
 

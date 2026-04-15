@@ -108,7 +108,7 @@ class KubeClient(KubeAPI):
 
 class KbsAuthLoader:
     
-    def __init__(self, config_file: str|None = None, context: str = "default"):
+    def __init__(self, config_file: str|None = None, context: str | None = None):
         """
         :param config_path: 
         :param context: 

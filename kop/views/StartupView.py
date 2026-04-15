@@ -2,7 +2,6 @@ import asyncio
 from pathlib import Path
 from textual import on, work
 from textual.binding import Binding
-from textual.events import Mount
 from textual.reactive import Reactive
 from textual.app import App, ComposeResult
 from textual.screen import Screen, ModalScreen
@@ -13,6 +12,7 @@ from kop.widgets.Focusable import ConfigItem
 from kop.provider.config import Config, ConfigModel
 from kop.views.ResourceView import ResourceView
 from kop.widgets.Directory import CustomDirectoryTree
+from kop.provider.client import KbsEndpoint
 
 
 
@@ -164,9 +164,12 @@ class ConfigView(Screen):
             return
         if len(self.selected.contexts) > 1:
             context = await self.app.push_screen_wait(SelectContextScreen(self.selected))
-            self.app.push_screen(ResourceView(self.selected.path, context))
         else:
-            self.app.push_screen(ResourceView(self.selected.path))
+            context = None
+        setattr(self.app, "endpoint", KbsEndpoint(config_file=self.selected.path, context=context))
+        view = ResourceView()
+        self.app.push_screen(view)
+        setattr(self.app, "view", view)
 
     @on(Button.Pressed, "#add")
     @work
@@ -623,5 +626,5 @@ if __name__ == "__main__":
             {"name": "test50", "content": "hello world"}
         ]
     config = Config().get_configs()
-    app = TestApp(kube_config=config)
+    app = TestApp(kubeconfigs=config)
     app.run()

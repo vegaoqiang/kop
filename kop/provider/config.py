@@ -161,7 +161,9 @@ class Config:
         return self.load_config(self.kube_default_path.joinpath("config"))
     
         
-    def validate_config(self, path: Path) -> tuple[bool, dict | None]:
+    def validate_config(self, path: Path | str) -> tuple[bool, dict | None]:
+        if isinstance(path, str):
+            path = Path(path)
         # size of file, in bytes
         if path.stat().st_size < 20:
             return False, None
