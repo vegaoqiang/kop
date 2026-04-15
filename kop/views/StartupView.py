@@ -92,25 +92,25 @@ class ConfigView(Screen):
         Binding(key='enter', action='connect', description='Connect Cluster')
     ]
 
-    KubeConfig: Reactive[list[ConfigModel]] = Reactive([], recompose=True)
+    KubeConfigs: Reactive[list[ConfigModel]] = Reactive([], recompose=True)
 
-    def __init__(self, kube_config: list[ConfigModel], column_length: int = 4, **kwargs) -> None:
+    def __init__(self, kubeconfigs: list[ConfigModel], column_length: int = 4, **kwargs) -> None:
         super().__init__(**kwargs)
         self.column_length = column_length
-        self.set_reactive(ConfigView.KubeConfig, kube_config)
+        self.set_reactive(ConfigView.KubeConfigs, kubeconfigs)
         self.border_title = "Clusters"
         self.selected: ConfigModel | None = None
         self.selected_item: ConfigItem | None = None
 
 
     def compose(self) -> ComposeResult:
-        if not self.KubeConfig:
+        if not self.KubeConfigs:
             return
         yield Header()
         yield Label("Kubernetes Clusters - Press ↑ ↓ ← → to select", id="title")
         with VerticalScroll(id="config"):
-            for i in range(0, len(self.KubeConfig), self.column_length):
-                yield ConfigRow(self.KubeConfig[i:i+self.column_length])
+            for i in range(0, len(self.KubeConfigs), self.column_length):
+                yield ConfigRow(self.KubeConfigs[i:i+self.column_length])
         yield Horizontal(
             Button(label="Sync", variant="success", id="sync", tooltip="Sync cluster from local"),
             Button(label="Add", variant="success", id="add", tooltip="Add new cluster"),
@@ -134,12 +134,12 @@ class ConfigView(Screen):
             return
         self.selected_item.focus()
 
-    def update_kube_config(self, value: ConfigModel) -> None:
+    def update_kubeconfigs(self, value: ConfigModel) -> None:
         """
         For update kube config add new cluster
         """
-        self.KubeConfig.append(value)
-        self.mutate_reactive(ConfigView.KubeConfig)
+        self.KubeConfigs.append(value)
+        self.mutate_reactive(ConfigView.KubeConfigs)
 
     @on(Button.Pressed, "#delete")
     @work
@@ -150,8 +150,8 @@ class ConfigView(Screen):
         if not await self.app.push_screen_wait(DeleteConfigConfirmScreen(self.selected)):
             return
         Config().delete_config(config_path=self.selected.path)
-        self.KubeConfig.remove(self.selected)
-        self.mutate_reactive(ConfigView.KubeConfig)
+        self.KubeConfigs.remove(self.selected)
+        self.mutate_reactive(ConfigView.KubeConfigs)
 
     @work
     @on(Button.Pressed, "#connect")
@@ -172,7 +172,7 @@ class ConfigView(Screen):
     @work
     async def action_add(self):
         config_model = await self.app.push_screen_wait(AddClusterScreen())
-        self.update_kube_config(config_model)
+        self.update_kubeconfigs(config_model)
 
     @on(Button.Pressed, "#edit")
     @work
@@ -184,9 +184,9 @@ class ConfigView(Screen):
         if not config_model:
             self.notify("Cluster edited failed", severity="error")
             return
-        idx = self.KubeConfig.index(self.selected)
-        self.KubeConfig[idx] = config_model
-        self.mutate_reactive(ConfigView.KubeConfig)
+        idx = self.KubeConfigs.index(self.selected)
+        self.KubeConfigs[idx] = config_model
+        self.mutate_reactive(ConfigView.KubeConfigs)
         self.notify("Cluster edited successfully", severity="information")
 
     @work
@@ -196,9 +196,9 @@ class ConfigView(Screen):
         if not path:
             return
         configs: list[ConfigModel] = await self._sync_configs(path)
-        self.KubeConfig.extend(configs)
-        self.mutate_reactive(ConfigView.KubeConfig)
-        self.notify(f"{len(configs)} kubeconfig synced successfully", severity="information")
+        self.KubeConfigs.extend(configs)
+        self.mutate_reactive(ConfigView.KubeConfigs)
+        self.notify(f"{len(configs)} kubeconfigs synced successfully", severity="information")
 
     async def _sync_configs(self, path: Path) -> list[ConfigModel]:
         handler = Config()
@@ -558,12 +558,12 @@ class SelectContextScreen(ModalScreen):
 
 class TestApp(App):
     
-    def __init__(self, kube_config: list[ConfigModel], **kwargs):
+    def __init__(self, kubeconfigs: list[ConfigModel], **kwargs):
         super().__init__(**kwargs)
-        self.kube_config = kube_config
+        self.kubeconfigs = kubeconfigs
 
     def on_mount(self) -> None:
-        self.push_screen(ConfigView(self.kube_config))
+        self.push_screen(ConfigView(self.kubeconfigs))
  
 
 
