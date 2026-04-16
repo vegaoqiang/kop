@@ -52,6 +52,7 @@ class ConfigView(Screen):
             border-title-color: white;
             border-title-background: $secondary;
             border-title-style: bold;
+            border-subtitle-align: right;
             height: 70%;
             width: 70%;
             align: left top;
@@ -107,7 +108,7 @@ class ConfigView(Screen):
         if not self.KubeConfigs:
             return
         yield Header()
-        yield Label("Kubernetes Clusters - Press ↑ ↓ ← → to select", id="title")
+        yield Label("Kubernetes Clusters", id="title")
         with VerticalScroll(id="config"):
             for i in range(0, len(self.KubeConfigs), self.column_length):
                 yield ConfigRow(self.KubeConfigs[i:i+self.column_length])
@@ -125,6 +126,7 @@ class ConfigView(Screen):
         if not self.KubeConfigs:
             self.call_after_refresh(self._init_configs)
         self.query_one(ConfigItem).focus()
+        self.call_after_refresh(self._set_container_title)
 
     def on_screen_resume(self):
         """
@@ -232,8 +234,10 @@ class ConfigView(Screen):
         configs = Config().get_configs()
         self.KubeConfigs.extend(configs)
         self.mutate_reactive(ConfigView.KubeConfigs)
-            
 
+    def _set_container_title(self) -> None:
+        container = self.query_one("#config", VerticalScroll)
+        container.border_subtitle = "Press ↑ ↓ ← → to select • Enter to connect"
 
     def on_key(self, event):
         if event.key not in ("up", "down", "left", "right", "tab"):
