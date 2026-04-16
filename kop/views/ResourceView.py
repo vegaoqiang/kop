@@ -49,7 +49,7 @@ class ResourceView(Screen):
 
     BINDINGS = [
         Binding(key="c", action="new_resource", description="Create", show=True),
-        Binding(key="escape", action="close", description="Go back home", show=True),
+        Binding(key="escape", action="home", description="Go back home", show=True),
     ]
 
     FACTORY_CACHE: BaseFactory | None = None
@@ -333,6 +333,12 @@ class ResourceView(Screen):
         cleaned.sort(key=lambda vm: vm.name)
         self.table.data = cleaned
         self.panel.resource_count = len(filtered.items)
+
+    def action_home(self) -> None:
+        """
+        go back to home screen
+        """
+        self.app.push_screen(getattr(self.app, "home"))
 
 
 class ResApp(App):

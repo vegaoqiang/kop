@@ -29,9 +29,12 @@ class Kop(App):
             self.view = view = ResourceView()
             self.push_screen(view)
             return
+        start_view = ConfigView(kubeconfigs=self._get_configs())
         self.push_screen(
-            ConfigView(kubeconfigs=self._get_configs())
+            start_view
             )
+        self.home = start_view
+        
     
     def _get_configs(self) -> list[ConfigModel]:
         """

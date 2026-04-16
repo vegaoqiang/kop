@@ -94,7 +94,7 @@ class ConfigView(Screen):
 
     KubeConfigs: Reactive[list[ConfigModel]] = Reactive([], recompose=True)
 
-    def __init__(self, kubeconfigs: list[ConfigModel], column_length: int = 4, **kwargs) -> None:
+    def __init__(self, kubeconfigs: list[ConfigModel] = [], column_length: int = 4, **kwargs) -> None:
         super().__init__(**kwargs)
         self.column_length = column_length
         self.set_reactive(ConfigView.KubeConfigs, kubeconfigs)
@@ -122,6 +122,8 @@ class ConfigView(Screen):
         yield Footer()
 
     def on_mount(self):
+        if not self.KubeConfigs:
+            self.call_after_refresh(self._init_configs)
         self.query_one(ConfigItem).focus()
 
     def on_screen_resume(self):
@@ -222,6 +224,14 @@ class ConfigView(Screen):
         else:
             configs.extend(await asyncio.to_thread(_handle_file, path))
         return configs
+    
+    def _init_configs(self) -> None:
+        """
+        init kubeconfigs when ConfigView on_mount
+        """
+        configs = Config().get_configs()
+        self.KubeConfigs.extend(configs)
+        self.mutate_reactive(ConfigView.KubeConfigs)
             
 
 
