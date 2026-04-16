@@ -84,6 +84,8 @@ class ConfigView(Screen):
         }
     """
 
+    SUB_TITLE = "Kubernetes Clusters"
+
     BINDINGS = [
         Binding(key='a', action='add', description='Add New Cluster'),
         Binding(key='c', action='connect', description='Connect Cluster'),
@@ -174,6 +176,8 @@ class ConfigView(Screen):
             context = None
         setattr(self.app, "endpoint", KbsEndpoint(config_file=self.selected.path, context=context))
         view = ResourceView()
+        # set cluster name to sub title
+        view.sub_title = self.selected.name
         self.app.push_screen(view)
         setattr(self.app, "view", view)
 

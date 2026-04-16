@@ -11,6 +11,7 @@ from kop.provider.client import KbsEndpoint
 
 
 class Kop(App):
+    TITLE = "Kop"
 
     def __init__(self, config_file: str | None = None, **kwargs):
         """
@@ -27,6 +28,7 @@ class Kop(App):
         if self.config_file:
             self.endpoint = KbsEndpoint(config_file=self.config_file)
             self.view = view = ResourceView()
+            self.view.sub_title = self.config_file
             self.push_screen(view)
             return
         start_view = ConfigView(kubeconfigs=self._get_configs())
