@@ -1,14 +1,59 @@
 [project]
 name = "kop"
 version = "0.1.0"
-description = "Add your description here"
+description = "The Kubernetes operation platform base on terminal"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+authors = [
+  { name = "vegaoqiang", email = "vegaoqiang@gmail.com" },
+]
+keywords = [
+  "kop",
+  "kubernetes",
+  "k8s",
+  "terminal",
+  "textual",
+  "lens"
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
+    "Topic :: System :: Systems Administration",
+    "Topic :: Software Development",
+    "Topic :: Terminals",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.9",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: MacOS",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
+]
+
 dependencies = [
     "kubernetes>=33.1.0",
     "textual>=8.1.1",
     "textual[syntax]",
     "pyte",
-    "pytest>=9.0.2",
-    "textual-dev>=1.8.0",
 ]
+
+[project.optional-dependencies]
+dev = [
+ "pytest>=9.0.2",
+ "textual-dev>=1.8.0",
+]
+
+
+[project.scripts]
+kop = "kop.app.app:run"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
