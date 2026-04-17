@@ -179,7 +179,7 @@ class ConfigView(Screen):
         setattr(self.app, "endpoint", KbsEndpoint(config_file=self.selected.path, context=context))
         view = ResourceView()
         # set cluster name to sub title
-        # view.sub_title = self.selected.name
+        view.sub_title = self.selected.name
         self.app.push_screen(view)
         setattr(self.app, "view", view)
 
