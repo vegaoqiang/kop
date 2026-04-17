@@ -43,6 +43,7 @@ dependencies = [
     "textual[syntax]",
     "pyte",
 ]
+dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [
@@ -57,3 +58,5 @@ kop = "kop.app:run"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool]
