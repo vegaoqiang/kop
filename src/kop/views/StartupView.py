@@ -108,13 +108,14 @@ class ConfigView(Screen):
 
 
     def compose(self) -> ComposeResult:
-        if not self.KubeConfigs:
-            return
         yield Header()
         yield Label("Kubernetes Clusters", id="title")
         with VerticalScroll(id="config"):
-            for i in range(0, len(self.KubeConfigs), self.column_length):
-                yield ConfigRow(self.KubeConfigs[i:i+self.column_length])
+            if not self.KubeConfigs:
+                yield Label("No Kubernetes Cluster Found, Please Add or Sync your kubeconfigs", id="empty")
+            else:
+                for i in range(0, len(self.KubeConfigs), self.column_length):
+                    yield ConfigRow(self.KubeConfigs[i:i+self.column_length])
         yield Horizontal(
             Button(label="Add", variant="default", id="add", tooltip="Add new cluster"),
             Button(label="Connect", variant="default", id="connect", tooltip="Connect to cluster"),
@@ -178,7 +179,7 @@ class ConfigView(Screen):
         setattr(self.app, "endpoint", KbsEndpoint(config_file=self.selected.path, context=context))
         view = ResourceView()
         # set cluster name to sub title
-        view.sub_title = self.selected.name
+        # view.sub_title = self.selected.name
         self.app.push_screen(view)
         setattr(self.app, "view", view)
 
@@ -244,8 +245,6 @@ class ConfigView(Screen):
         try:
             config_item = self.query_one(ConfigItem)
         except Exception:
-            label = Label("No Kubernetes Cluster Found, Please Add or Sync your kubeconfigs", id="empty")
-            self.query_one('#config', VerticalScroll).mount(label)
             return
         config_item.focus()
 
