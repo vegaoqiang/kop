@@ -1,7 +1,7 @@
 [project]
 name = "kop"
 version = "0.1.0"
-description = "The Kubernetes operation platform base on terminal"
+description = "Terminal-based kubernetes operation platform"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
@@ -52,7 +52,7 @@ dev = [
 
 
 [project.scripts]
-kop = "kop.app.app:run"
+kop = "kop.app:run"
 
 [build-system]
 requires = ["hatchling"]
