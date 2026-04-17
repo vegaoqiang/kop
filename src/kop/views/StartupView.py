@@ -101,7 +101,8 @@ class ConfigView(Screen):
     def __init__(self, kubeconfigs: list[ConfigModel] = [], column_length: int = 4, **kwargs) -> None:
         super().__init__(**kwargs)
         self.column_length = column_length
-        self.set_reactive(ConfigView.KubeConfigs, kubeconfigs)
+        if kubeconfigs:
+            self.set_reactive(ConfigView.KubeConfigs, kubeconfigs)
         self.border_title = "Clusters"
         self.selected: Optional[ConfigModel] = None
         self.selected_item: Optional[ConfigItem] = None

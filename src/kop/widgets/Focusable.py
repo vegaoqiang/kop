@@ -58,6 +58,7 @@ class ConfigItem(Focusable):
         )
         super().__init__(panel, **kwargs)
         self.config = config
+        self.worker = None
 
     def on_focus(self) -> None:
         self.post_message(ConfigItem.Selected(self.config).set_sender(self))
@@ -67,6 +68,10 @@ class ConfigItem(Focusable):
         load cluster version, set into Panel title
         """
         self.call_after_refresh(self.load_cluster_version)
+
+    def on_unmount(self) -> None:
+        if self.worker and self.worker.is_running:
+            self.worker.cancel()
 
     @staticmethod
     def _build_title(version: str = "") -> str:
@@ -82,7 +87,7 @@ class ConfigItem(Focusable):
 
     @work(thread=True, exclusive=True)
     def load_cluster_version(self) -> None:
-        worker = get_current_worker()
+        self.worker = worker = get_current_worker()
         version = self._fetch_cluster_version()
         if worker.is_cancelled or not version:
             return
@@ -100,7 +105,7 @@ class ConfigItem(Focusable):
                 persist_config=False,
             )
             api_client = client.ApiClient(configuration=configuration)
-            version_info = client.VersionApi(api_client=api_client).get_code(_request_timeout=5)
+            version_info = client.VersionApi(api_client=api_client).get_code(_request_timeout=3)
             git_version = getattr(version_info, "git_version", "")
             return git_version.lstrip("v")
         except Exception:
