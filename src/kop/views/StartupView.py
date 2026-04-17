@@ -128,7 +128,7 @@ class ConfigView(Screen):
     def on_mount(self):
         if not self.KubeConfigs:
             self.call_after_refresh(self._init_configs)
-        self.query_one(ConfigItem).focus()
+        self._focus_item()
         self.call_after_refresh(self._set_container_title)
 
     def on_screen_resume(self):
@@ -239,6 +239,15 @@ class ConfigView(Screen):
         configs = Config().get_configs()
         self.KubeConfigs.extend(configs)
         self.mutate_reactive(ConfigView.KubeConfigs)
+
+    def _focus_item(self) -> None:
+        try:
+            config_item = self.query_one(ConfigItem)
+        except Exception:
+            label = Label("No Kubernetes Cluster Found, Please Add or Sync your kubeconfigs", id="empty")
+            self.query_one('#config', VerticalScroll).mount(label)
+            return
+        config_item.focus()
 
     def _set_container_title(self) -> None:
         container = self.query_one("#config", VerticalScroll)
