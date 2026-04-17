@@ -4,6 +4,7 @@ from textual.widgets import Static
 from textual.containers import Vertical
 from textual.worker import get_current_worker
 from rich.table import Table
+from typing import Optional
 
 
 
@@ -20,7 +21,7 @@ class ServiceEndpoints(Static):
     def __init__(self, data, **kwargs):
         super().__init__(**kwargs)
         self.data = data
-        self.body: Static | None = None
+        self.body: Optional[Static] = None
 
     def compose(self) -> ComposeResult:
         self.container = Vertical(id="service-endpoints")
@@ -52,14 +53,14 @@ class ServiceEndpoints(Static):
             if not worker.is_cancelled:
                 self.app.call_from_thread(self._update_body, None, str(e))
 
-    def _update_body(self, table: Table | None, error: str | None = None) -> None:
+    def _update_body(self, table: Optional[Table], error: Optional[str] = None) -> None:
         if not table:
             return
         if self.empty:
             self.empty.update(table)
 
     @classmethod
-    def _format_from_list(cls, response) -> Table | None:
+    def _format_from_list(cls, response) -> Optional[Table]:
         items = response.items
         if not items:
             return None

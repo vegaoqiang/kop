@@ -43,7 +43,6 @@ dependencies = [
     "textual[syntax]",
     "pyte",
 ]
-dynamic = ["version"]
 
 [project.optional-dependencies]
 dev = [

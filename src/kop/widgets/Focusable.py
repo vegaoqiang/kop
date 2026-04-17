@@ -6,6 +6,9 @@ from rich.panel import Panel
 from rich.table import Table
 from kop.provider.config import ConfigModel
 from kubernetes import client, config as kube_config
+from typing import Optional
+
+
 
 
 class Focusable(Static, can_focus=True):
@@ -85,10 +88,10 @@ class ConfigItem(Focusable):
             return
         self.app.call_from_thread(self._update_panel_title, version)
 
-    def _fetch_cluster_version(self) -> str | None:
+    def _fetch_cluster_version(self) ->Optional[str]:
         context = self.config.current_context
         configuration = client.Configuration()
-        api_client: client.ApiClient | None = None
+        api_client: Optional[client.ApiClient] = None
         try:
             kube_config.load_kube_config(
                 config_file=self.config.path,
@@ -109,7 +112,7 @@ class ConfigItem(Focusable):
     class Selected(Message):
         """export selected message."""
 
-        def __init__(self, config: ConfigModel | None = None, **kwargs) -> None:
+        def __init__(self, config: Optional[ConfigModel] = None, **kwargs) -> None:
             super().__init__(**kwargs)
             self.config = config
 

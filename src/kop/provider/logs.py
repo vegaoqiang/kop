@@ -9,7 +9,7 @@ from kubernetes.client import CoreV1Api
 
 class PodLogs:
 
-    def __init__(self, api_client, pod_name: str, namespace: str, container_name: str|None = None):
+    def __init__(self, api_client, pod_name: str, namespace: str, container_name: Optional[str] = None):
         self.core_api = CoreV1Api(api_client=api_client)
         self.pod_name = pod_name
         self.namespace = namespace

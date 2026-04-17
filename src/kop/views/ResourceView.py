@@ -12,6 +12,7 @@ from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.provider.client import KbsEndpoint
 from kop.views.EditView import ResourceEditScreen
+from typing import Optional, Tuple
 
 
 
@@ -52,22 +53,22 @@ class ResourceView(Screen):
         Binding(key="escape", action="home", description="Go back home", show=True),
     ]
 
-    FACTORY_CACHE: BaseFactory | None = None
+    FACTORY_CACHE: Optional[BaseFactory] = None
 
-    table: TableRenderer | None = None
+    table: Optional[TableRenderer] = None
 
-    panel: ResourcePanel | None = None
+    panel: Optional[ResourcePanel] = None
 
     # keyword to filter resource
-    keyword: str | None = None
+    keyword: Optional[str] = None
 
     # fetched resource
-    data: object | None = None
+    data: Optional[object] = None
 
     # request sequence to ignore stale worker results
     _resource_request_id: int = 0
     # the resource type currently mounted in table
-    _table_resource_type: str | None = None
+    _table_resource_type: Optional[str] = None
 
     # 1s interval timer
     fast_timer = None
@@ -78,9 +79,9 @@ class ResourceView(Screen):
         super().__init__(**kwargs)
         # self.config_file = config_file
         # self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file, context=context)
-        self.endpoint: KbsEndpoint | None = getattr(self.app, "endpoint", None)
+        self.endpoint: Optional[KbsEndpoint] = getattr(self.app, "endpoint", None)
         self.namespace = None
-        self.resource_type: str | None = None
+        self.resource_type: Optional[str] = None
 
     def compose(self) -> ComposeResult: 
             yield Header()
@@ -101,7 +102,7 @@ class ResourceView(Screen):
         if hasattr(self, "timer"):
             self.timer.resume()
 
-    def _fetch_resource(self, resource_type: str, namespace: str | None, keyword: str | None) -> tuple[BaseFactory | None, object | None, list]:
+    def _fetch_resource(self, resource_type: str, namespace: Optional[str], keyword: Optional[str]) -> Tuple[Optional[BaseFactory], Optional[object], list]:
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
             return None, None, []
@@ -133,7 +134,7 @@ class ResourceView(Screen):
         if self.table:
             self.table.display = True
 
-    def _apply_resource(self, request_id: int, resource_type: str, factory: BaseFactory | None, data: object | None, cleaned: list) -> None:
+    def _apply_resource(self, request_id: int, resource_type: str, factory: Optional[BaseFactory], data: Optional[object], cleaned: list) -> None:
         if request_id != self._resource_request_id:
             return
         self._set_loading(False)
@@ -161,7 +162,7 @@ class ResourceView(Screen):
         self.notify(f"Load {self.resource_type} failed: {exc}", severity="error")
 
     @work(thread=True, exclusive=True)
-    def _load_resource_worker(self, request_id: int, resource_type: str, namespace: str | None, keyword: str | None) -> None:
+    def _load_resource_worker(self, request_id: int, resource_type: str, namespace: Optional[str], keyword: Optional[str]) -> None:
         worker = get_current_worker()
         try:
             factory, data, cleaned = self._fetch_resource(resource_type, namespace, keyword)

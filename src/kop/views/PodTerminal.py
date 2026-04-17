@@ -4,11 +4,12 @@ from kop.widgets.Pty import PodPty
 from kop.provider.client import KbsAuthLoader
 from kop.provider.exec import PodExec
 from kop.models import PodViewModel
+from typing import Optional
 
 
 class PodTerminal(Screen):
     
-    def __init__(self, client: KbsAuthLoader, data: PodViewModel, container_name: str|None = None) -> None:
+    def __init__(self, client: KbsAuthLoader, data: PodViewModel, container_name: Optional[str] = None) -> None:
         super().__init__()
         self.exec = PodExec(
             api_client=client.api_client, 

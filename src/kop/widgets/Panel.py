@@ -7,6 +7,7 @@ from textual.containers import Grid
 from textual.timer import Timer
 from textual.binding import Binding
 from rich.console import RenderableType
+from typing import Optional
 
 
 
@@ -55,7 +56,7 @@ class ResourcePanel(Static):
     resource_count = Reactive(int)
 
     # debounce search
-    search_timer: Timer | None = None
+    search_timer: Optional[Timer] = None
     debounce_time: float = 0.3
 
     BINDINGS = [

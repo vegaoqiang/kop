@@ -43,7 +43,7 @@ from kubernetes.client.models import (
     V1ClusterRoleBinding,
     )
 from datetime import datetime
-from typing import List, Any, Callable, Optional
+from typing import List, Any, Callable, Optional, Union
 from kop.renderers import fields as f
 
 
@@ -57,9 +57,9 @@ class ColumnModel:
     field: the field name in the model
     """
     title: str
-    width: int | None
+    width: Optional[int]
     field: str
-    renderer: Optional[Callable] | None = None
+    renderer: Optional[Callable] = None
 
 
 @dataclass
@@ -77,9 +77,9 @@ class ActionModel:
     variant: str
     tooltip: str
     action: str
-    icon: str | None = None
+    icon: Optional[str] = None
 
-    key: str | None = None # "ctrl+l"
+    key: Optional[str] = None # "ctrl+l"
 
 
 @dataclass
@@ -211,10 +211,10 @@ class ViewModel:
 
 @dataclass
 class ContainerEnvironmentModel(ViewModel):
-    name: str | None = field(default=None, metadata={"title": "Name"})
-    value: str | None = field(default=None, metadata={"title": "Value"})
+    name: Optional[str] = field(default=None, metadata={"title": "Name"})
+    value: Optional[str] = field(default=None, metadata={"title": "Value"})
 
-    _raw: V1EnvVar | None = field(default=None, repr=False)
+    _raw: Optional[V1EnvVar] = field(default=None, repr=False)
 
     @classmethod
     def clean(cls, data):
@@ -229,11 +229,11 @@ class ContainerEnvironmentModel(ViewModel):
 
 @dataclass
 class ContainerStatusModel(ViewModel):
-    name: str | None = field(default=None, metadata={"title": "Name"})
-    state: str | None = field(default=None, metadata={"title": "State"})
-    last_state: dict | None = field(default=None, metadata={"title": "Last State"})
+    name: Optional[str] = field(default=None, metadata={"title": "Name"})
+    state: Optional[str] = field(default=None, metadata={"title": "State"})
+    last_state: Optional[dict] = field(default=None, metadata={"title": "Last State"})
 
-    _raw: V1ContainerStatus | None = field(default=None, repr=False)
+    _raw: Optional[V1ContainerStatus] = field(default=None, repr=False)
 
     @classmethod
     def clean(cls, data: V1ContainerStatus) -> "ContainerStatusModel":
@@ -252,21 +252,21 @@ class ContainerStatusModel(ViewModel):
 
 @dataclass
 class ContainerModel(ViewModel):
-    name: str | None = field(default="", metadata={"title": "Name"})
+    name: Optional[str] = field(default="", metadata={"title": "Name"})
     image: str = field(default="", metadata={"title": "Image"})
     image_pull_policy: str = field(default="", metadata={"title": "Pull Policy"})
-    environmnet: List[V1EnvVar] | str = field(default="", metadata={"title": "Environment"})
+    environmnet: Union[List[V1EnvVar], str] = field(default="", metadata={"title": "Environment"})
     arguments: str = field(default="", metadata={"title": "Arguments"})
     command: str = field(default="", metadata={"title": "Command"})
-    container_statuses: ContainerStatusModel | None = field(default=None, metadata={"title": "Status"})
-    ports: List[V1ContainerPort] | None = field(default=None, metadata={"title": "Port"})
-    volume_mounts: List[V1VolumeMount] | None = field(default=None, metadata={"title": "Volume Mount"})
-    resources: V1ResourceRequirements | None = field(default=None, metadata={"title": "Resources"})
-    probe: dict[str, V1Probe|None] | None = field(default=None, metadata={"title": "Probe"})
+    container_statuses: Optional[ContainerStatusModel] = field(default=None, metadata={"title": "Status"})
+    ports: Optional[List[V1ContainerPort]] = field(default=None, metadata={"title": "Port"})
+    volume_mounts: Optional[List[V1VolumeMount]] = field(default=None, metadata={"title": "Volume Mount"})
+    resources: Optional[V1ResourceRequirements] = field(default=None, metadata={"title": "Resources"})
+    probe: Optional[dict[str, Optional[V1Probe]]] = field(default=None, metadata={"title": "Probe"})
 
 
     # _raw is used to cache the raw container data
-    _raw: V1Container | None = field(default=None, repr=False)
+    _raw: Optional[V1Container] = field(default=None, repr=False)
 
     @classmethod
     def clean(cls, data: V1Container) -> "ContainerModel":
@@ -297,7 +297,7 @@ class PodViewModel(ViewModel):
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     node: str = field(metadata={"title": "Node", "width": 10})
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
-    containers: str | List[ContainerModel] = field(metadata={"title": "Containers", "width": 9, "after": "affinities"})
+    containers: Union[str, List[ContainerModel]] = field(metadata={"title": "Containers", "width": 9, "after": "affinities"})
     restarts: str = field(metadata={"title": "Restarts", "width": 8})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 9})
     qos: str = field(metadata={"title": "QoS", "width": 9})
@@ -376,7 +376,7 @@ class PodDetailModel(PodViewModel):
     tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})
 
-    _raw: V1Pod |None = field(default=None, repr=False)
+    _raw: Optional[V1Pod] = field(default=None, repr=False)
 
     @classmethod
     def clean(cls, data: V1Pod) -> "PodDetailModel":

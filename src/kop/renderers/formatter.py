@@ -4,6 +4,7 @@ from rich.panel import Panel
 from rich.columns import Columns
 from rich.console import Group
 from rich.padding import Padding
+from typing import Optional
 
 
 
@@ -81,7 +82,7 @@ def resources_formatter(desc):
     Request 200Mi     Request 200m      Request xx
     """
 
-    def create_panel(title: str, request: str | None, limit: str | None) -> Panel:
+    def create_panel(title: str, request: Optional[str], limit: Optional[str]) -> Panel:
         table = Table.grid(padding=(0, 1))
         table.add_column(justify="left")
         table.add_column(justify="left")

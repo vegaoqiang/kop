@@ -6,7 +6,7 @@ from kop.widgets.Modals import PortForward
 from kop.provider.forward import PortForwardSpec, PodPortForwardManager
 from kubernetes.client import CoreV1Api
 from kubernetes.client.models import V1ContainerPort, V1ServicePort
-from typing import Any
+from typing import Any, Optional, Tuple
 
 
 
@@ -41,7 +41,7 @@ class PodPortItem(ListItem):
             return f"{self.base_text} (local: {self._forward_local_port})"
         return self.base_text
 
-    def set_forward_local_port(self, local_port: int | None) -> None:
+    def set_forward_local_port(self, local_port: Optional[int]) -> None:
         self._forward_local_port = local_port
         link = self.query_one(Link)
         if local_port is None:
@@ -98,7 +98,7 @@ class DescPorts(Static):
     def __init__(self, desc: Any):
         super().__init__()
         self.desc = desc
-        self._pending_port_item: PodPortItem | None = None
+        self._pending_port_item: Optional[PodPortItem] = None
         self._is_service_ports = any(isinstance(item, V1ServicePort) for item in self.desc)
 
     def compose(self) -> ComposeResult:
@@ -119,7 +119,7 @@ class DescPorts(Static):
             setattr(self.app, "port_forward_manager", manager)
         return manager
 
-    def _get_resource_context(self) -> tuple[str, str, str] | None:
+    def _get_resource_context(self) -> Optional[Tuple[str, str, str]]:
         data = getattr(self.screen, "data", None)
         if not data:
             return None
@@ -141,7 +141,7 @@ class DescPorts(Static):
         _, forward = entry
         return forward
 
-    def _make_forward_key(self, remote_port: int) -> str | None:
+    def _make_forward_key(self, remote_port: int) -> Optional[str]:
         context = self._get_resource_context()
         if not context:
             return None
@@ -251,7 +251,7 @@ class DescPorts(Static):
         )
         
 
-    def _hander_start_forward(self, obj: dict | None) -> None:
+    def _hander_start_forward(self, obj: Optional[dict]) -> None:
         if not obj or not self._pending_port_item:
             return
 

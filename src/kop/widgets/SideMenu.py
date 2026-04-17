@@ -5,7 +5,7 @@ from textual.binding import Binding
 from textual.app import ComposeResult
 from textual.reactive import Reactive, var
 from textual.widgets import ListItem, ListView, Label, Input, Static
-from typing import List
+from typing import List, Optional
 from types import SimpleNamespace
 
 
@@ -63,10 +63,10 @@ class SideMenu(Static):
     search_timer = None
     debounce_time: float = 0.3
     # highlighted item
-    highlight_item: ListItem | None = None
+    highlight_item: Optional[ListItem] = None
 
     # selected item
-    selected_item_id: str | None = None
+    selected_item_id: Optional[str] = None
 
     # the cursor index of the highlighted item
     cursor_index: var[int] = var(0)
@@ -87,7 +87,7 @@ class SideMenu(Static):
     @on(ListView.Highlighted)
     async def handle_highlighted(self, event: ListView.Highlighted):
         """when menu item is highlighted or clicked"""
-        item: ListItem | None = event.item
+        item: Optional[ListItem] = event.item
         if not item:
             return
         if not item.id:

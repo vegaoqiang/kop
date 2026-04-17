@@ -6,7 +6,7 @@ from rich.style import Style
 from rich.syntax import Syntax
 from textual.containers import Grid
 from textual.widgets import Collapsible
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 from kop.widgets.Expandable import ExpandableText
 
 
@@ -23,8 +23,8 @@ class Title(Static):
     def __init__(self, 
                  text: str, 
                  expand: bool = False, 
-                 color: str | None = None,
-                 bg: str | None = None) -> None:
+                 color: Optional[str] = None,
+                 bg: Optional[str] = None) -> None:
         """
         :param str text:  text string
         :param bool expand: define the title col expand in row
@@ -48,8 +48,8 @@ class Desc(Static):
 
     def __init__(self, 
                  desc: Any,
-                 formatter: Callable | None = None,
-                 style: str | None = None,
+                 formatter: Optional[Callable] = None,
+                 style: Optional[str] = None,
                  ):
         super().__init__()
         self.desc = desc

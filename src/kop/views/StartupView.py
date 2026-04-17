@@ -13,6 +13,7 @@ from kop.provider.config import Config, ConfigModel
 from kop.views.ResourceView import ResourceView
 from kop.widgets.Directory import CustomDirectoryTree
 from kop.provider.client import KbsEndpoint
+from typing import Optional
 
 
 
@@ -102,8 +103,8 @@ class ConfigView(Screen):
         self.column_length = column_length
         self.set_reactive(ConfigView.KubeConfigs, kubeconfigs)
         self.border_title = "Clusters"
-        self.selected: ConfigModel | None = None
-        self.selected_item: ConfigItem | None = None
+        self.selected: Optional[ConfigModel] = None
+        self.selected_item: Optional[ConfigItem] = None
 
 
     def compose(self) -> ComposeResult:
@@ -365,7 +366,7 @@ class AddClusterScreen(Screen):
         ("escape", "close", "Cancel"),
     ]
 
-    def __init__(self, config: ConfigModel|None = None):
+    def __init__(self, config: Optional[ConfigModel] = None):
         super().__init__()
         self.config = config
 
@@ -478,7 +479,7 @@ class SyncClusterScreen(ModalScreen):
         Binding(key="escape", action="close", description="Cancel and go back", show=True),
     ]
 
-    selected: Path | None = None
+    selected: Optional[Path] = None
 
     def compose(self) -> ComposeResult:
         with Container(id="container"):
@@ -554,7 +555,7 @@ class SelectContextScreen(ModalScreen):
         Binding(key="shift+enter", action="confirm", description="Confirm", show=False),
     ]
     
-    def __init__(self, config: ConfigModel|None = None):
+    def __init__(self, config: Optional[ConfigModel] = None):
         super().__init__()
         self.config = config
         self.option = [(x, x) for x in config.contexts]

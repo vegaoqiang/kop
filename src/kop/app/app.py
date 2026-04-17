@@ -1,11 +1,12 @@
 import os
 import argparse
 import difflib
-from textual.app import App, ComposeResult
+from textual.app import App
 from kop.views.ResourceView import ResourceView
 from kop.views.StartupView import ConfigView
 from kop.provider.config import ConfigModel, Config
 from kop.provider.client import KbsEndpoint
+from typing import Optional
 
 
 
@@ -13,7 +14,7 @@ from kop.provider.client import KbsEndpoint
 class Kop(App):
     TITLE = "Kop"
 
-    def __init__(self, config_file: str | None = None, **kwargs):
+    def __init__(self, config_file: Optional[str] = None, **kwargs):
         """
         `config_file` is the path to the local kubuconfig file 
         specified by the user when starting Kop using the 
@@ -21,7 +22,7 @@ class Kop(App):
         """
 
         super().__init__(**kwargs)
-        self.endpoint: KbsEndpoint | None = None
+        self.endpoint: Optional[KbsEndpoint] = None
         self.config_file = config_file
 
     def on_mount(self) -> None:
@@ -45,7 +46,7 @@ class Kop(App):
         return Config().get_configs()
     
 
-def get_args() -> str | None:
+def get_args() -> Optional[str]:
     """
     retrieves the value of the `--kubeconfig` parameter specified on the command line when starting Kop.
     includes typo suggestion and validation.

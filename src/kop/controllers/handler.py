@@ -9,6 +9,7 @@ from kop.views.PodAttach import Attach
 from kop.views.EditView import ResourceEditScreen
 from kop.widgets.Modals import Option, Delete, Scale, Confirm
 from kubernetes import client
+from typing import Optional
 
 
 
@@ -134,7 +135,7 @@ class DeploymentActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def scale(action, resource: models.DeploymentViewModel, app):
-        def scale_callback(replicas: int | None) -> None:
+        def scale_callback(replicas: Optional[int]) -> None:
             if replicas is None:
                 return
 
@@ -164,7 +165,7 @@ class DeploymentActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def restart(action, resource: models.DeploymentViewModel, app):
-        def restart_callback(data: models.DeploymentViewModel | None) -> None:
+        def restart_callback(data: Optional[models.DeploymentViewModel]) -> None:
             if data is None:
                 return
 
@@ -244,7 +245,7 @@ class DaemonSetActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def restart(action, resource: models.DaemonSetViewModel, app):
-        def restart_callback(data: models.DaemonSetViewModel | None) -> None:
+        def restart_callback(data: Optional[models.DaemonSetViewModel]) -> None:
             if data is None:
                 return
 
@@ -332,7 +333,7 @@ class StatefueSetActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def scale(action, resource: models.StatefulSetViewModel, app):
-        def scale_callback(replicas: int | None) -> None:
+        def scale_callback(replicas: Optional[int]) -> None:
             if replicas is None:
                 return
 
@@ -361,7 +362,7 @@ class StatefueSetActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def restart(action, resource: models.StatefulSetViewModel, app):
-        def restart_callback(data: models.StatefulSetViewModel | None) -> None:
+        def restart_callback(data: Optional[models.StatefulSetViewModel]) -> None:
             if data is None:
                 return
 
@@ -507,7 +508,7 @@ class CronJobActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def trigger(action, resource: models.CronJobViewModel, app):
-        def trigger_callback(data: models.CronJobViewModel | None) -> None:
+        def trigger_callback(data: Optional[models.CronJobViewModel]) -> None:
             if data is None:
                 return
 
@@ -568,7 +569,7 @@ class CronJobActionHandler(BaseActionHandlerMixin):
         is_suspended = str(resource.suspend).lower() == "true"
         confirm_action_name = "Resume" if is_suspended else "Suspend"
 
-        def suspend_callback(data: models.CronJobViewModel | None) -> None:
+        def suspend_callback(data: Optional[models.CronJobViewModel]) -> None:
             if data is None:
                 return
 
@@ -858,7 +859,7 @@ class IngressClassActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def set_default(action, resource: models.IngressClassViewModel, app):
-        def set_default_callback(data: models.IngressClassViewModel | None) -> None:
+        def set_default_callback(data: Optional[models.IngressClassViewModel]) -> None:
             if data is None:
                 return
 
@@ -927,7 +928,7 @@ class IngressClassActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.IngressClassViewModel, app):
-        def delete_callback(data: models.IngressClassViewModel | None) -> None:
+        def delete_callback(data: Optional[models.IngressClassViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -985,7 +986,7 @@ class NetworkPolicyActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.NetworkPolicyViewModel, app):
-        def delete_callback(data: models.NetworkPolicyViewModel | None) -> None:
+        def delete_callback(data: Optional[models.NetworkPolicyViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -1052,7 +1053,7 @@ class PersistentVolumeActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.PersistentVolumeViewModel, app):
-        def delete_callback(data: models.PersistentVolumeViewModel | None) -> None:
+        def delete_callback(data: Optional[models.PersistentVolumeViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -1110,7 +1111,7 @@ class PersistentVolumeClaimActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.PersistentVolumeClaimViewModel, app):
-        def delete_callback(data: models.PersistentVolumeClaimViewModel | None) -> None:
+        def delete_callback(data: Optional[models.PersistentVolumeClaimViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -1177,7 +1178,7 @@ class StorageClassActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.StorageClassViewModel, app):
-        def delete_callback(data: models.StorageClassViewModel | None) -> None:
+        def delete_callback(data: Optional[models.StorageClassViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -1241,7 +1242,7 @@ class NamespaceActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.NamespaceViewModel, app):
-        def delete_callback(data: models.NamespaceViewModel | None) -> None:
+        def delete_callback(data: Optional[models.NamespaceViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -1299,7 +1300,7 @@ class ServiceAccountActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.ServiceAccountViewModel, app):
-        def delete_callback(data: models.ServiceAccountViewModel | None) -> None:
+        def delete_callback(data: Optional[models.ServiceAccountViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -1360,7 +1361,7 @@ class RoleActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.RoleViewModel, app):
-        def delete_callback(data: models.RoleViewModel | None) -> None:
+        def delete_callback(data: Optional[models.RoleViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -1427,7 +1428,7 @@ class ClusterRoleActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.ClusterRoleViewModel, app):
-        def delete_callback(data: models.ClusterRoleViewModel | None) -> None:
+        def delete_callback(data: Optional[models.ClusterRoleViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -1485,7 +1486,7 @@ class RoleBindingActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.RoleBindingViewModel, app):
-        def delete_callback(data: models.RoleBindingViewModel | None) -> None:
+        def delete_callback(data: Optional[models.RoleBindingViewModel]) -> None:
             if data is None:
                 return
             try:
@@ -1552,7 +1553,7 @@ class ClusterRoleBindingActionHandler(BaseActionHandlerMixin):
 
     @staticmethod
     def delete(action, resource: models.ClusterRoleBindingViewModel, app):
-        def delete_callback(data: models.ClusterRoleBindingViewModel | None) -> None:
+        def delete_callback(data: Optional[models.ClusterRoleBindingViewModel]) -> None:
             if data is None:
                 return
             try:

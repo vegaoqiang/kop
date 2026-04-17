@@ -15,6 +15,7 @@ from kop.widgets.Edit import DataEdit
 from kop.controllers.handler import ActionRegistry
 from kop.provider.events import EventService
 from kop.widgets.Endpoint import ServiceEndpoints
+from typing import Optional
 
 
 
@@ -153,7 +154,7 @@ def render_podfailurepolicy(title: str, desc: dict) -> ComposeResult:
 
 @RendererRegistry.register_renderer('data')
 def render_configmap_data(title: str, desc: dict) -> ComposeResult:
-    def guess_data_language(key: str, value) -> str|None:
+    def guess_data_language(key: str, value) -> Optional[str]:
         if not isinstance(value, str):
             return "yaml"
 
@@ -267,9 +268,9 @@ class DetailModalRenderer(ModalScreen):
         ("escape", "close", "Close"),
     ]
 
-    event_service: EventService | None = None
+    event_service: Optional[EventService] = None
 
-    def __init__(self, columns: list, data, actions: list, kind: str | None = None, **kwargs):
+    def __init__(self, columns: list, data, actions: list, kind: Optional[str] = None, **kwargs):
         """
         :param data: PodDetailModel
         """
@@ -304,7 +305,7 @@ class DetailModalRenderer(ModalScreen):
             detail.mount(ServiceEndpoints(data=self.data))
         self._make_event_service(detail)
 
-    def _make_event_service(self, detail: VerticalScroll | None = None):
+    def _make_event_service(self, detail: Optional[VerticalScroll] = None):
         service = getattr(self.app, "event_service", None)
         if service:
             self.event_service = service

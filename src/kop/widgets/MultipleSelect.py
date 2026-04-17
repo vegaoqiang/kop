@@ -13,7 +13,7 @@ from textual.css.query import NoMatches
 from textual.content import Content
 from rich.text import Text
 from dataclasses import dataclass
-from typing import Generic
+from typing import Generic, Optional
 
 
 
@@ -87,13 +87,13 @@ class MultipleSelectOverlay(SelectionList):
                 # highlight the search matched item
                 self.highlighted = index
 
-    def check_consume_key(self, key: str, character: str | None = None) -> bool:
+    def check_consume_key(self, key: str, character: Optional[str] = None) -> bool:
         """Check if the widget may consume the given key."""
         return (
             self._type_to_search and character is not None and character.isprintable()
         )
 
-    def _find_search_match(self, query: str) -> int | None:
+    def _find_search_match(self, query: str) -> Optional[int]:
         """A simple substring search which favors options containing the substring
         earlier in the prompt.
 
@@ -103,8 +103,8 @@ class MultipleSelectOverlay(SelectionList):
         Returns:
             The index of the option that matches the query, or `None` if no match is found.
         """
-        best_match: int | None = None
-        minimum_index: int | None = None
+        best_match: Optional[int] = None
+        minimum_index: Optional[int] = None
 
         query = query.lower()
         for index, option in enumerate(self.options):

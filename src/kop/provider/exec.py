@@ -10,7 +10,7 @@ import json
 
 class PodExec:
 
-    def __init__(self, api_client: ApiClient, pod_name: str, namespace: str = "default", command=None, container_name: str|None = None):
+    def __init__(self, api_client: ApiClient, pod_name: str, namespace: str = "default", command=None, container_name: Optional[str] = None):
         self.core_api = CoreV1Api(api_client=api_client)
         self.pod = pod_name
         self.namespace = namespace
@@ -128,14 +128,3 @@ class PodExec:
         self.close()
         return False
     
-
-
-
-if __name__ == '__main__':
-    from kube.client import KbsAuthLoader
-    from pprint import pprint
-    k = KbsAuthLoader(config_file="~/.kube/config")
-    exec = PodExec(k.api_client, "mysql8-0", "public")
-    with exec as e:
-        pprint(e.write_stdin("ls/\n"))
-        pprint(e.read_stdout())

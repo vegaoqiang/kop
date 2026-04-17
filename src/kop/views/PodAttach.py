@@ -4,12 +4,13 @@ from kop.widgets.Attach import PodAttachView
 from kop.provider.client import KbsAuthLoader
 from kop.provider.attach import PodAttach
 from kop.models import PodViewModel
+from typing import Optional
 
 
 
 class Attach(Screen):
 
-    def __init__(self, client: KbsAuthLoader, data: PodViewModel, container_name: str|None = None) -> None:
+    def __init__(self, client: KbsAuthLoader, data: PodViewModel, container_name: Optional[str] = None) -> None:
         super().__init__()
         self.attach = PodAttach(
             api_client=client.api_client, 

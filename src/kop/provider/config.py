@@ -3,6 +3,7 @@ import shutil
 import uuid
 from pathlib import Path
 from dataclasses import dataclass, field
+from typing import Optional, Union, Tuple
 
 
 
@@ -161,7 +162,7 @@ class Config:
         return self.load_config(self.kube_default_path.joinpath("config"))
     
         
-    def validate_config(self, path: Path | str) -> tuple[bool, dict | None]:
+    def validate_config(self, path: Union[Path, str]) -> Tuple[bool, Optional[dict]]:
         if isinstance(path, str):
             path = Path(path)
         # size of file, in bytes

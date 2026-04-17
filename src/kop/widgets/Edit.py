@@ -6,6 +6,7 @@ from textual.binding import Binding
 from textual.message import Message
 from yaml import safe_load, safe_dump
 from dataclasses import dataclass
+from typing import Optional
 
 
 
@@ -103,7 +104,7 @@ class DataEdit(Static):
         }
     """
 
-    def __init__(self, language: str|None = "yaml", resource=None, data_key: str = "", **kwargs):
+    def __init__(self, language: Optional[str] = "yaml", resource=None, data_key: str = "", **kwargs):
         super().__init__(**kwargs)
         self.language = language
         self.resource = resource if resource is not None else ""

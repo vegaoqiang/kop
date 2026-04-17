@@ -6,6 +6,7 @@ from textual.message import Message
 from textual.reactive import reactive
 from textual.color import Color
 from kop.registry import ActionRegistry
+from typing import Optional, Union
 
 
 
@@ -18,7 +19,7 @@ class BaseCol(Static):
         """
     text = reactive("")
 
-    def __init__(self, text: str|list, width: int,  **kwargs) -> None:
+    def __init__(self, text: Union[str,list], width: int,  **kwargs) -> None:
         if isinstance(text, list):
             text = str(len(text))
         self.set_reactive(BaseCol.text, text)
@@ -129,7 +130,7 @@ class TableRenderer(Vertical):
     data = reactive(list)
     raw_data = reactive(list)
     # save Selected or Highlighted row object
-    picked_row: BaseRow|None = None
+    picked_row: Optional[BaseRow] = None
 
     # not allow TableRenderer focus, let focus to ListView
     # focus on the first item when TableRenderer is focused
@@ -139,7 +140,7 @@ class TableRenderer(Vertical):
                 columns: list, 
                 data: list, 
                 raw_data: list, 
-                actions: list|None = None,
+                actions: Optional[list] = None,
                 **kwargs) -> None:
         
         super().__init__(**kwargs)

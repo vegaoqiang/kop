@@ -4,7 +4,7 @@ from textual.screen import Screen
 from textual.app import ComposeResult
 from textual.widgets import LoadingIndicator
 from kop.widgets.Edit import ResourceEdit, PlayLoad
-from typing import Callable
+from typing import Callable, Optional
 
 
 
@@ -17,7 +17,7 @@ class AsyncEditScreen(Screen):
     """
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
-        self.editor: ResourceEdit | None = None
+        self.editor: Optional[ResourceEdit] = None
 
     def compose(self) -> ComposeResult:
         yield LoadingIndicator()

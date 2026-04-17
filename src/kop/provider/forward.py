@@ -5,7 +5,7 @@ import select
 import socket
 import threading
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Optional
 
 from kubernetes.client import ApiClient, CoreV1Api
 from kubernetes.stream import portforward
@@ -47,9 +47,9 @@ class PodPortForward:
         self._validate_port(remote_port, "remote_port")
 
         self._stop_event = threading.Event()
-        self._thread: threading.Thread | None = None
+        self._thread: Optional[threading.Thread] = None
         self._event_queue: queue.Queue[Exception] = queue.Queue()
-        self._server_socket: socket.socket | None = None
+        self._server_socket: Optional[socket.socket] = None
         self._active_clients: set[socket.socket] = set()
         self._lock = threading.Lock()
 
@@ -144,7 +144,7 @@ class PodPortForward:
 
     def _handle_client(self, client: socket.socket) -> None:
         forwarder = None
-        upstream: socket.socket | None = None
+        upstream: Optional[socket.socket] = None
         try:
             forwarder = portforward(
                 self.core_api.connect_get_namespaced_pod_portforward,
@@ -225,7 +225,7 @@ class PodPortForwardManager:
         spec: PortForwardSpec,
         *,
         start: bool = True,
-        key: str | None = None,
+        key: Optional[str] = None,
     ) -> str:
         forward = PodPortForward(
             api_client=api_client,

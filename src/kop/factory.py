@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any, List, Optional
 from abc import ABC, abstractmethod
 from pathlib import Path
 from copy import copy, deepcopy
@@ -45,7 +45,7 @@ class BaseFactory(ABC):
         self.endpoint = endpoint
 
     @abstractmethod
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         """fetch raw data from kube api"""
         raise NotImplementedError
     
@@ -77,7 +77,7 @@ class BaseFactory(ABC):
         """create resource"""
         raise NotImplementedError(f"{self.__class__.__name__} does not support create")
 
-    def load_template(self, namespace: str | None = None) -> dict:
+    def load_template(self, namespace: Optional[str] = None) -> dict:
         """load new resource template from file"""
         template_path = Path(__file__).resolve().parent / "templates" / "resource" / f"{self.resource_type}.yaml"
         if not template_path.exists():
@@ -206,7 +206,7 @@ class PodFacotry(BaseFactory):
                     action="delete", 
                     key="d")]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         # client = self._client.core_v1()
         return self.endpoint.list_pods(namespace=namespace)
     
@@ -305,7 +305,7 @@ class DeploymentFactory(BaseFactory):
                     action="delete", 
                     key="d")]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         # client = self._client.apps_v1()
         return self.endpoint.list_deployments(namespace=namespace)
     
@@ -381,7 +381,7 @@ class DaemonSetFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_daemon_sets(namespace=namespace)
 
     def delete(self, name, namespace: str = "default"):
@@ -449,7 +449,7 @@ class StatefulSetFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_stateful_sets(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -502,7 +502,7 @@ class JobFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_jobs(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -569,7 +569,7 @@ class CronJobFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_cron_jobs(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -624,7 +624,7 @@ class ConfigMapFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_config_maps(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -682,7 +682,7 @@ class SecretFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_secrets(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -746,7 +746,7 @@ class ServiceFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_services(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -811,7 +811,7 @@ class EndpointFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_endpoints(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -875,7 +875,7 @@ class IngressFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_ingresses(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -945,7 +945,7 @@ class IngressClassFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_ingressclasses()
     
     def delete(self, name, namespace: str = "default"):
@@ -1008,7 +1008,7 @@ class NetworkPolicyFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_networkpolicies(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -1073,7 +1073,7 @@ class PersistentVolumeFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_persistentvolumes()
     
     def delete(self, name, namespace: str = "default"):
@@ -1139,7 +1139,7 @@ class PersistentVolumeClaimFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_persistentvolumeclaims(namespace=namespace)
     
     def delete(self, name, namespace: str = "default"):
@@ -1202,7 +1202,7 @@ class StorageClassFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_storageclasses()
     
     def delete(self, name, namespace: str = "default"):
@@ -1260,7 +1260,7 @@ class NamespaceFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_namespaces()
     
     def delete(self, name, namespace: str = "default"):
@@ -1318,7 +1318,7 @@ class ServiceAccountFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_serviceaccounts()
     
     def delete(self, name, namespace: str = "default"):
@@ -1376,7 +1376,7 @@ class RoleFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_roles()
     
     def delete(self, name, namespace: str = "default"):
@@ -1434,7 +1434,7 @@ class ClusterRoleFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_cluster_roles()
     
     def delete(self, name, namespace: str = "default"):
@@ -1492,7 +1492,7 @@ class RoleBindingFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_role_bindings()
     
     def delete(self, name, namespace: str = "default"):
@@ -1550,7 +1550,7 @@ class ClusterRoleBindingFactory(BaseFactory):
                     key="d")
     ]
 
-    def fetch(self, namespace: str | None = None):
+    def fetch(self, namespace: Optional[str] = None):
         return self.endpoint.list_cluster_role_bindings()
     
     def delete(self, name, namespace: str = "default"):
