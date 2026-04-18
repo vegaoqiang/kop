@@ -1,6 +1,7 @@
 import asyncio
 from pathlib import Path
 from textual import on, work
+from textual.worker import get_current_worker
 from textual.binding import Binding
 from textual.reactive import Reactive
 from textual.app import App, ComposeResult
@@ -14,6 +15,7 @@ from kop.views.ResourceView import ResourceView
 from kop.widgets.Directory import CustomDirectoryTree
 from kop.provider.client import KbsEndpoint
 from typing import Optional
+from kubernetes import client, config as kube_config
 
 
 
@@ -133,6 +135,9 @@ class ConfigView(Screen):
         self._focus_item()
         self.call_after_refresh(self._set_container_title)
 
+        if self.KubeConfigs:
+            self.call_after_refresh(self.load_cluster_version, self.KubeConfigs)
+
     def on_screen_resume(self):
         """
         back from previous screen then focus the selected item.
@@ -241,6 +246,8 @@ class ConfigView(Screen):
         configs = Config().get_configs()
         self.KubeConfigs.extend(configs)
         self.mutate_reactive(ConfigView.KubeConfigs)
+        # if self.KubeConfigs:
+        #     self.call_after_refresh(self.load_cluster_version, self.KubeConfigs)
 
     def _focus_item(self) -> None:
         try:
@@ -284,7 +291,55 @@ class ConfigView(Screen):
         event.stop()
         self.selected = event.config
         self.selected_item = event._sender
-        
+    
+    def _update_cluster_version(self, config: ConfigModel, version: str = "") -> None:
+        config.version = version
+        for item in self.query(ConfigItem):
+            if item.config.path == config.path:
+                print("_update_cluster_version:", version)
+                item.version = version
+                item.ready = True if version else False
+                break
+
+    @work(thread=True, exclusive=True)
+    async def load_cluster_version(self, configs: list[ConfigModel]) -> None:
+        semaphore = asyncio.Semaphore(5)
+        async def worker(config: ConfigModel) -> None:
+            async with semaphore:
+                try:
+                    version = await asyncio.wait_for(
+                        asyncio.to_thread(self._fetch_cluster_version, config),
+                        timeout=5,
+                    )
+                    print("load_cluster_version:", version)
+                except Exception:
+                    version = ""
+                    self.log("Failed to fetch cluster version")
+                self.app.call_from_thread(self._update_cluster_version, config, version)
+
+        await asyncio.gather(*(worker(c) for c in configs))
+
+    def _fetch_cluster_version(self, config: ConfigModel) ->Optional[str]:
+        context = config.current_context
+        configuration = client.Configuration()
+        api_client: Optional[client.ApiClient] = None
+        try:
+            kube_config.load_kube_config(
+                config_file=config.path,
+                context=context,
+                client_configuration=configuration,
+                persist_config=False,
+            )
+            api_client = client.ApiClient(configuration=configuration)
+            version_info = client.VersionApi(api_client=api_client).get_code(_request_timeout=5)
+            git_version = getattr(version_info, "git_version", "")
+            return git_version.strip()
+        except Exception:
+            self.log("Failed to fetch cluster version")
+            return None
+        finally:
+            if api_client:
+                api_client.close()
 
 
 class DeleteConfigConfirmScreen(ModalScreen):

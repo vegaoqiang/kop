@@ -1,11 +1,9 @@
 from textual.widgets import Static
 from textual.message import Message
-from textual import work
-from textual.worker import get_current_worker
+from textual.reactive import Reactive
 from rich.panel import Panel
 from rich.table import Table
 from kop.provider.config import ConfigModel
-from kubernetes import client, config as kube_config
 from typing import Optional
 
 
@@ -41,8 +39,11 @@ class ConfigItem(Focusable):
         }
     """
 
+    # kubernetes cluster is ready and can be connect, True/False
+    ready: Reactive[Optional[bool]] = Reactive(None)
+    version: Reactive[str] = Reactive("")
+
     def __init__(self, config: ConfigModel, **kwargs):
-        # panel = Panel(f"[b]{config.name}[/b]\n[cyan]{config.server}", expand=True)
         table = Table.grid(expand=True)
         table.add_column(justify="left", ratio=30)
         table.add_column(justify="left", ratio=70)
@@ -58,61 +59,26 @@ class ConfigItem(Focusable):
         )
         super().__init__(panel, **kwargs)
         self.config = config
-        self.worker = None
 
     def on_focus(self) -> None:
         self.post_message(ConfigItem.Selected(self.config).set_sender(self))
 
-    def on_mount(self) -> None:
-        """
-        load cluster version, set into Panel title
-        """
-        self.call_after_refresh(self.load_cluster_version)
-
-    def on_unmount(self) -> None:
-        if self.worker and self.worker.is_running:
-            self.worker.cancel()
-
     @staticmethod
     def _build_title(version: str = "") -> str:
-        normalized = version.lstrip("v")
-        if not normalized:
-            return "[b][red]☸ NotReady[/b]"
-        return f"[b][green]☸[/b] v{normalized}"
+        if not version:
+            return "[b]☸[/b]"
+        return f"[b]☸[/b] {version}"
 
-    def _update_panel_title(self, version: str) -> None:
-        self.config.version = version
-        self.panel.title = self._build_title(version)
+    def watch_ready(self, value: bool) -> None:
+        self.panel.border_style = "green" if value else "red"
+        if value == False:
+            # set NotReady into title
+            self.panel.title = self._build_title(version="NotReady")
+
+    def watch_version(self, value: str) -> None:
+        self.panel.title = self._build_title(value)
         self.update(self.panel)
 
-    @work(thread=True, exclusive=True)
-    def load_cluster_version(self) -> None:
-        self.worker = worker = get_current_worker()
-        version = self._fetch_cluster_version()
-        if worker.is_cancelled or not version:
-            return
-        self.app.call_from_thread(self._update_panel_title, version)
-
-    def _fetch_cluster_version(self) ->Optional[str]:
-        context = self.config.current_context
-        configuration = client.Configuration()
-        api_client: Optional[client.ApiClient] = None
-        try:
-            kube_config.load_kube_config(
-                config_file=self.config.path,
-                context=context,
-                client_configuration=configuration,
-                persist_config=False,
-            )
-            api_client = client.ApiClient(configuration=configuration)
-            version_info = client.VersionApi(api_client=api_client).get_code(_request_timeout=3)
-            git_version = getattr(version_info, "git_version", "")
-            return git_version.lstrip("v")
-        except Exception:
-            return None
-        finally:
-            if api_client:
-                api_client.close()
         
     class Selected(Message):
         """export selected message."""
