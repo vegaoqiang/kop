@@ -1,5 +1,7 @@
 import asyncio
+from queue import Empty, Queue
 from pathlib import Path
+from threading import Thread
 from textual import on, work
 from textual.worker import get_current_worker
 from textual.binding import Binding
@@ -109,6 +111,9 @@ class ConfigView(Screen):
         self.selected: Optional[ConfigModel] = None
         self.selected_item: Optional[ConfigItem] = None
 
+        self.updater = None
+        self.version_worker = None
+
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -136,7 +141,20 @@ class ConfigView(Screen):
         self.call_after_refresh(self._set_container_title)
 
         if self.KubeConfigs:
-            self.call_after_refresh(self.load_cluster_version, self.KubeConfigs)
+            self.call_after_refresh(self._schedule_version_refresh)
+            self.updater = self.set_interval(10, self._schedule_version_refresh)
+
+    def on_unmount(self) -> None:
+        if self.updater:
+            self.updater.stop()
+        if self.version_worker:
+            self.version_worker.cancel()
+            self.version_worker = None
+
+    def _schedule_version_refresh(self) -> None:
+        if not self.KubeConfigs:
+            return
+        self.version_worker = self.load_cluster_version(list(self.KubeConfigs))
 
     def on_screen_resume(self):
         """
@@ -296,28 +314,40 @@ class ConfigView(Screen):
         config.version = version
         for item in self.query(ConfigItem):
             if item.config.path == config.path:
-                print("_update_cluster_version:", version)
                 item.version = version
                 item.ready = True if version else False
                 break
 
     @work(thread=True, exclusive=True)
-    async def load_cluster_version(self, configs: list[ConfigModel]) -> None:
-        semaphore = asyncio.Semaphore(5)
-        async def worker(config: ConfigModel) -> None:
-            async with semaphore:
-                try:
-                    version = await asyncio.wait_for(
-                        asyncio.to_thread(self._fetch_cluster_version, config),
-                        timeout=5,
-                    )
-                    print("load_cluster_version:", version)
-                except Exception:
-                    version = ""
-                    self.log("Failed to fetch cluster version")
+    def load_cluster_version(self, configs: list[ConfigModel]) -> None:
+        worker = get_current_worker()
+        for config in configs:
+            if worker.is_cancelled:
+                return
+            version = self._fetch_cluster_version_with_timeout(config, timeout=1.0)
+            if worker.is_cancelled:
+                return
+            try:
                 self.app.call_from_thread(self._update_cluster_version, config, version)
+            except Exception:
+                return
 
-        await asyncio.gather(*(worker(c) for c in configs))
+    def _fetch_cluster_version_with_timeout(self, config: ConfigModel, timeout: float = 1.0) -> str:
+        result: Queue[Optional[str]] = Queue(maxsize=1)
+
+        def _runner() -> None:
+            try:
+                result.put(self._fetch_cluster_version(config))
+            except Exception:
+                result.put(None)
+
+        thread = Thread(target=_runner, daemon=True, name=f"version-fetch-{config.name}")
+        thread.start()
+        try:
+            value = result.get(timeout=timeout)
+            return value or ""
+        except Empty:
+            return ""
 
     def _fetch_cluster_version(self, config: ConfigModel) ->Optional[str]:
         context = config.current_context
