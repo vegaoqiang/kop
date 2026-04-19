@@ -47,6 +47,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
  "pytest>=9.0.2",
+ "pytest-asyncio",
  "textual-dev>=1.8.0",
 ]
 
