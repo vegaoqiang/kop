@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from types import MethodType
+from types import MethodType, SimpleNamespace
 
 import pytest
 from textual.app import App
 from textual.screen import Screen
+from textual.widgets import Input, TextArea
 
 import kop.views.StartupView as startup_view
 from kop.provider.config import Config, ConfigModel
@@ -15,6 +16,7 @@ from kop.views.StartupView import (
     AddClusterScreen,
     ConfigView,
     DeleteConfigConfirmScreen,
+    SelectContextScreen,
     SyncClusterScreen,
 )
 from kop.widgets.Focusable import ConfigItem
@@ -22,6 +24,15 @@ from kop.widgets.Focusable import ConfigItem
 
 class StartupHarnessApp(App[None]):
     def __init__(self, view: ConfigView) -> None:
+        super().__init__()
+        self._view = view
+
+    def on_mount(self) -> None:
+        self.push_screen(self._view)
+
+
+class AddClusterHarnessApp(App[None]):
+    def __init__(self, view: AddClusterScreen) -> None:
         super().__init__()
         self._view = view
 
@@ -270,3 +281,456 @@ def test_fetch_cluster_version_returns_trimmed_git_version_and_closes_client(
     assert load_calls == [("/tmp/cluster-a.yaml", "ctx-a", False)]
     assert len(created_clients) == 1
     assert created_clients[0].closed is True
+
+
+def test_add_cluster_screen_prefills_name_and_content_on_mount(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = _config("cluster-a", "/tmp/cluster-a.yaml", contexts=["ctx-a"])
+    screen = AddClusterScreen(config=base)
+    app = AddClusterHarnessApp(screen)
+    monkeypatch.setattr(ConfigModel, "to_str", lambda self: "apiVersion: v1\n")
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            assert screen.query_one(Input).value == "cluster-a"
+            assert screen.query_one(TextArea).text == "apiVersion: v1\n"
+
+    asyncio.run(_run())
+
+
+def test_add_cluster_screen_clear_button_clears_textarea() -> None:
+    screen = AddClusterScreen()
+    app = AddClusterHarnessApp(screen)
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            textarea = screen.query_one(TextArea)
+            textarea.text = "clusters:\n- name: demo\n"
+            await pilot.click("#clear")
+            await pilot.pause()
+            assert textarea.text == ""
+
+    asyncio.run(_run())
+
+
+def test_add_cluster_screen_cancel_button_pops_screen(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    screen = AddClusterScreen()
+    app = AddClusterHarnessApp(screen)
+    pop_calls: list[bool] = []
+
+    def _fake_pop_screen(self: App):
+        pop_calls.append(True)
+
+    monkeypatch.setattr(app, "pop_screen", MethodType(_fake_pop_screen, app))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.click("#cancel")
+            await pilot.pause()
+            assert pop_calls == [True]
+
+    asyncio.run(_run())
+
+
+def test_add_cluster_screen_save_new_config_with_cluster_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    screen = AddClusterScreen()
+    app = AddClusterHarnessApp(screen)
+
+    class FakeClusterContentValidator:
+        def __init__(self, _content: str) -> None:
+            pass
+
+        @property
+        def validate(self) -> bool:
+            return True
+
+        @property
+        def format(self) -> dict:
+            return {
+                "contexts": [{"context": {"cluster": "old", "user": "u1"}}],
+                "clusters": [{"name": "old", "cluster": {"server": "https://old"}}],
+                "users": [{"name": "u1"}],
+            }
+
+    updated_yaml = {
+        "contexts": [{"context": {"cluster": "new-name", "user": "u1"}}],
+        "clusters": [{"name": "new-name", "cluster": {"server": "https://old"}}],
+        "users": [{"name": "u1"}],
+    }
+    update_calls: list[tuple[dict, str]] = []
+    save_calls: list[dict] = []
+    from_yaml_calls: list[tuple[dict, Path]] = []
+    dismissed: list[object] = []
+    expected_model = _config("new-name", "/tmp/generated.yaml", contexts=["ctx-a"])
+
+    def _fake_update_cluster_name(self: Config, yaml_obj: dict, cluster_name: str) -> dict:
+        update_calls.append((yaml_obj, cluster_name))
+        return updated_yaml
+
+    def _fake_save_config(self: Config, yaml_obj: dict) -> Path:
+        save_calls.append(yaml_obj)
+        return Path("/tmp/generated.yaml")
+
+    def _fake_from_yaml(cls, yaml_obj: dict, path: Path):
+        from_yaml_calls.append((yaml_obj, path))
+        return expected_model
+
+    def _fake_dismiss(self: AddClusterScreen, result):
+        dismissed.append(result)
+
+    monkeypatch.setattr(startup_view, "ClusterContentValidator", FakeClusterContentValidator)
+    monkeypatch.setattr(Config, "update_cluster_name", _fake_update_cluster_name)
+    monkeypatch.setattr(Config, "save_config", _fake_save_config)
+    monkeypatch.setattr(ConfigModel, "from_yaml", classmethod(_fake_from_yaml))
+    monkeypatch.setattr(screen, "dismiss", MethodType(_fake_dismiss, screen))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            screen.query_one(Input).value = "new-name"
+            screen.query_one(TextArea).text = "fake-config"
+            await pilot.click("#save")
+            await pilot.pause()
+
+            assert update_calls and update_calls[0][1] == "new-name"
+            assert save_calls == [updated_yaml]
+            assert from_yaml_calls == [
+                (
+                    update_calls[0][0],
+                    Path("/tmp/generated.yaml"),
+                )
+            ]
+            assert dismissed == [expected_model]
+
+    asyncio.run(_run())
+
+
+def test_add_cluster_screen_save_edit_config_rejects_multiple_clusters(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = _config("cluster-a", "/tmp/cluster-a.yaml", contexts=["ctx-a"])
+    screen = AddClusterScreen(config=base)
+    app = AddClusterHarnessApp(screen)
+    monkeypatch.setattr(ConfigModel, "to_str", lambda self: "apiVersion: v1\n")
+
+    class FakeClusterContentValidator:
+        def __init__(self, _content: str) -> None:
+            pass
+
+        @property
+        def validate(self) -> bool:
+            return True
+
+        @property
+        def format(self) -> dict:
+            return {
+                "contexts": [
+                    {"context": {"cluster": "a", "user": "u1"}},
+                    {"context": {"cluster": "b", "user": "u2"}},
+                ],
+                "clusters": [
+                    {"name": "a", "cluster": {"server": "https://a"}},
+                    {"name": "b", "cluster": {"server": "https://b"}},
+                ],
+                "users": [{"name": "u1"}, {"name": "u2"}],
+            }
+
+    update_calls: list[dict] = []
+    notify_calls: list[str] = []
+    dismissed: list[object] = []
+
+    def _fake_update_config(self: Config, config: ConfigModel, yaml_obj: dict):
+        update_calls.append(yaml_obj)
+        return config
+
+    def _fake_notify(self: AddClusterScreen, message: str, **_kwargs):
+        notify_calls.append(message)
+
+    def _fake_dismiss(self: AddClusterScreen, result):
+        dismissed.append(result)
+
+    monkeypatch.setattr(startup_view, "ClusterContentValidator", FakeClusterContentValidator)
+    monkeypatch.setattr(Config, "update_config", _fake_update_config)
+    monkeypatch.setattr(screen, "notify", MethodType(_fake_notify, screen))
+    monkeypatch.setattr(screen, "dismiss", MethodType(_fake_dismiss, screen))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            screen.query_one(TextArea).text = "fake-edit"
+            await pilot.click("#save")
+            await pilot.pause()
+
+            assert update_calls == []
+            assert "Edit cluster config not allow add new cluster" in notify_calls
+            assert dismissed == []
+
+    asyncio.run(_run())
+
+
+def test_add_cluster_screen_save_edit_config_updates_and_dismisses(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = _config("cluster-a", "/tmp/cluster-a.yaml", contexts=["ctx-a"])
+    updated_model = _config("cluster-a", "/tmp/cluster-a.yaml", contexts=["ctx-a"])
+    screen = AddClusterScreen(config=base)
+    app = AddClusterHarnessApp(screen)
+    monkeypatch.setattr(ConfigModel, "to_str", lambda self: "apiVersion: v1\n")
+
+    class FakeClusterContentValidator:
+        def __init__(self, _content: str) -> None:
+            pass
+
+        @property
+        def validate(self) -> bool:
+            return True
+
+        @property
+        def format(self) -> dict:
+            return {
+                "contexts": [{"context": {"cluster": "cluster-a", "user": "u1"}}],
+                "clusters": [{"name": "cluster-a", "cluster": {"server": "https://a"}}],
+                "users": [{"name": "u1"}],
+            }
+
+    update_args: list[tuple[ConfigModel, dict]] = []
+    dismissed: list[ConfigModel] = []
+
+    def _fake_update_config(self: Config, config: ConfigModel, yaml_obj: dict) -> ConfigModel:
+        update_args.append((config, yaml_obj))
+        return updated_model
+
+    def _fake_dismiss(self: AddClusterScreen, result: ConfigModel):
+        dismissed.append(result)
+
+    monkeypatch.setattr(startup_view, "ClusterContentValidator", FakeClusterContentValidator)
+    monkeypatch.setattr(Config, "update_config", _fake_update_config)
+    monkeypatch.setattr(screen, "dismiss", MethodType(_fake_dismiss, screen))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            screen.query_one(TextArea).text = "fake-edit-valid"
+            await pilot.click("#save")
+            await pilot.pause()
+
+            assert len(update_args) == 1
+            assert update_args[0][0] == base
+            assert dismissed == [updated_model]
+
+    asyncio.run(_run())
+
+
+def test_add_cluster_screen_show_invalid_reasons_notifies_warning(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    screen = AddClusterScreen()
+    notify_calls: list[tuple[str, dict]] = []
+
+    def _fake_notify(self: AddClusterScreen, message: str, **kwargs):
+        notify_calls.append((message, kwargs))
+
+    monkeypatch.setattr(screen, "notify", MethodType(_fake_notify, screen))
+    event = SimpleNamespace(
+        validation_result=SimpleNamespace(
+            is_valid=False,
+            failure_descriptions=["reason-1", "reason-2"],
+        )
+    )
+
+    screen.show_invalid_reasons(event)
+
+    assert len(notify_calls) == 1
+    assert notify_calls[0][0] == "reason-1\nreason-2"
+    assert notify_calls[0][1]["severity"] == "warning"
+
+
+def test_add_cluster_screen_validate_config_content_notifies_when_invalid(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    screen = AddClusterScreen()
+    notify_calls: list[tuple[str, dict]] = []
+
+    class FakeClusterContentValidator:
+        def __init__(self, _content: str) -> None:
+            pass
+
+        @property
+        def validate(self) -> bool:
+            return False
+
+        @property
+        def format(self):
+            return False
+
+    def _fake_notify(self: AddClusterScreen, message: str, **kwargs):
+        notify_calls.append((message, kwargs))
+
+    monkeypatch.setattr(startup_view, "ClusterContentValidator", FakeClusterContentValidator)
+    monkeypatch.setattr(screen, "notify", MethodType(_fake_notify, screen))
+    event = SimpleNamespace(text_area=SimpleNamespace(text="invalid-yaml"))
+
+    screen.validate_config_content(event)
+
+    assert len(notify_calls) == 1
+    assert notify_calls[0][0] == "Invalid Cluster Config Content"
+    assert notify_calls[0][1]["severity"] == "error"
+
+
+def test_delete_config_confirm_screen_yes_and_no_buttons_dismiss_result(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = _config("cluster-a", "/tmp/cluster-a.yaml")
+    screen = DeleteConfigConfirmScreen(config=base)
+    app = AddClusterHarnessApp(screen)
+    dismissed: list[bool] = []
+
+    def _fake_dismiss(self: DeleteConfigConfirmScreen, result: bool) -> None:
+        dismissed.append(result)
+
+    monkeypatch.setattr(screen, "dismiss", MethodType(_fake_dismiss, screen))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.click("#yes")
+            await pilot.pause()
+            await pilot.click("#no")
+            await pilot.pause()
+
+            assert dismissed == [True, False]
+
+    asyncio.run(_run())
+
+
+def test_delete_config_confirm_screen_escape_action_pops_screen(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = _config("cluster-a", "/tmp/cluster-a.yaml")
+    screen = DeleteConfigConfirmScreen(config=base)
+    app = AddClusterHarnessApp(screen)
+    pop_calls: list[bool] = []
+
+    def _fake_pop_screen(self: App):
+        pop_calls.append(True)
+
+    monkeypatch.setattr(app, "pop_screen", MethodType(_fake_pop_screen, app))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            await pilot.press("escape")
+            await pilot.pause()
+            assert pop_calls == [True]
+
+    asyncio.run(_run())
+
+
+def test_sync_cluster_screen_validate_selected_and_close(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    screen = SyncClusterScreen()
+    app = AddClusterHarnessApp(screen)
+    notified: list[str] = []
+    dismissed: list[Path] = []
+    pop_calls: list[bool] = []
+
+    def _fake_notify(self: SyncClusterScreen, message: str, **_kwargs) -> None:
+        notified.append(message)
+
+    def _fake_dismiss(self: SyncClusterScreen, value: Path) -> None:
+        dismissed.append(value)
+
+    def _fake_pop_screen(self: App):
+        pop_calls.append(True)
+
+    monkeypatch.setattr(screen, "notify", MethodType(_fake_notify, screen))
+    monkeypatch.setattr(screen, "dismiss", MethodType(_fake_dismiss, screen))
+    monkeypatch.setattr(app, "pop_screen", MethodType(_fake_pop_screen, app))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            # on_mount should apply helper subtitle
+            assert "Enter to select" in screen.query_one("#container").border_subtitle
+
+            screen._validate_selected(None)
+            screen._validate_selected(Path.home() / ".kop" / "x")
+            screen._validate_selected(Path.home() / ".kube" / "config")
+            screen._validate_selected(Path("/tmp/sync-me.yaml"))
+
+            await pilot.press("escape")
+            await pilot.pause()
+
+            assert "Please select a directory or file" in notified
+            assert any("Cannot sync kop directory" in x for x in notified)
+            assert any("Cannot sync kube directory" in x for x in notified)
+            assert dismissed == [Path("/tmp/sync-me.yaml")]
+            assert pop_calls == [True]
+
+    asyncio.run(_run())
+
+
+def test_sync_cluster_screen_file_and_directory_events_validate_selection(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    screen = SyncClusterScreen()
+    selected: list[Path] = []
+    stopped: list[str] = []
+
+    def _fake_validate_selected(self: SyncClusterScreen, value) -> None:
+        selected.append(value)
+
+    monkeypatch.setattr(screen, "_validate_selected", MethodType(_fake_validate_selected, screen))
+
+    file_event = SimpleNamespace(path=Path("/tmp/a.yaml"), stop=lambda: stopped.append("file"))
+    dir_event = SimpleNamespace(path=Path("/tmp/d"), stop=lambda: stopped.append("dir"))
+
+    screen.file_selected(file_event)
+    screen.directory_selected(dir_event)
+
+    assert selected == [Path("/tmp/a.yaml"), Path("/tmp/d")]
+    assert stopped == ["file", "dir"]
+
+
+def test_select_context_screen_confirm_and_cancel(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = _config("cluster-a", "/tmp/cluster-a.yaml", contexts=["ctx-a", "ctx-b"])
+    base.current_context = "ctx-a"
+    screen = SelectContextScreen(config=base)
+    app = AddClusterHarnessApp(screen)
+    dismissed: list[str] = []
+    pop_calls: list[bool] = []
+
+    def _fake_dismiss(self: SelectContextScreen, result: str) -> None:
+        dismissed.append(result)
+
+    def _fake_pop_screen(self: App):
+        pop_calls.append(True)
+
+    monkeypatch.setattr(screen, "dismiss", MethodType(_fake_dismiss, screen))
+    monkeypatch.setattr(app, "pop_screen", MethodType(_fake_pop_screen, app))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            assert "Shift+Enter to connect" in screen.query_one("#grid").border_subtitle
+
+            await pilot.click("#confirm")
+            await pilot.pause()
+            await pilot.click("#cancel")
+            await pilot.pause()
+
+            assert dismissed == ["ctx-a"]
+            assert pop_calls == [True]
+
+    asyncio.run(_run())
