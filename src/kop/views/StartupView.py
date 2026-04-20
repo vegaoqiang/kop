@@ -6,10 +6,10 @@ from textual import on, work
 from textual.worker import get_current_worker
 from textual.binding import Binding
 from textual.reactive import Reactive
-from textual.app import App, ComposeResult
+from textual.app import ComposeResult, RenderResult
 from textual.screen import Screen, ModalScreen
 from textual.containers import VerticalScroll, Horizontal, Grid, Container
-from textual.widgets import Header, Footer, TextArea, Input, Label, Button, DirectoryTree, Select
+from textual.widgets import Header, Footer, TextArea, Input, Label, Button, DirectoryTree, Select, LoadingIndicator
 from kop.validations import ClusterNameValidator, ClusterContentValidator
 from kop.widgets.Focusable import ConfigItem
 from kop.provider.config import Config, ConfigModel
@@ -18,6 +18,10 @@ from kop.widgets.Directory import CustomDirectoryTree
 from kop.provider.client import KbsEndpoint
 from typing import Optional
 from kubernetes import client, config as kube_config
+from rich.console import Group
+from rich.text import Text
+
+
 
 
 
@@ -196,16 +200,42 @@ class ConfigView(Screen):
         if not self.selected:
             self.notify("Please select a cluster to connect", severity="error")
             return
-        if len(self.selected.contexts) > 1:
-            context = await self.app.push_screen_wait(SelectContextScreen(self.selected))
-        else:
-            context = None
-        setattr(self.app, "endpoint", KbsEndpoint(config_file=self.selected.path, context=context))
-        view = ResourceView()
-        # set cluster name to sub title
-        view.sub_title = self.selected.name
-        self.app.push_screen(view)
-        setattr(self.app, "view", view)
+        selected = self.selected
+        context = selected.current_context
+        if len(selected.contexts) > 1:
+            context = await self.app.push_screen_wait(SelectContextScreen(selected))
+            if not context:
+                return
+
+        loading_screen = ConnectingModalScreen(f"Connecting to {selected.name}...")
+        self.app.push_screen(loading_screen)
+        try:
+            version, error = await asyncio.to_thread(
+                self._fetch_cluster_version_with_timeout,
+                selected,
+                5.0,
+                context,
+            )
+            if error or not version:
+                selected.connection_error = error or "Cluster API server is unreachable."
+                if loading_screen in self.app.screen_stack:
+                    loading_screen.dismiss()
+                await self.app.push_screen_wait(ClusterConnectionErrorScreen(selected))
+                return
+
+            selected.version = version
+            selected.connection_error = ""
+            if loading_screen in self.app.screen_stack:
+                loading_screen.dismiss()
+            setattr(self.app, "endpoint", KbsEndpoint(config_file=selected.path, context=context))
+            view = ResourceView()
+            # set cluster name to sub title
+            view.sub_title = selected.name
+            self.app.push_screen(view)
+            setattr(self.app, "view", view)
+        finally:
+            if loading_screen in self.app.screen_stack:
+                loading_screen.dismiss()
 
     @on(Button.Pressed, "#add")
     @work
@@ -310,8 +340,9 @@ class ConfigView(Screen):
         self.selected = event.config
         self.selected_item = event._sender
     
-    def _update_cluster_version(self, config: ConfigModel, version: str = "") -> None:
+    def _update_cluster_version(self, config: ConfigModel, version: str = "", error: str = "") -> None:
         config.version = version
+        config.connection_error = error
         for item in self.query(ConfigItem):
             if item.config.path == config.path:
                 item.version = version
@@ -324,33 +355,38 @@ class ConfigView(Screen):
         for config in configs:
             if worker.is_cancelled:
                 return
-            version = self._fetch_cluster_version_with_timeout(config, timeout=1.0)
+            version, error = self._fetch_cluster_version_with_timeout(config, timeout=1.0)
             if worker.is_cancelled:
                 return
             try:
-                self.app.call_from_thread(self._update_cluster_version, config, version)
+                self.app.call_from_thread(self._update_cluster_version, config, version, error)
             except Exception:
                 return
 
-    def _fetch_cluster_version_with_timeout(self, config: ConfigModel, timeout: float = 1.0) -> str:
-        result: Queue[Optional[str]] = Queue(maxsize=1)
+    def _fetch_cluster_version_with_timeout(
+        self,
+        config: ConfigModel,
+        timeout: float = 1.0,
+        context: Optional[str] = None,
+    ) -> tuple[str, str]:
+        result: Queue[tuple[str, str]] = Queue(maxsize=1)
 
         def _runner() -> None:
             try:
-                result.put(self._fetch_cluster_version(config))
-            except Exception:
-                result.put(None)
+                result.put(self._fetch_cluster_version(config, context=context))
+            except Exception as exc:
+                result.put(("", str(exc).strip() or exc.__class__.__name__))
 
         thread = Thread(target=_runner, daemon=True, name=f"version-fetch-{config.name}")
         thread.start()
         try:
             value = result.get(timeout=timeout)
-            return value or ""
+            return value
         except Empty:
-            return ""
+            return "", f"Connection timed out after {timeout:.1f}s."
 
-    def _fetch_cluster_version(self, config: ConfigModel) ->Optional[str]:
-        context = config.current_context
+    def _fetch_cluster_version(self, config: ConfigModel, context: Optional[str] = None) -> tuple[str, str]:
+        context = context or config.current_context
         configuration = client.Configuration()
         api_client: Optional[client.ApiClient] = None
         try:
@@ -363,10 +399,11 @@ class ConfigView(Screen):
             api_client = client.ApiClient(configuration=configuration)
             version_info = client.VersionApi(api_client=api_client).get_code(_request_timeout=5)
             git_version = getattr(version_info, "git_version", "")
-            return git_version.strip()
-        except Exception:
-            self.log("Failed to fetch cluster version")
-            return None
+            return git_version.strip(), ""
+        except Exception as exc:
+            msg = str(exc).strip() or exc.__class__.__name__
+            self.log(f"Failed to fetch cluster version: {msg}")
+            return "", msg
         finally:
             if api_client:
                 api_client.close()
@@ -674,72 +711,81 @@ class SelectContextScreen(ModalScreen):
         self.dismiss(self.query_one("#select", Select).value)
 
 
-class TestApp(App):
-    
-    def __init__(self, kubeconfigs: list[ConfigModel], **kwargs):
+class ClusterConnectionErrorScreen(ModalScreen):
+    DEFAULT_CSS = """
+        ClusterConnectionErrorScreen {
+            align: center middle;
+        }
+        #dialog {
+            width: 80;
+            height: auto;
+            max-height: 70%;
+            border: solid $error;
+            padding: 1 2;
+            background: $surface;
+        }
+        #title {
+            text-style: bold;
+            color: $error;
+            margin-bottom: 1;
+        }
+        #detail {
+            margin-bottom: 1;
+        }
+        #close {
+            width: 100%;
+        }
+    """
+
+    BINDINGS = [
+        Binding(key="escape", action="close", description="Close", show=False),
+    ]
+
+    def __init__(self, config: ConfigModel):
+        super().__init__()
+        self.config = config
+
+    def compose(self) -> ComposeResult:
+        detail = self.config.connection_error or "Unknown connection error."
+        with VerticalScroll(id="dialog"):
+            yield Label(f"Unable to connect to {self.config.name}", id="title")
+            yield Label(detail, id="detail")
+            yield Button("Close", variant="error", id="close")
+
+    @on(Button.Pressed, "#close")
+    def action_close(self) -> None:
+        self.dismiss()
+
+
+class ConnectingModalScreen(ModalScreen):
+    DEFAULT_CSS = """
+        ConnectingModalScreen {
+            align: center middle;
+            background: $background 55%;
+        }
+    """
+
+    def __init__(self, msg: str, **kwargs):
         super().__init__(**kwargs)
-        self.kubeconfigs = kubeconfigs
+        self.msg = msg
 
-    def on_mount(self) -> None:
-        self.push_screen(ConfigView(self.kubeconfigs))
- 
-
+    def compose(self) -> ComposeResult:
+        yield ConnectingIndicator(self.msg)
 
 
+class ConnectingIndicator(LoadingIndicator):
 
-if __name__ == "__main__":
-    t = [
-            {"name": "test1", "content": "hello world"},
-            {"name": "test2", "content": "hello world"},
-            {"name": "test3", "content": "hello world"},
-            {"name": "test4", "content": "hello world"},
-            {"name": "test5", "content": "hello world"},
-            {"name": "test6", "content": "hello world"},
-            {"name": "test7", "content": "hello world"},
-            {"name": "test8", "content": "hello world"},
-            {"name": "test9", "content": "hello world"},
-            {"name": "test10", "content": "hello world"},
-            {"name": "test11", "content": "hello world"},
-            {"name": "test12", "content": "hello world"},
-            {"name": "test13", "content": "hello world"},
-            {"name": "test14", "content": "hello world"},
-            {"name": "test15", "content": "hello world"},
-            {"name": "test16", "content": "hello world"},
-            {"name": "test17", "content": "hello world"},
-            {"name": "test18", "content": "hello world"},
-            {"name": "test19", "content": "hello world"},
-            {"name": "test20", "content": "hello world"},
-            {"name": "test21", "content": "hello world"},
-            {"name": "test22", "content": "hello world"},
-            {"name": "test23", "content": "hello world"},
-            {"name": "test24", "content": "hello world"},
-            {"name": "test25", "content": "hello world"},
-            {"name": "test26", "content": "hello world"},
-            {"name": "test27", "content": "hello world"},
-            {"name": "test28", "content": "hello world"},
-            {"name": "test29", "content": "hello world"},
-            {"name": "test30", "content": "hello world"},
-            {"name": "test31", "content": "hello world"},
-            {"name": "test32", "content": "hello world"},
-            {"name": "test33", "content": "hello world"},
-            {"name": "test34", "content": "hello world"},
-            {"name": "test35", "content": "hello world"},
-            {"name": "test36", "content": "hello world"},
-            {"name": "test37", "content": "hello world"},
-            {"name": "test38", "content": "hello world"},
-            {"name": "test39", "content": "hello world"},
-            {"name": "test40", "content": "hello world"},
-            {"name": "test41", "content": "hello world"},
-            {"name": "test42", "content": "hello world"},
-            {"name": "test43", "content": "hello world"},
-            {"name": "test44", "content": "hello world"},
-            {"name": "test45", "content": "hello world"},
-            {"name": "test46", "content": "hello world"},
-            {"name": "test47", "content": "hello world"},
-            {"name": "test48", "content": "hello world"},
-            {"name": "test49", "content": "hello world"},
-            {"name": "test50", "content": "hello world"}
-        ]
-    config = Config().get_configs()
-    app = TestApp(kubeconfigs=config)
-    app.run()
+    def __init__(self, msg: str):
+        super().__init__()
+        self.msg = msg
+
+    def render(self) -> RenderResult:
+        loading = super().render()
+        if not self.msg:
+            return loading
+        return Group(
+            Text(self.msg, style="bold"),
+            loading,
+        )
+
+        

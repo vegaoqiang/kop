@@ -20,6 +20,8 @@ class ConfigModel:
     users: list[str] = field(default_factory=list)
     # the kubernetes cluster version, not contain `version` field in config by default, it will add by kop
     version: str = ""
+    # cluster connection error details collected during reachability/version checks
+    connection_error: str = ""
     # the kubernetes config file absolute path
     path: str = ""
 
