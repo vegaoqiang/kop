@@ -191,7 +191,7 @@ class ConfigView(Screen):
         self.KubeConfigs.remove(self.selected)
         self.mutate_reactive(ConfigView.KubeConfigs)
 
-    @work
+    @work(exclusive=True)
     @on(Button.Pressed, "#connect")
     async def action_connect(self):
         """
@@ -209,6 +209,7 @@ class ConfigView(Screen):
 
         loading_screen = ConnectingModalScreen(f"Connecting to {selected.name}...")
         self.app.push_screen(loading_screen)
+        loading_visible = True
         try:
             version, error = await asyncio.to_thread(
                 self._fetch_cluster_version_with_timeout,
@@ -218,15 +219,17 @@ class ConfigView(Screen):
             )
             if error or not version:
                 selected.connection_error = error or "Cluster API server is unreachable."
-                if loading_screen in self.app.screen_stack:
-                    loading_screen.dismiss()
+                if loading_visible and self.app.screen is loading_screen:
+                    await loading_screen.dismiss()
+                    loading_visible = False
                 await self.app.push_screen_wait(ClusterConnectionErrorScreen(selected))
                 return
 
             selected.version = version
             selected.connection_error = ""
-            if loading_screen in self.app.screen_stack:
-                loading_screen.dismiss()
+            if loading_visible and self.app.screen is loading_screen:
+                await loading_screen.dismiss()
+                loading_visible = False
             setattr(self.app, "endpoint", KbsEndpoint(config_file=selected.path, context=context))
             view = ResourceView()
             # set cluster name to sub title
@@ -234,8 +237,8 @@ class ConfigView(Screen):
             self.app.push_screen(view)
             setattr(self.app, "view", view)
         finally:
-            if loading_screen in self.app.screen_stack:
-                loading_screen.dismiss()
+            if loading_visible and self.app.screen is loading_screen:
+                await loading_screen.dismiss()
 
     @on(Button.Pressed, "#add")
     @work
