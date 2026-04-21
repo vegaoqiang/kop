@@ -191,7 +191,7 @@ class ConfigView(Screen):
         self.KubeConfigs.remove(self.selected)
         self.mutate_reactive(ConfigView.KubeConfigs)
 
-    @work(exclusive=True)
+    @work(group="connect", exclusive=True)
     @on(Button.Pressed, "#connect")
     async def action_connect(self):
         """
@@ -208,8 +208,7 @@ class ConfigView(Screen):
                 return
 
         loading_screen = ConnectingModalScreen(f"Connecting to {selected.name}...")
-        self.app.push_screen(loading_screen)
-        loading_visible = True
+        await self.app.push_screen(loading_screen)
         try:
             version, error = await asyncio.to_thread(
                 self._fetch_cluster_version_with_timeout,
@@ -219,17 +218,15 @@ class ConfigView(Screen):
             )
             if error or not version:
                 selected.connection_error = error or "Cluster API server is unreachable."
-                if loading_visible and self.app.screen is loading_screen:
+                if self.app.screen is loading_screen:
                     await loading_screen.dismiss()
-                    loading_visible = False
                 await self.app.push_screen_wait(ClusterConnectionErrorScreen(selected))
                 return
 
             selected.version = version
             selected.connection_error = ""
-            if loading_visible and self.app.screen is loading_screen:
+            if self.app.screen is loading_screen:
                 await loading_screen.dismiss()
-                loading_visible = False
             setattr(self.app, "endpoint", KbsEndpoint(config_file=selected.path, context=context))
             view = ResourceView()
             # set cluster name to sub title
@@ -237,7 +234,7 @@ class ConfigView(Screen):
             self.app.push_screen(view)
             setattr(self.app, "view", view)
         finally:
-            if loading_visible and self.app.screen is loading_screen:
+            if self.app.screen is loading_screen:
                 await loading_screen.dismiss()
 
     @on(Button.Pressed, "#add")
@@ -352,7 +349,7 @@ class ConfigView(Screen):
                 item.ready = True if version else False
                 break
 
-    @work(thread=True, exclusive=True)
+    @work(thread=True, group="version_refresh", exclusive=True)
     def load_cluster_version(self, configs: list[ConfigModel]) -> None:
         worker = get_current_worker()
         for config in configs:
