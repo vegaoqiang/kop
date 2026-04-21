@@ -133,7 +133,7 @@ class ConfigView(Screen):
             Button(label="Connect", variant="default", id="connect", tooltip="Connect to cluster"),
             Button(label="Delete", variant="default", id="delete", tooltip="Delete cluster"),
             Button(label="Edit", variant="default", id="edit", tooltip="Edit cluster"),
-            Button(label="Sync", variant="default", id="sync", tooltip="Sync cluster from local"),
+            Button(label="Sync", variant="default", id="sync", tooltip="Sync local kubeconfig"),
             id="button_group"
         )
         yield Footer()
