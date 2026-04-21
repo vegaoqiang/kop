@@ -484,6 +484,7 @@ class AddClusterScreen(Screen):
         }
         Button {
             margin-right: 1;
+            width: 1fr;
         }
         Toast {
             align: right top;
