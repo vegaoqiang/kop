@@ -3,7 +3,7 @@ from textual.events import Mount
 from textual.reactive import Reactive
 from textual.app import ComposeResult
 from textual.widgets import Static, Input, Label, Select
-from textual.containers import Grid
+from textual.containers import Grid, Horizontal
 from textual.timer import Timer
 from textual.binding import Binding
 from rich.console import RenderableType
@@ -32,8 +32,9 @@ class ResourcePanel(Static):
             display: none;
         }
         Grid {
-            grid-size: 4 1;
-            grid-columns: 1fr 1fr 2fr 2fr;
+            grid-size: 3 1;
+            grid-columns: 1fr 2fr 2fr;
+            grid-gutter: 0 2;
         }
         #resource_type {
             width: auto;
@@ -48,7 +49,12 @@ class ResourcePanel(Static):
             content-align: left middle;
             color: $block-cursor-background;
         }
-
+        #namespace_label, #search_label {
+            width: auto;
+            height: 3;
+            content-align: left middle;
+            color: $block-cursor-background;
+        }
     """
     
     resource_type = Reactive(str)
@@ -68,14 +74,19 @@ class ResourcePanel(Static):
 
     def compose(self) -> ComposeResult:
         with Grid():
-            yield Label(self.resource_type, id="resource_type")
-            yield Label(f"Total: {self.resource_count} items", id="resource_count")
-            yield Select(options=[], 
-                         prompt="Press ] to select a namespace 🍒", 
-                         tooltip="Type enter or click to choose a namespace", 
-                         allow_blank=True, 
-                         id="namespace_select")
-            yield Input(placeholder=f"Press / to search {self.resource_type} 🔍", id="search_input")
+            with Horizontal():
+                yield Label(self.resource_type, id="resource_type")
+                yield Label(f" ({self.resource_count} items)", id="resource_count")
+            with Horizontal():
+                yield Label("Namespace", id="namespace_label")
+                yield Select(options=[], 
+                            prompt="Press ] to select a namespace 🍒", 
+                            tooltip="Type enter or click to choose a namespace", 
+                            allow_blank=True, 
+                            id="namespace_select")
+            with Horizontal():
+                yield Label("Search", id="search_label")
+                yield Input(placeholder=f"Press / to search {self.resource_type} 🔍", id="search_input")
 
 
     def watch_resource_type(self, resource_type: str) -> None:
@@ -83,7 +94,7 @@ class ResourcePanel(Static):
        self.query_one("#search_input", Input).placeholder = f"Press / to search {resource_type} 🔍"
 
     def watch_resource_count(self, resource_count: int) -> None:
-       self.query_one("#resource_count", Label).update(f"Total: {resource_count} items")
+       self.query_one("#resource_count", Label).update(f" ({resource_count} items)")
 
     def update_namespaces(self, namespaces: list[str]) -> None:
        options = [self.DEFAULT_NAMESPACE_OPTION]
