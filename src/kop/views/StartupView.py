@@ -149,12 +149,18 @@ class ConfigView(Screen):
             self.updater = self.set_interval(10, self._schedule_version_refresh)
 
     def on_unmount(self) -> None:
+        self._cancel_task()
+
+    def on_screen_suspend(self) -> None:
+        self._cancel_task()
+    
+    def _cancel_task(self) -> None:
         if self.updater:
             self.updater.stop()
         if self.version_worker:
             self.version_worker.cancel()
             self.version_worker = None
-
+    
     def _schedule_version_refresh(self) -> None:
         if not self.KubeConfigs:
             return
@@ -171,6 +177,10 @@ class ConfigView(Screen):
         if not self.selected_item:
             return
         self.selected_item.focus()
+
+        # restart updater when screen resume
+        if self.updater:
+            self.updater._start()
 
     def update_kubeconfigs(self, value: ConfigModel) -> None:
         """
