@@ -213,11 +213,11 @@ class ViewModel:
 @dataclass
 class NodeViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
-    internalip: str = field(metadata={"title": "InternalIP", "width": 10, "renderer": f.node_internalip_renderer})
-    osimage: str = field(metadata={"title": "OS-Image", "width": 10})
+    internalip: str = field(metadata={"title": "InternalIP", "width": 10, "detail": False, "renderer": f.node_internalip_renderer})
+    osimage: str = field(metadata={"title": "OS-Image", "width": 10, "detail": False})
     taints: list = field(metadata={"title": "Taints", "width": 5})
     roles: str = field(metadata={"title": "Roles", "width": 10, "renderer": f.node_roles_renderer})
-    version: str = field(metadata={"title": "Version", "width": 10})
+    version: str = field(metadata={"title": "Version", "width": 10, "detail": False})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     conditions: list = field(metadata={"title": "Conditions", "width": 5, "renderer": f.node_conditions_renderer})
 
@@ -234,9 +234,40 @@ class NodeViewModel(ViewModel):
             conditions=data.status.conditions,
         )
 
+
 @dataclass
 class NodeDetailModel(NodeViewModel):
-    ...
+    created: str = field(default_factory=str, metadata={"title": "Created"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
+    addresses: list = field(default_factory=list, metadata={"title": "Addresses"})
+    capacity: dict = field(default_factory=dict, metadata={"title": "Capacity"})
+    allocatable: dict = field(default_factory=dict, metadata={"title": "Allocatable"})
+    daemonendpoints: dict = field(default_factory=dict, metadata={"title": "Daemon Endpoints"})
+    nodeinfo: dict = field(default_factory=dict, metadata={"title": "Node Info"})
+    images: list = field(default_factory=list, metadata={"title": "Images"})
+    podcidr: str = field(default_factory=str, metadata={"title": "Pod CIDR"})
+    podcidrs: list = field(default_factory=list, metadata={"title": "Pod CIDRs"})
+
+    @classmethod
+    def clean(cls, data: V1Node) -> "NodeDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            "created": cls.get_created_text(data.metadata.creation_timestamp),
+            "labels": data.metadata.labels,
+            "annotations": data.metadata.annotations,
+            "finalizers": data.metadata.finalizers,
+            "addresses": data.status.addresses,
+            "capacity": data.status.capacity,
+            "allocatable": data.status.allocatable,
+            "daemonendpoints": data.status.daemon_endpoints,
+            "nodeinfo": data.status.node_info,
+            "images": data.status.images,
+            "podcidr": data.spec.pod_cidr,
+            "podcidrs": data.spec.pod_cid_rs
+        })
+        return cls(**base)
 
 
 @dataclass

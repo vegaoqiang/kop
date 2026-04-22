@@ -246,6 +246,12 @@ def renderer_roleref(title: str, desc: dict) -> ComposeResult:
     yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.roleref_formatter))
 
 
+@RendererRegistry.register_renderer('addresses')
+def renderer_addresses(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.addresses_formatter))
+
+
+
 class DetailModalRenderer(ModalScreen):
 
     DEFAULT_CSS = """

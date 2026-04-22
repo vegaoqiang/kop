@@ -484,3 +484,13 @@ def roleref_formatter(desc):
     table.add_column("apiGroup", justify="left")
     table.add_row(desc.kind, desc.name, desc.api_group)
     return table
+
+
+def addresses_formatter(desc):
+    if not desc:
+        return DEFAULT_CHAR
+    text = []
+    for item in desc:
+        string = Text.assemble((f"{item.type}", "bold"), f": {item.address}")
+        text.append(string)
+    return Text("\n").join(text)
