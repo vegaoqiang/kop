@@ -130,3 +130,28 @@ def rolebinding_bindings_renderer(value):
     if not value:
         return ""
     return ",".join([x.name for x in value])
+
+
+def node_internalip_renderer(value):
+    if not value:
+        return ""
+    for item in value:
+        if item.type == "InternalIP":
+            return item.address
+        
+
+def node_roles_renderer(value):
+    if not value:
+        return ""
+    if value.get("node-role.kubernetes.io/control-plane", "") == "true":
+        return "control-plane"
+    
+
+def node_conditions_renderer(value):
+    if not value:
+        return ""
+    for item in value:
+        if item.type == "Ready" and item.status == 'True':
+            return Text("Ready", style="rgb(0,255,0)")
+        if item.type == "Ready" and item.status != 'True':
+            return Text("NotReady", style="red")

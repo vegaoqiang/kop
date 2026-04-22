@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field, fields, asdict
 from kubernetes.client.models import (
+    V1Node,
     V1Pod, 
     V1Deployment, 
     V1DaemonSet, 
@@ -208,6 +209,35 @@ class ViewModel:
     def clean(cls, data):
         raise NotImplementedError
     
+
+@dataclass
+class NodeViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    internalip: str = field(metadata={"title": "InternalIP", "width": 10, "renderer": f.node_internalip_renderer})
+    osimage: str = field(metadata={"title": "OS-Image", "width": 10})
+    taints: list = field(metadata={"title": "Taints", "width": 5})
+    roles: str = field(metadata={"title": "Roles", "width": 10, "renderer": f.node_roles_renderer})
+    version: str = field(metadata={"title": "Version", "width": 10})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+    conditions: list = field(metadata={"title": "Conditions", "width": 5, "renderer": f.node_conditions_renderer})
+
+    @classmethod
+    def clean(cls, data: V1Node):
+        return cls(
+            name=data.metadata.name,
+            internalip=data.status.addresses,
+            osimage=data.status.node_info.os_image,
+            taints=data.spec.taints or [],
+            roles=data.metadata.labels,
+            version=data.status.node_info.kubelet_version,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+            conditions=data.status.conditions,
+        )
+
+@dataclass
+class NodeDetailModel(NodeViewModel):
+    ...
+
 
 @dataclass
 class ContainerEnvironmentModel(ViewModel):

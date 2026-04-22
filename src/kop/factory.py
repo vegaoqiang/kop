@@ -161,6 +161,78 @@ class BaseFactory(ABC):
         return [str(value)]
     
 
+class NodeFacotry(BaseFactory):
+    resource_type = "nodes"
+    resource_kind = "Node"
+    filter_fields = (
+        "metadata.name",
+    )
+
+    actions: List[ActionModel] = [
+        ActionModel(name="shell",
+                    label="Shell",
+                    variant="default",
+                    tooltip="Node shell",
+                    action="shell",
+                    key="s"),
+        ActionModel(name="cordon",
+                    label="Cordon",
+                    variant="default",
+                    tooltip="Cordon Node",
+                    action="cordon",
+                    key="c"),
+        ActionModel(name="drain",
+                    label="Drain",
+                    variant="default",
+                    tooltip="Drain Node",
+                    action="drain",
+                    key="r"),
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit Node", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete Node", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(self, namespace: Optional[str] = None):
+        return self.endpoint.list_nodes()
+
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_node(name=name)
+    
+    def clean(self, raw) -> List[models.NodeViewModel]:
+        return [models.NodeViewModel.clean(no) for no in raw.items]
+    
+    def clean_detail(self, raw) -> models.NodeDetailModel:
+        return models.NodeDetailModel.clean(raw)
+        
+    def create_renderer(self, data):
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.NodeViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions,
+        )
+        
+    def create_detail_renderer(self, data) -> DetailModalRenderer:
+        return DetailModalRenderer(
+            columns=models.NodeDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions,
+            kind=self.resource_kind,
+        )
+
+    
+
 class PodFacotry(BaseFactory):
     """factory for pods"""
     resource_type = "pods"

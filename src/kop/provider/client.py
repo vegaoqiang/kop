@@ -156,6 +156,14 @@ class KbsEndpoint(KbsAuthLoader):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.create_namespaced_pod(namespace=namespace, body=body, **kwargs)
 
+    def list_nodes(self):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.list_node()
+    
+    def delete_node(self, name: str, **kwargs):
+        endpoint = client.CoreV1Api(api_client=self.api_client)
+        return endpoint.delete_node(name=name, **kwargs)
+
     def list_pods(self, namespace: Optional[str] = None, 
                   watch: bool = False, 
                   async_req: bool = False):
