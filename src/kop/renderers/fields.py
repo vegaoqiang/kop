@@ -138,6 +138,7 @@ def node_internalip_renderer(value):
     for item in value:
         if item.type == "InternalIP":
             return item.address
+    return ""
         
 
 def node_roles_renderer(value):
@@ -145,6 +146,8 @@ def node_roles_renderer(value):
         return ""
     if value.get("node-role.kubernetes.io/control-plane", "") == "true":
         return "control-plane"
+    else:
+        return ""
     
 
 def node_conditions_renderer(value):
@@ -155,3 +158,4 @@ def node_conditions_renderer(value):
             return Text("Ready", style="rgb(0,255,0)")
         if item.type == "Ready" and item.status != 'True':
             return Text("NotReady", style="red")
+    return ""
