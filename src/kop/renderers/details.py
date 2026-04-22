@@ -251,6 +251,16 @@ def renderer_addresses(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.addresses_formatter))
 
 
+@RendererRegistry.register_renderer('capacity')
+def renderer_capacity(title: str, desc: dict) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.capacity_formatter))
+
+
+@RendererRegistry.register_renderer('allocatable')
+def renderer_allocatable(title: str, desc: dict) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.allocatable_formatter))
+
+
 
 class DetailModalRenderer(ModalScreen):
 

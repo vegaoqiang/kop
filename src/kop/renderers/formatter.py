@@ -494,3 +494,33 @@ def addresses_formatter(desc):
         string = Text.assemble((f"{item.type}", "bold"), f": {item.address}")
         text.append(string)
     return Text("\n").join(text)
+
+
+def capacity_formatter(desc):
+    if not desc:
+        return DEFAULT_CHAR
+    table = Table(expand=True)
+    rows = []
+    for k ,v in desc.items():
+        table.add_column(k.capitalize(), justify="left")
+        if k in ("memory", "ephemeral-storage"):
+            gi = int(v[:-2])/(1024**2)
+            v = f"{gi:.2f}Gi"
+        rows.append(v)
+    table.add_row(*rows)
+    return table
+    
+
+def allocatable_formatter(desc):
+    if not desc:
+        return DEFAULT_CHAR
+    table = Table(expand=True)
+    rows = []
+    for k ,v in desc.items():
+        table.add_column(k.capitalize(), justify="left")
+        if k in ("memory", "ephemeral-storage"):
+            gi = int(v[:-2])/(1024**2)
+            v = f"{gi:.2f}Gi"
+        rows.append(v)
+    table.add_row(*rows)
+    return table
