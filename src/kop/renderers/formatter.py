@@ -524,3 +524,39 @@ def allocatable_formatter(desc):
         rows.append(v)
     table.add_row(*rows)
     return table
+
+
+def daemonendpoints_formatter(desc):
+    if not desc:
+        return DEFAULT_CHAR
+    return f":{desc.kubelet_endpoint.port}"
+    
+
+def nodeinfo_formatter(desc):
+    if not desc:
+        return DEFAULT_CHAR
+    table = Table.grid(padding=(0, 1), expand=True)
+    table.add_column(justify="left")
+    table.add_column(justify="left")
+
+    attribute_map = getattr(desc, "attribute_map", None)
+    if isinstance(attribute_map, dict):
+        for attr_key, attr_label in attribute_map.items():
+            value = getattr(desc, attr_key, None)
+            if value is None:
+                value = DEFAULT_CHAR
+            table.add_row(
+                Text(str(attr_label).capitalize(), style="bold"),
+                str(value),
+            )
+        return table
+
+    if isinstance(desc, dict):
+        for key, value in desc.items():
+            table.add_row(
+                Text(str(key).capitalize(), style="bold"),
+                str(value if value is not None else DEFAULT_CHAR),
+            )
+        return table
+
+    return str(desc)

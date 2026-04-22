@@ -261,6 +261,16 @@ def renderer_allocatable(title: str, desc: dict) -> ComposeResult:
     yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.allocatable_formatter))
 
 
+@RendererRegistry.register_renderer('daemonendpoints')
+def renderer_daemonendpoints(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.daemonendpoints_formatter))
+
+
+@RendererRegistry.register_renderer('nodeinfo')
+def renderer_nodeinfo(title: str, desc: dict) -> ComposeResult:
+    yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.nodeinfo_formatter))
+
+
 
 class DetailModalRenderer(ModalScreen):
 
