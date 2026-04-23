@@ -14,7 +14,7 @@ from kop.widgets.Forward import DescPorts
 from kop.widgets.Edit import DataEdit
 from kop.controllers.handler import ActionRegistry
 from kop.provider.events import EventService
-from kop.widgets.Endpoint import ServiceEndpoints
+from kop.widgets.Dynamic import ServiceEndpoints, NodePods
 from typing import Optional
 
 
@@ -329,6 +329,8 @@ class DetailModalRenderer(ModalScreen):
         detail = self.query_one("#detail", VerticalScroll)
         if self.data.__class__.__name__ == "ServiceDetailModel":
             detail.mount(ServiceEndpoints(data=self.data))
+        if self.data.__class__.__name__ == "NodeDetailModel":
+            detail.mount(NodePods(data=self.data))
         self._make_event_service(detail)
 
     def _make_event_service(self, detail: Optional[VerticalScroll] = None):

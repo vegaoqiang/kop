@@ -246,7 +246,6 @@ class NodeDetailModel(NodeViewModel):
     allocatable: dict = field(default_factory=dict, metadata={"title": "Allocatable"})
     daemonendpoints: dict = field(default_factory=dict, metadata={"title": "Daemon Endpoints"})
     nodeinfo: dict = field(default_factory=dict, metadata={"title": "Node Info"})
-    images: list = field(default_factory=list, metadata={"title": "Images"})
     podcidr: str = field(default_factory=str, metadata={"title": "Pod CIDR"})
     podcidrs: list = field(default_factory=list, metadata={"title": "Pod CIDRs"})
 
@@ -263,7 +262,6 @@ class NodeDetailModel(NodeViewModel):
             "allocatable": data.status.allocatable,
             "daemonendpoints": data.status.daemon_endpoints,
             "nodeinfo": data.status.node_info,
-            "images": data.status.images,
             "podcidr": data.spec.pod_cidr,
             "podcidrs": data.spec.pod_cid_rs
         })
