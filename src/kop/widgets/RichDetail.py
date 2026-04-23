@@ -22,7 +22,7 @@ class Title(Static):
     """
 
     def __init__(self, 
-                 text: str, 
+                 text: Optional[str], 
                  expand: bool = False, 
                  color: Optional[str] = None,
                  bg: Optional[str] = None) -> None:
@@ -33,7 +33,8 @@ class Title(Static):
         :param str bg: text background
         """
         super().__init__()
-        self.text = text
+        # rich.Text expects a string-like value; normalize None to empty text.
+        self.text = "" if text is None else str(text)
         self.expand = expand
         self.style = "bold"
         self.bg = bg

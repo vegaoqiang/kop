@@ -21,7 +21,8 @@ class EventCard(Static):
         color = None
         if getattr(self.event_data, "type", None) == 'Warning':
             color = "red"
-        yield Row(title=Title(text=self.event_data.message, expand=True, color=color), 
+        message = getattr(self.event_data, "message", "No message")
+        yield Row(title=Title(text=message, expand=True, color=color), 
                   desc=Desc(self.event_data, formatter=events_formatter))
         yield DetailRule()
 
