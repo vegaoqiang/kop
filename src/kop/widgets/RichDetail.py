@@ -130,12 +130,13 @@ class RawDetail(Static):
 
 
 class DescAnnotations(Static):
-    def __init__(self, desc: Any):
+    def __init__(self, title: str, desc: Any):
         super().__init__()
         self.desc = desc
+        self.title = title
     
     def compose(self) -> ComposeResult:
-        collapsible = Collapsible(title="Annotations")
+        collapsible = Collapsible(title=self.title)
         endpoint = getattr(self.app, "endpoint", None)
         if not endpoint:
             yield collapsible
@@ -150,22 +151,25 @@ class DescAnnotations(Static):
             yield Static(Syntax(sanitize, "yaml", word_wrap=True))
 
 
-class DescAffinity(Static):
-    def __init__(self, title: str, desc: Any):
-        super().__init__()
-        self.title = title
-        self.desc = desc
+class DescAffinity(DescAnnotations):
+    """
+    for affinity field
+    """
+    # def __init__(self, title: str, desc: Any):
+    #     super().__init__()
+    #     self.title = title
+    #     self.desc = desc
 
-    def compose(self) -> ComposeResult:
-        with Collapsible(title=self.title):
-            yield Static(Syntax(self.desc, "yaml"))
+    # def compose(self) -> ComposeResult:
+    #     with Collapsible(title=self.title):
+    #         yield Static(Syntax(self.desc, "yaml"))
 
 
-class DescPodFailurePolicy(DescAffinity):
+class DescPodFailurePolicy(DescAnnotations):
     """
     for job podFailurePolicy field
     """
     
-    def compose(self) -> ComposeResult:
-        with Collapsible(title="PodFailurePolicy"):
-            yield Static(Syntax(self.desc, "yaml"))
+    # def compose(self) -> ComposeResult:
+    #     with Collapsible(title="PodFailurePolicy"):
+    #         yield Static(Syntax(self.desc, "yaml"))

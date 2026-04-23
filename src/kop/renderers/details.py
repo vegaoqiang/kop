@@ -111,8 +111,7 @@ def render_ports(title: str, desc: list) -> ComposeResult:
 
 @RendererRegistry.register_renderer('annotations')
 def renderer_annotations(title: str, desc: dict) -> ComposeResult:
-    # yield Row(title=Title(title), desc=DescAnnotations(desc=desc))
-    yield DescAnnotations(desc=desc)
+    yield DescAnnotations(title=title, desc=desc)
 
 
 @RendererRegistry.register_renderer('selector')
@@ -127,30 +126,12 @@ def render_strategy(title: str, desc: dict) -> ComposeResult:
 
 @RendererRegistry.register_renderer('affinities')
 def render_affinities(title: str, desc: list) -> ComposeResult:
-    from kubernetes.client import ApiClient
-    from yaml import safe_dump
-    api_client = ApiClient()
-    yield DescAffinity(
-        title=title,
-        desc=safe_dump(
-            api_client.sanitize_for_serialization(desc), 
-            allow_unicode=True, 
-            sort_keys=False, 
-            default_flow_style=False))
+    yield DescAffinity(title=title, desc=desc)
     
 
 @RendererRegistry.register_renderer('podfailurepolicy')
 def render_podfailurepolicy(title: str, desc: dict) -> ComposeResult:
-    from kubernetes.client import ApiClient
-    from yaml import safe_dump
-    api_client = ApiClient()
-    yield DescPodFailurePolicy(
-            title=title,
-            desc=safe_dump(
-                api_client.sanitize_for_serialization(desc), 
-                allow_unicode=True, 
-                sort_keys=False, 
-                default_flow_style=False))
+    yield DescPodFailurePolicy(title=title, desc=desc)
     
 
 @RendererRegistry.register_renderer('data')
