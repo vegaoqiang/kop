@@ -546,7 +546,7 @@ def nodeinfo_formatter(desc):
             if value is None:
                 value = DEFAULT_CHAR
             table.add_row(
-                Text(str(attr_label).capitalize(), style="bold"),
+                Text(str(attr_label)[:1].upper() + str(attr_label)[1:], style="bold"),
                 str(value),
             )
         return table
@@ -554,7 +554,7 @@ def nodeinfo_formatter(desc):
     if isinstance(desc, dict):
         for key, value in desc.items():
             table.add_row(
-                Text(str(key).capitalize(), style="bold"),
+                Text(str(key)[:1].upper() + str(key)[1:], style="bold"),
                 str(value if value is not None else DEFAULT_CHAR),
             )
         return table
