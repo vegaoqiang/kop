@@ -156,21 +156,9 @@ class DescAffinity(DescAnnotations):
     """
     for affinity field
     """
-    # def __init__(self, title: str, desc: Any):
-    #     super().__init__()
-    #     self.title = title
-    #     self.desc = desc
-
-    # def compose(self) -> ComposeResult:
-    #     with Collapsible(title=self.title):
-    #         yield Static(Syntax(self.desc, "yaml"))
 
 
 class DescPodFailurePolicy(DescAnnotations):
     """
     for job podFailurePolicy field
     """
-    
-    # def compose(self) -> ComposeResult:
-    #     with Collapsible(title="PodFailurePolicy"):
-    #         yield Static(Syntax(self.desc, "yaml"))
