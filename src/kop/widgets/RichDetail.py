@@ -8,6 +8,7 @@ from textual.containers import Grid
 from textual.widgets import Collapsible
 from typing import Any, Callable, Optional
 from kop.widgets.Expandable import ExpandableText
+from yaml import safe_dump
 
 
 
@@ -134,8 +135,19 @@ class DescAnnotations(Static):
         self.desc = desc
     
     def compose(self) -> ComposeResult:
-        for k, v in self.desc.items():
-            yield ExpandableText(text=f"{k}={v}")
+        collapsible = Collapsible(title="Annotations")
+        endpoint = getattr(self.app, "endpoint", None)
+        if not endpoint:
+            yield collapsible
+            return
+        api_client = endpoint.api_client
+        sanitize = safe_dump(
+            api_client.sanitize_for_serialization(self.desc), 
+            allow_unicode=True, 
+            sort_keys=False, 
+            default_flow_style=False) 
+        with collapsible:
+            yield Static(Syntax(sanitize, "yaml", word_wrap=True))
 
 
 class DescAffinity(Static):

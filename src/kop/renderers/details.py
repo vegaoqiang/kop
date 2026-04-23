@@ -111,7 +111,8 @@ def render_ports(title: str, desc: list) -> ComposeResult:
 
 @RendererRegistry.register_renderer('annotations')
 def renderer_annotations(title: str, desc: dict) -> ComposeResult:
-    yield Row(title=Title(title), desc=DescAnnotations(desc=desc))
+    # yield Row(title=Title(title), desc=DescAnnotations(desc=desc))
+    yield DescAnnotations(desc=desc)
 
 
 @RendererRegistry.register_renderer('selector')
