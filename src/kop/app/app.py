@@ -1,6 +1,8 @@
 import os
 import argparse
 import difflib
+from pathlib import Path
+from importlib.metadata import PackageNotFoundError, version
 from textual.app import App
 from kop.views.ResourceView import ResourceView
 from kop.views.StartupView import ConfigView
@@ -46,6 +48,20 @@ class Kop(App):
         return Config().get_configs()
     
 
+def get_app_version() -> str:
+    """Resolve Kop version from package metadata, with a pyproject fallback."""
+    try:
+        return version("kop")
+    except PackageNotFoundError:
+        pyproject_path = Path(__file__).resolve().parents[3] / "pyproject.toml"
+        if pyproject_path.is_file():
+            with pyproject_path.open("r", encoding="utf-8") as f:
+                for line in f:
+                    if line.strip().startswith("version ="):
+                        return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return "unknown"
+
+
 def get_args() -> Optional[str]:
     """
     retrieves the value of the `--kubeconfig` parameter specified on the command line when starting Kop.
@@ -58,6 +74,12 @@ def get_args() -> Optional[str]:
         "--kubeconfig",
         type=valid_file,
         help="Path to kubeconfig file"
+    )
+
+    parser.add_argument(
+        "--version",
+        action="version",
+        version=f"%(prog)s {get_app_version()}"
     )
 
     valid_args = ["--kubeconfig"]
