@@ -27,6 +27,171 @@ class BaseActionHandlerMixin(ABC):
             ActionRegistry.register(cls)
 
 
+class NodeActionHandler(BaseActionHandlerMixin):
+    """Action handler for Node resources"""
+
+    resource_type = [models.NodeViewModel, models.NodeDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.NodeViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for Node, {e}", severity="error")
+
+    @staticmethod
+    def cordon(action, resource: models.NodeViewModel, app):
+        def cordon_callback(data: Optional[models.NodeViewModel]) -> None:
+            if data is None:
+                return
+
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                endpoint.patch_node(
+                    name=data.name,
+                    body={"spec": {"unschedulable": True}},
+                )
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(
+                    f"Cordon node {data.name} success",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Cordon node {data.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(
+            Confirm(data=resource, action_name=action.name.capitalize()),
+            callback=cordon_callback,
+        )
+
+    @staticmethod
+    def drain(action, resource: models.NodeViewModel, app):
+        def drain_callback(data: Optional[models.NodeViewModel]) -> None:
+            if data is None:
+                return
+
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+
+                # Cordon first to prevent new pods from being scheduled onto this node.
+                endpoint.patch_node(
+                    name=data.name,
+                    body={"spec": {"unschedulable": True}},
+                )
+
+                pod_list = endpoint.list_pod_for_all_namespaces(
+                    field_selector=f"spec.nodeName={data.name}"
+                )
+
+                evicted = 0
+                skipped = 0
+                for pod in pod_list.items:
+                    metadata = pod.metadata
+                    if metadata is None or metadata.name is None or metadata.namespace is None:
+                        skipped += 1
+                        continue
+
+                    annotations = metadata.annotations or {}
+                    owner_refs = metadata.owner_references or []
+
+                    # Skip static/mirror pods and DaemonSet-managed pods.
+                    if "kubernetes.io/config.mirror" in annotations:
+                        skipped += 1
+                        continue
+                    if any(ref.kind == "DaemonSet" for ref in owner_refs if ref is not None):
+                        skipped += 1
+                        continue
+
+                    endpoint.create_namespaced_pod_eviction(
+                        name=metadata.name,
+                        namespace=metadata.namespace,
+                        body={
+                            "apiVersion": "policy/v1",
+                            "kind": "Eviction",
+                            "metadata": {
+                                "name": metadata.name,
+                                "namespace": metadata.namespace,
+                            },
+                        },
+                    )
+                    evicted += 1
+
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+
+                app.notify(
+                    f"Drain node {data.name} success, evicted {evicted} pod(s), skipped {skipped} pod(s)",
+                    severity="information",
+                )
+            except Exception as e:
+                app.notify(
+                    f"Drain node {data.name} failed: {e}",
+                    severity="error",
+                )
+
+        app.push_screen(
+            Confirm(data=resource, action_name=action.name.capitalize()),
+            callback=drain_callback,
+        )
+
+    @staticmethod
+    def edit(action, resource: models.NodeViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                node = endpoint.read_node(name=resource.name)
+            except Exception:
+                return
+
+            node = app.endpoint.api_client.sanitize_for_serialization(node)
+            metadata = node.setdefault("metadata", {})
+            metadata.setdefault("namespace", "default")
+            return node
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+            body = kwargs.get("body")
+            if isinstance(body, dict):
+                body_metadata = body.get("metadata")
+                if isinstance(body_metadata, dict):
+                    body_metadata.pop("namespace", None)
+
+            res = endpoint.patch_node(
+                name=name,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update node {name} success", severity="information")
+            return res
+
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+
+    @staticmethod
+    def delete(action, resource: models.NodeViewModel, app):
+        def delete_callback(data: Optional[models.NodeViewModel]) -> None:
+            if data is None:
+                return
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                endpoint.delete_node(name=data.name)
+                if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                    app.view._update_resource()
+                app.notify(f"Delete node {data.name} success", severity="information")
+            except Exception as e:
+                app.notify(f"Delete node {data.name} failed: {e}", severity="error")
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+
+
 class PodActionHandler(BaseActionHandlerMixin):
     """Action handler for Pod resources"""
 
