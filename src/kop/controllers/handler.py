@@ -54,14 +54,44 @@ class NodeActionHandler(BaseActionHandlerMixin):
         namespace = "default"
 
         def start_shell_flow(data: models.NodeViewModel) -> None:
-            app.push_screen(NodeShellLoading(node_name=data.name))
+            cancel_event = threading.Event()
+            state = {"pod_name": ""}
+
+            def cleanup() -> None:
+                pod_name = state.get("pod_name")
+                if not pod_name:
+                    return
+                try:
+                    cleanup_endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                    cleanup_endpoint.delete_namespaced_pod(
+                        name=pod_name,
+                        namespace=namespace,
+                        body=client.V1DeleteOptions(grace_period_seconds=0),
+                    )
+                except Exception:
+                    pass
+
+            def cancel_prepare() -> None:
+                cancel_event.set()
+
+            def loading_callback(result: str) -> None:
+                if result == "cancel":
+                    cancel_event.set()
+
+            app.push_screen(
+                NodeShellLoading(node_name=data.name, on_cleanup=cancel_prepare),
+                callback=loading_callback,
+            )
 
             def run_prepare() -> None:
                 endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
-                pod_name = ""
                 try:
+                    if cancel_event.is_set():
+                        return
+
                     ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
                     pod_name = f"kop-node-shell-{data.name}-{ts}"
+                    state["pod_name"] = pod_name
 
                     factory = app.view.FACTORY_CACHE
                     body = factory.load_template(namespace=namespace)
@@ -95,31 +125,32 @@ class NodeActionHandler(BaseActionHandlerMixin):
                         body=body,
                     )
 
+                    if cancel_event.is_set():
+                        cleanup()
+                        return
+
                     for _ in range(60):
+                        if cancel_event.is_set():
+                            cleanup()
+                            return
                         pod = endpoint.read_namespaced_pod(name=pod_name, namespace=namespace)
                         phase = (pod.status.phase or "").lower() if pod.status else ""
                         if phase == "running":
                             break
                         if phase in {"failed", "succeeded"}:
                             raise RuntimeError(f"busybox pod phase={phase}")
-                        time.sleep(1)
+                        if cancel_event.wait(1):
+                            cleanup()
+                            return
                     else:
                         raise RuntimeError("wait busybox pod running timeout")
 
                     def on_success() -> None:
+                        if cancel_event.is_set():
+                            cleanup()
+                            return
                         if isinstance(app.screen, NodeShellLoading):
                             app.pop_screen()
-
-                        def cleanup() -> None:
-                            try:
-                                cleanup_endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
-                                cleanup_endpoint.delete_namespaced_pod(
-                                    name=pod_name,
-                                    namespace=namespace,
-                                    body=client.V1DeleteOptions(grace_period_seconds=0),
-                                )
-                            except Exception:
-                                pass
 
                         pod_ref = SimpleNamespace(name=pod_name, namespace=namespace)
                         app.push_screen(
@@ -138,20 +169,9 @@ class NodeActionHandler(BaseActionHandlerMixin):
 
                     app.call_from_thread(on_success)
                 except Exception as e:
+                    if cancel_event.is_set():
+                        return
                     reason = str(e)
-
-                    def cleanup() -> None:
-                        if not pod_name:
-                            return
-                        try:
-                            cleanup_endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
-                            cleanup_endpoint.delete_namespaced_pod(
-                                name=pod_name,
-                                namespace=namespace,
-                                body=client.V1DeleteOptions(grace_period_seconds=0),
-                            )
-                        except Exception:
-                            pass
 
                     def on_failed() -> None:
                         if isinstance(app.screen, NodeShellLoading):

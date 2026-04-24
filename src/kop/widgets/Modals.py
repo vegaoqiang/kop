@@ -250,9 +250,14 @@ class NodeShellLoading(ModalScreen):
         }
     """
 
-    def __init__(self, node_name: str):
+    BINDINGS = [
+        Binding("escape", "close", "Close", show=False),
+    ]
+
+    def __init__(self, node_name: str, on_cleanup: Optional[Callable[[], None]] = None):
         super().__init__()
         self.node_name = node_name
+        self.on_cleanup = on_cleanup
 
     def compose(self) -> ComposeResult:
         yield Grid(
@@ -265,6 +270,10 @@ class NodeShellLoading(ModalScreen):
             id="dialog"
         )
 
+    def action_close(self):
+        if self.on_cleanup is not None:
+            self.on_cleanup()
+        self.dismiss("cancel")
 
 class NodeShellFailed(ModalScreen):
     """
