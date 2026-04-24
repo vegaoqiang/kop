@@ -1,5 +1,8 @@
 from abc import ABC
 from datetime import datetime, timezone
+import threading
+import time
+from types import SimpleNamespace
 from kop.registry import ActionRegistry
 from kop.models import PodViewModel, PodDetailModel
 from kop import models
@@ -7,7 +10,15 @@ from kop.views.PodTerminal import PodTerminal
 from kop.views.PodLog import PodLog
 from kop.views.PodAttach import Attach
 from kop.views.EditView import ResourceEditScreen
-from kop.widgets.Modals import Option, Delete, Scale, Confirm
+from kop.widgets.Modals import (
+    Option,
+    Delete,
+    Scale,
+    Confirm,
+    NodeShellConfirm,
+    NodeShellLoading,
+    NodeShellFailed,
+)
 from kubernetes import client
 from typing import Optional
 
@@ -38,6 +49,139 @@ class NodeActionHandler(BaseActionHandlerMixin):
             getattr(cls, action.action)(action, resource, app)
         except AttributeError as e:
             app.notify(f"Action '{action.action}' not supported for Node, {e}", severity="error")
+
+    @staticmethod
+    def shell(action, resource: models.NodeViewModel, app):
+        namespace = "default"
+
+        def start_shell_flow(data: models.NodeViewModel) -> None:
+            app.push_screen(NodeShellLoading(node_name=data.name))
+
+            def run_prepare() -> None:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                pod_name = ""
+                try:
+                    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
+                    pod_name = f"kop-node-shell-{ts}"[:63]
+
+                    factory = app.view.FACTORY_CACHE
+                    body = factory.load_template(namespace=namespace)
+
+                    metadata = body.setdefault("metadata", {})
+                    metadata["name"] = pod_name
+                    labels = metadata.setdefault("labels", {})
+                    labels.setdefault("app.kubernetes.io/name", "kop-node-shell")
+                    labels.setdefault("app.kubernetes.io/managed-by", "kop")
+
+                    spec = body.setdefault("spec", {})
+                    spec["nodeName"] = data.name
+                    affinity = spec.setdefault("affinity", {})
+                    node_affinity = affinity.setdefault("nodeAffinity", {})
+                    required = node_affinity.setdefault(
+                        "requiredDuringSchedulingIgnoredDuringExecution",
+                        {"nodeSelectorTerms": [{}]},
+                    )
+                    terms = required.setdefault("nodeSelectorTerms", [{}])
+                    if not terms:
+                        terms.append({})
+                    match_fields = terms[0].setdefault("matchFields", [{}])
+                    if not match_fields:
+                        match_fields.append({})
+                    match_fields[0]["key"] = "metadata.name"
+                    match_fields[0]["operator"] = "In"
+                    match_fields[0]["values"] = [data.name]
+
+                    endpoint.create_namespaced_pod(
+                        namespace=namespace,
+                        body=body,
+                    )
+
+                    for _ in range(60):
+                        pod = endpoint.read_namespaced_pod(name=pod_name, namespace=namespace)
+                        phase = (pod.status.phase or "").lower() if pod.status else ""
+                        if phase == "running":
+                            break
+                        if phase in {"failed", "succeeded"}:
+                            raise RuntimeError(f"busybox pod phase={phase}")
+                        time.sleep(1)
+                    else:
+                        raise RuntimeError("wait busybox pod running timeout")
+
+                    def on_success() -> None:
+                        if isinstance(app.screen, NodeShellLoading):
+                            app.pop_screen()
+
+                        def cleanup() -> None:
+                            try:
+                                cleanup_endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                                cleanup_endpoint.delete_namespaced_pod(
+                                    name=pod_name,
+                                    namespace=namespace,
+                                    body=client.V1DeleteOptions(grace_period_seconds=0),
+                                )
+                            except Exception:
+                                pass
+
+                        pod_ref = SimpleNamespace(name=pod_name, namespace=namespace)
+                        app.push_screen(
+                            PodTerminal(
+                                client=app.endpoint,
+                                data=pod_ref,
+                                container_name="busybox",
+                                command=[
+                                    "sh",
+                                    "-c",
+                                    "if command -v chroot >/dev/null 2>&1; then exec chroot /host sh; else exec sh; fi",
+                                ],
+                                on_close=cleanup,
+                            )
+                        )
+
+                    app.call_from_thread(on_success)
+                except Exception as e:
+                    reason = str(e)
+
+                    def cleanup() -> None:
+                        if not pod_name:
+                            return
+                        try:
+                            cleanup_endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                            cleanup_endpoint.delete_namespaced_pod(
+                                name=pod_name,
+                                namespace=namespace,
+                                body=client.V1DeleteOptions(grace_period_seconds=0),
+                            )
+                        except Exception:
+                            pass
+
+                    def on_failed() -> None:
+                        if isinstance(app.screen, NodeShellLoading):
+                            app.pop_screen()
+
+                        def failed_callback(result: str) -> None:
+                            if result == "retry":
+                                start_shell_flow(data)
+
+                        app.push_screen(
+                            NodeShellFailed(
+                                node_name=data.name,
+                                reason=reason,
+                                on_cleanup=cleanup,
+                            ),
+                            callback=failed_callback,
+                        )
+
+                    app.call_from_thread(on_failed)
+
+            thread = threading.Thread(target=run_prepare, daemon=True)
+            thread.start()
+
+        def shell_callback(data: Optional[models.NodeViewModel]) -> None:
+            if data is None:
+                return
+            start_shell_flow(data)
+
+        app.push_screen(NodeShellConfirm(data=resource, image="busybox:latest"), callback=shell_callback)
 
     @staticmethod
     def cordon(action, resource: models.NodeViewModel, app):

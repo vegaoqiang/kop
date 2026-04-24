@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kop-node-shell
+  labels:
+    app.kubernetes.io/name: kop-node-shell
+    app.kubernetes.io/managed-by: kop
+spec:
+  restartPolicy: Never
+  hostPID: true
+  hostNetwork: true
+  terminationGracePeriodSeconds: 0
+  nodeName: ""
+  affinity:
+    nodeAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        nodeSelectorTerms:
+          - matchFields:
+              - key: metadata.name
+                operator: In
+                values: [""]
+  containers:
+    - name: busybox
+      image: busybox:stable
+      imagePullPolicy: IfNotPresent
+      command:
+        - sh
+        - -c
+        - sleep infinity
+      stdin: true
+      tty: true
+      securityContext:
+        privileged: true
+      volumeMounts:
+        - name: host-root
+          mountPath: /host
+  volumes:
+    - name: host-root
+      hostPath:
+        path: /

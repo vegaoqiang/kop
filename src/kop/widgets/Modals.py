@@ -4,8 +4,9 @@ from textual.binding import Binding
 from textual.screen import ModalScreen
 from textual.app import ComposeResult
 from textual.containers import Grid, Horizontal
-from textual.widgets import Button, OptionList, Label, Input, Switch
+from textual.widgets import Button, OptionList, Label, Input, Switch, LoadingIndicator
 from textual.validation import Number
+from typing import Callable, Optional
 
 
 
@@ -137,6 +138,218 @@ class Confirm(ModalScreen):
     @on(Button.Pressed, "#confirm")
     def action_confirm(self):
         self.dismiss(self.data)
+
+
+class NodeShellConfirm(ModalScreen):
+    """
+    Modal screen to confirm creating a busybox pod for node shell access.
+    """
+
+    DEFAULT_CSS = """
+        NodeShellConfirm {
+            align: center middle;
+        }
+
+        #dialog {
+            grid-size: 2;
+            grid-gutter: 1 1;
+            grid-rows: 3 7 3;
+            padding: 0 1;
+            width: 76;
+            height: 17;
+            border: thick $background 80%;
+            background: $surface;
+        }
+
+        #title {
+            column-span: 2;
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+        }
+
+        #content {
+            column-span: 2;
+            height: 1fr;
+            width: 1fr;
+            content-align: left top;
+        }
+
+        #cancel, #confirm {
+            width: 1fr;
+        }
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+    ]
+
+    def __init__(self, data, image: str = "busybox:latest"):
+        super().__init__()
+        self.data = data
+        self.image = image
+
+    def compose(self) -> ComposeResult:
+        content = (
+            f"This action will create a temporary busybox pod ({self.image}) on node {self.data.name}.\n"
+            "The pod runs in privileged mode with host PID/network and mounts host root to /host.\n"
+            "After startup, KOP will open a shell and try `chroot /host sh`.\n"
+            "The temporary pod will be deleted automatically when shell exits."
+        )
+        yield Grid(
+            Label("Start Node Shell", id="title"),
+            Label(content, id="content"),
+            Button("Cancel", variant="default", id="cancel"),
+            Button("Start Busybox Shell", variant="default", id="confirm"),
+            id="dialog"
+        )
+
+    @on(Button.Pressed, "#cancel")
+    def action_close(self):
+        self.app.pop_screen()
+
+    @on(Button.Pressed, "#confirm")
+    def action_confirm(self):
+        self.dismiss(self.data)
+
+
+class NodeShellLoading(ModalScreen):
+    """
+    Loading modal for node shell preparation.
+    """
+
+    DEFAULT_CSS = """
+        NodeShellLoading {
+            align: center middle;
+        }
+
+        #dialog {
+            grid-size: 1;
+            grid-gutter: 1 1;
+            grid-rows: 3 7 3;
+            padding: 0 1;
+            width: 76;
+            height: 17;
+            border: thick $background 80%;
+            background: $surface;
+            content-align: center middle;
+        }
+
+        #title {
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+        }
+
+        #content {
+            height: 1fr;
+            width: 1fr;
+            content-align: center top;
+        }
+    """
+
+    def __init__(self, node_name: str):
+        super().__init__()
+        self.node_name = node_name
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label("Starting Node Shell", id="title"),
+            LoadingIndicator(),
+            Label(
+                f"Starting the Busybox container on node {self.node_name}, please wait....",
+                id="content",
+            ),
+            id="dialog"
+        )
+
+
+class NodeShellFailed(ModalScreen):
+    """
+    Failure modal for node shell startup.
+    """
+
+    DEFAULT_CSS = """
+        NodeShellFailed {
+            align: center middle;
+        }
+
+        #dialog {
+            grid-size: 2;
+            grid-gutter: 1 1;
+            grid-rows: 3 7 3;
+            padding: 0 1;
+            width: 76;
+            height: 17;
+            border: thick $background 80%;
+            background: $surface;
+        }
+
+        #title {
+            column-span: 2;
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+        }
+
+        #content {
+            column-span: 2;
+            height: 1fr;
+            width: 1fr;
+            content-align: left top;
+        }
+
+        #confirm, #retry {
+            width: 1fr;
+        }
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Close", show=False),
+    ]
+
+    def __init__(self, node_name: str, reason: str, on_cleanup: Optional[Callable[[], None]] = None):
+        super().__init__()
+        self.node_name = node_name
+        self.reason = reason
+        self.on_cleanup = on_cleanup
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label("Start Node Shell Failed", id="title"),
+            Label(
+                f"The node {self.node_name} failed to start Busybox: {self.reason}",
+                id="content",
+            ),
+            Button("Confirm", variant="default", id="confirm"),
+            Button("Retry", variant="default", id="retry"),
+            id="dialog"
+        )
+
+    def _cleanup(self) -> None:
+        if self.on_cleanup is None:
+            return
+        try:
+            self.on_cleanup()
+        except Exception as e:
+            self.app.notify(f"Cleanup failed: {e}", severity="error")
+
+    def action_close(self):
+        self._cleanup()
+        self.dismiss("confirm")
+
+    @on(Button.Pressed, "#confirm")
+    def action_confirm(self):
+        self._cleanup()
+        self.dismiss("confirm")
+
+    @on(Button.Pressed, "#retry")
+    def action_retry(self):
+        self._cleanup()
+        self.dismiss("retry")
     
 
 class Delete(ModalScreen):

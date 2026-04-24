@@ -2,7 +2,7 @@ from kubernetes.stream import stream
 from kubernetes.client import CoreV1Api
 from kubernetes.client import ApiClient
 from kubernetes.client.exceptions import ApiException
-from typing import Optional
+from typing import Optional, Union
 from websocket import ABNF
 import json
 
@@ -10,7 +10,12 @@ import json
 
 class PodExec:
 
-    def __init__(self, api_client: ApiClient, pod_name: str, namespace: str = "default", command=None, container_name: Optional[str] = None):
+    def __init__(self, 
+                 api_client: ApiClient, 
+                 pod_name: str, 
+                 namespace: str = "default", 
+                 command: Optional[Union[str, list[str]]] = None, 
+                 container_name: Optional[str] = None):
         self.core_api = CoreV1Api(api_client=api_client)
         self.pod = pod_name
         self.namespace = namespace
