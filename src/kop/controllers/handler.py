@@ -94,7 +94,7 @@ class NodeActionHandler(BaseActionHandlerMixin):
                     state["pod_name"] = pod_name
 
                     factory = app.view.FACTORY_CACHE
-                    body = factory.load_template(namespace=namespace)
+                    body = factory.load_template(namespace=namespace, template_name="node-shell-pod")
 
                     metadata = body.setdefault("metadata", {})
                     metadata["name"] = pod_name

@@ -77,9 +77,11 @@ class BaseFactory(ABC):
         """create resource"""
         raise NotImplementedError(f"{self.__class__.__name__} does not support create")
 
-    def load_template(self, namespace: Optional[str] = None) -> dict:
-        """load new resource template from file"""
-        template_path = Path(__file__).resolve().parent / "templates" / "resource" / f"{self.resource_type}.yaml"
+    def load_template(self, namespace: Optional[str] = None, template_name: Optional[str] = None) -> dict:
+        """load new resource template from file and set namespace, 
+        the template file should be placed in `templates/resource/{resource_type}.yaml`
+        """
+        template_path = Path(__file__).resolve().parent / "templates" / "resource" / f"{template_name or self.resource_type}.yaml"
         if not template_path.exists():
             raise FileExistsError(
                 f"{self.__class__.__name__} template not found: {template_path}"
