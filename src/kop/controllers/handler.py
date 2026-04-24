@@ -1,7 +1,7 @@
+import time
+import threading
 from abc import ABC
 from datetime import datetime, timezone
-import threading
-import time
 from types import SimpleNamespace
 from kop.registry import ActionRegistry
 from kop.models import PodViewModel, PodDetailModel
@@ -12,7 +12,6 @@ from kop.views.PodAttach import Attach
 from kop.views.EditView import ResourceEditScreen
 from kop.widgets.Modals import (
     Option,
-    Delete,
     Scale,
     Confirm,
     NodeShellConfirm,
@@ -61,8 +60,8 @@ class NodeActionHandler(BaseActionHandlerMixin):
                 endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
                 pod_name = ""
                 try:
-                    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S%f")
-                    pod_name = f"kop-node-shell-{ts}"[:63]
+                    ts = datetime.now(timezone.utc).strftime("%Y%m%d%H%M%S")
+                    pod_name = f"kop-node-shell-{data.name}-{ts}"
 
                     factory = app.view.FACTORY_CACHE
                     body = factory.load_template(namespace=namespace)
@@ -181,7 +180,7 @@ class NodeActionHandler(BaseActionHandlerMixin):
                 return
             start_shell_flow(data)
 
-        app.push_screen(NodeShellConfirm(data=resource, image="busybox:latest"), callback=shell_callback)
+        app.push_screen(NodeShellConfirm(data=resource, image="busybox:stable"), callback=shell_callback)
 
     @staticmethod
     def cordon(action, resource: models.NodeViewModel, app):

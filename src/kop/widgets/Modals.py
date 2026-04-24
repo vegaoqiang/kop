@@ -185,7 +185,7 @@ class NodeShellConfirm(ModalScreen):
         Binding("escape", "close", "Cancel", show=False),
     ]
 
-    def __init__(self, data, image: str = "busybox:latest"):
+    def __init__(self, data, image: str = "busybox:stable"):
         super().__init__()
         self.data = data
         self.image = image
