@@ -277,7 +277,7 @@ class NodeShellLoading(ModalScreen):
 
     def on_mount(self) -> None:
         dialog = self.query_one("#dialog", Grid)
-        dialog.border_subtitle = "ESC to cancel"
+        dialog.border_subtitle = "ESC to Cancel"
 
 
 class NodeShellFailed(ModalScreen):
