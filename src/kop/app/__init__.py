@@ -1,4 +1,4 @@
-from .app import run
+from .kop import run
 
 
 __all__ = ["run"]
