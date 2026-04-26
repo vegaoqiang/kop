@@ -442,7 +442,13 @@ class PodActionHandler(BaseActionHandlerMixin):
             # serialize pod object to dict
             pod=app.endpoint.api_client.sanitize_for_serialization(pod)
             return pod
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=app.view.FACTORY_CACHE.update))
+        def updater(**playload):
+            try:
+                app.view.FACTORY_CACHE.update(**playload)
+                app.notify(f"Update pod {resource.name} success", severity="information")
+            except Exception as e:
+                raise e
+        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
 
 
 

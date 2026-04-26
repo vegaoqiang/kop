@@ -193,10 +193,6 @@ class AsyncEditScreen(Screen):
             if self.app.screen is loading_modal:
                 await loading_modal.dismiss()
         if update_success:
-            resource = event.playload.resource or {}
-            metadata = resource.get("metadata", {})
-            name = metadata.get("name", "resource")
-            self.notify(f"Update {name} success", severity="information")
             self.app.pop_screen()
 
 
