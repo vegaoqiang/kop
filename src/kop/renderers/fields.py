@@ -94,6 +94,12 @@ def networkpolicy_policytypes_renderer(value):
     return ",".join(value)
 
 
+def pv_capacity_renderer(value):
+    if not value:
+        return ""
+    return value.get('storage', '') if value else ""
+
+
 def pv_accessmodes_renderer(value):
     if not value:
         return ""

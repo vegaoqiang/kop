@@ -991,7 +991,7 @@ class NetworkPolicyDetailModel(NetworkPolicyViewModel):
 class PersistentVolumeViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     storageclass: str = field(metadata={"title": "Storage Class", "width": 10})
-    capacity: str = field(metadata={"title": "Capacity", "width": 5})
+    capacity: dict = field(metadata={"title": "Capacity", "width": 5, "renderer": f.pv_capacity_renderer})
     claim: str = field(metadata={"title": "Claim", "width": 15})
     accessmodes: list[str] = field(metadata={"title": "Access Modes", "width": 10, "renderer": f.pv_accessmodes_renderer})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
@@ -1002,7 +1002,7 @@ class PersistentVolumeViewModel(ViewModel):
         return cls(
             name=data.metadata.name,
             storageclass=data.spec.storage_class_name,
-            capacity=data.spec.capacity['storage'] if data.spec.capacity else "",
+            capacity=data.spec.capacity,
             claim=data.spec.claim_ref.name if data.spec.claim_ref else "",
             status=data.status.phase,
             accessmodes=data.spec.access_modes,
