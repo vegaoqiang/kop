@@ -237,8 +237,8 @@ class NodeViewModel(ViewModel):
 
 @dataclass
 class NodeDetailModel(NodeViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
-    labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "name"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables", "after": "created"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
     addresses: list = field(default_factory=list, metadata={"title": "Addresses"})
@@ -354,8 +354,8 @@ class ContainerModel(ViewModel):
 class PodViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 22})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    node: str = field(metadata={"title": "Node", "width": 10})
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
+    node: str = field(metadata={"title": "Node", "width": 10})
     containers: Union[str, List[ContainerModel]] = field(metadata={"title": "Containers", "width": 9, "after": "affinities"})
     restarts: str = field(metadata={"title": "Restarts", "width": 8})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 9})
@@ -393,29 +393,6 @@ class PodViewModel(ViewModel):
         if status and status.phase == "Failed" and status.reason == "Evicted":
             return "Evicted"
 
-        # # container level status
-        # container_statuses = (
-        #     status.container_statuses or []
-        # ) + (
-        #     status.init_container_statuses or []
-        # )
-
-        # for cs in container_statuses:
-        #     state = cs.state
-        #     if not state:
-        #         continue
-
-        #     # Waiting 
-        #     if state.waiting:
-        #         reason = state.waiting.reason
-        #         if reason:
-        #             return reason  # CrashLoopBackOff / ImagePullBackOff / ErrImagePull
-
-        #     # Terminated but abnormal
-        #     if state.terminated:
-        #         if state.terminated.exit_code != 0:
-        #             return state.terminated.reason or "Error"
-
         # default get pod phase
         if status and status.phase:
             return status.phase
@@ -425,7 +402,7 @@ class PodViewModel(ViewModel):
 
 @dataclass
 class PodDetailModel(PodViewModel):
-    labels: dict = field(default_factory=dict, metadata={"title": "Labels", "after": "namespace"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels", "after": "created"})
     annotations: list = field(default_factory=list, metadata={"title": "Annotations"})
     pod_ip: str = field(default="", metadata={"title": "Pod IP"})
     service_account: str = field(default="", metadata={"title": "Service Account"})
@@ -461,6 +438,7 @@ class PodDetailModel(PodViewModel):
 class DeploymentViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    created: str = field(metadata={"title": "Created", "width": 5, "column": False})
     pods: str = field(metadata={"title": "Pods", "width": 10})
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
@@ -485,8 +463,8 @@ class DeploymentViewModel(ViewModel):
 
 @dataclass
 class DeploymentDetailModel(DeploymentViewModel):
-    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     labels: dict = field(default_factory=dict, metadata={"title": "Labels", "after": "created"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     status_replicas: dict = field(default_factory=dict, metadata={"title": "Status Replicas"})
     selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
     node_selector: list = field(default_factory=list, metadata={"title": "Node Selector"})
@@ -521,7 +499,7 @@ class DeploymentDetailModel(DeploymentViewModel):
 class DaemonSetViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 20})
-    pods: str = field(metadata={"title": "Pods", "width": 10})
+    pods: str = field(metadata={"title": "Pods", "width": 10, "after": "annotations"})
     node_selector: str = field(metadata={"title": "NodeSelector", "width": 30})
     age: str = field(metadata={"title": "Age", "width": 10, "detail": False})
     
@@ -538,7 +516,7 @@ class DaemonSetViewModel(ViewModel):
 
 @dataclass
 class DaemonSetDetailModel(DaemonSetViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"}) 
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
@@ -563,7 +541,7 @@ class DaemonSetDetailModel(DaemonSetViewModel):
 class StatefulSetViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    pods: str = field(metadata={"title": "Pods", "width": 10})
+    pods: str = field(metadata={"title": "Pods", "width": 10, "after": "labels"})
     replicas: str = field(metadata={"title": "Replicas", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5})
     
@@ -580,7 +558,7 @@ class StatefulSetViewModel(ViewModel):
 
 @dataclass
 class StatefulSetDetailModel(StatefulSetViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"}) 
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
@@ -603,10 +581,10 @@ class StatefulSetDetailModel(StatefulSetViewModel):
 class JobViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 20})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    completions: str = field(metadata={"title": "Completions", "width": 10})
+    completions: str = field(metadata={"title": "Completions", "width": 10, "after": "labels"})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
-    start_time: str = field(metadata={"title": "Start Time", "width": 20})
-    completion_time: str = field(metadata={"title": "Completion Time", "width": 20})
+    start_time: str = field(metadata={"title": "Start Time", "width": 20, "after": "labels"})
+    completion_time: str = field(metadata={"title": "Completion Time", "width": 20, "after": "start_time"})
 
     @classmethod
     def clean(cls, data: V1Job) -> "JobViewModel":
@@ -622,7 +600,7 @@ class JobViewModel(ViewModel):
 
 @dataclass
 class JobDetailModel(JobViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"}) 
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
@@ -675,7 +653,7 @@ class CronJobViewModel(ViewModel):
 
 @dataclass
 class CronJobDetailModel(CronJobViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     concurrencypolicy: str = field(default_factory=str, metadata={"title": "Concurrency"})
     successfuljobshistorylimit: str = field(default_factory=str, metadata={"title": "SuccessLimit"})
     failedjobshistorylimit: str = field(default_factory=str, metadata={"title": "FailedLimit"})
@@ -711,7 +689,7 @@ class ConfigMapViewModel(ViewModel):
 
 @dataclass
 class ConfigMapDetailModel(ConfigMapViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     data: dict = field(default_factory=dict, metadata={"title": "Data"})
@@ -747,7 +725,7 @@ class SecretViewModel(ViewModel):
 
 @dataclass
 class SecretDetailModel(SecretViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
     type: str = field(default_factory=str, metadata={"title": "Type"})
     data: dict = field(default_factory=dict, metadata={"title": "Data"})
@@ -768,7 +746,7 @@ class SecretDetailModel(SecretViewModel):
 class ServiceViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    type: str = field(metadata={"title": "Type", "width": 10})
+    type: str = field(metadata={"title": "Type", "width": 10, "after": "labels"})
     clusterip: str = field(metadata={"title": "Cluster IP", "width": 10, "detail": False})
     externalip: str = field(metadata={"title": "External IP", "width": 10, "detail": False})
     ports: list[V1ServicePort] = field(metadata={"title": "Ports", "width": 15, "after": "selector", "renderer": f.service_ports_renderer})
@@ -794,7 +772,7 @@ class ServiceViewModel(ViewModel):
 
 @dataclass
 class ServiceDetailModel(ServiceViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
@@ -853,7 +831,7 @@ class EndpointViewModel(ViewModel):
 
 @dataclass
 class EndpointDetailModel(EndpointViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
     subsets: list[V1EndpointSubset] = field(default_factory=list, metadata={"title": "Subsets"})
 
@@ -890,7 +868,7 @@ class IngressViewModel(ViewModel):
 
 @dataclass
 class IngressDetailModel(IngressViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     tls: list[V1IngressTLS] = field(default_factory=list, metadata={"title": "TLS"})
@@ -934,8 +912,8 @@ class IngressDetailModel(IngressViewModel):
 @dataclass
 class IngressClassViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
-    default: str = field(metadata={"title": "Default", "width": 5})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    default: str = field(metadata={"title": "Default", "width": 5, "after": "labels"})
     controller: str = field(metadata={"title": "Controller", "width": 20})
     scope: str = field(metadata={"title": "Scope", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
@@ -954,7 +932,7 @@ class IngressClassViewModel(ViewModel):
 
 @dataclass
 class IngressClassDetailModel(IngressClassViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     parameters: dict = field(default_factory=dict, metadata={"title": "Parameters"})
@@ -975,7 +953,7 @@ class IngressClassDetailModel(IngressClassViewModel):
 class NetworkPolicyViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    policytypes: list[str] = field(metadata={"title": "Policy Types", "width": 20, "renderer": f.networkpolicy_policytypes_renderer})
+    policytypes: list[str] = field(metadata={"title": "Policy Types", "width": 20, "after": "annotations", "renderer": f.networkpolicy_policytypes_renderer})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
 
     @classmethod
@@ -990,7 +968,7 @@ class NetworkPolicyViewModel(ViewModel):
 
 @dataclass
 class NetworkPolicyDetailModel(NetworkPolicyViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     podselector: V1LabelSelector = field(default_factory=V1LabelSelector, metadata={"title": "Pod Selector"})
     ingress: list[V1NetworkPolicyIngressRule] = field(default_factory=list, metadata={"title": "Ingress"})
@@ -1034,7 +1012,7 @@ class PersistentVolumeViewModel(ViewModel):
 
 @dataclass
 class PersistentVolumeDetailModel(PersistentVolumeViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "name"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
     reclaimpolicy: str = field(default_factory=str, metadata={"title": "Reclaim Policy"})
@@ -1061,7 +1039,7 @@ class PersistentVolumeDetailModel(PersistentVolumeViewModel):
 class PersistentVolumeClaimViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
-    strorageclass: str = field(metadata={"title": "Storage", "width": 10})
+    strorageclass: str = field(metadata={"title": "Storage", "width": 10, "after": "labels"})
     size: str = field(metadata={"title": "Size", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
     status: str = field(metadata={"title": "Status", "width": 5, "renderer": f.pv_status_renderer})
@@ -1080,8 +1058,8 @@ class PersistentVolumeClaimViewModel(ViewModel):
 
 @dataclass
 class PersistentVolumeClaimDetailModel(PersistentVolumeClaimViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
-    labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Labels", "after": "created"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
     selector: dict = field(default_factory=dict, metadata={"title": "Selector"})
@@ -1109,7 +1087,7 @@ class PersistentVolumeClaimDetailModel(PersistentVolumeClaimViewModel):
 @dataclass
 class StorageClassViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
-    default: str = field(metadata={"title": "Default", "width": 5})
+    default: str = field(metadata={"title": "Default", "width": 5, "after": "labels"})
     provisioner: str = field(metadata={"title": "Provisioner", "width": 15})
     reclaimpolicy: str = field(metadata={"title": "Reclaim Policy", "width": 10})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
@@ -1133,7 +1111,7 @@ class StorageClassViewModel(ViewModel):
 
 @dataclass
 class StorageClassDetailModel(StorageClassViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "name"})
     labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     providerparameters: dict = field(default_factory=dict, metadata={"title": "Parameters"})
@@ -1160,7 +1138,7 @@ class StorageClassDetailModel(StorageClassViewModel):
 class NamespaceViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
-    status: str = field(metadata={"title": "Status", "width": 5, "renderer": f.namespace_status_renderer})
+    status: str = field(metadata={"title": "Status", "width": 5, "after": "labels", "renderer": f.namespace_status_renderer})
 
     @classmethod
     def clean(cls, data: V1Namespace) -> "NamespaceViewModel":
@@ -1173,7 +1151,7 @@ class NamespaceViewModel(ViewModel):
 
 @dataclass
 class NamespaceDetailModel(NamespaceViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "name"})
     labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     finalizers: list = field(default_factory=list, metadata={"title": "Finalizers"})
@@ -1207,7 +1185,7 @@ class ServiceAccountViewModel(ViewModel):
 
 @dataclass
 class ServiceAccountDetailModel(ServiceAccountViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     ownerreferences: list = field(default_factory=list, metadata={"title": "Owner References"})
@@ -1253,7 +1231,7 @@ class RoleViewModel(ViewModel):
 
 @dataclass
 class RoleDetailModel(RoleViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     rolerules: list = field(default_factory=list, metadata={"title": "Rules"})
@@ -1285,7 +1263,7 @@ class ClusterRoleViewModel(ViewModel):
 
 @dataclass
 class ClusterRoleDetailModel(ClusterRoleViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "name"})
     labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     rolerules: list = field(default_factory=list, metadata={"title": "Rules"})
@@ -1321,7 +1299,7 @@ class RoleBindingViewModel(ViewModel):
 
 @dataclass
 class RoleBindingDetailModel(RoleBindingViewModel): 
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
     labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     roleref: dict = field(default_factory=dict, metadata={"title": "Role Reference"})
@@ -1355,7 +1333,7 @@ class ClusterRoleBindingViewModel(ViewModel):
 
 @dataclass
 class ClusterRoleBindingDetailModel(ClusterRoleBindingViewModel):
-    created: str = field(default_factory=str, metadata={"title": "Created"})
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "name"})
     labels: dict = field(default_factory=dict, metadata={"title": "Labels"})
     annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
     roleref: dict = field(default_factory=dict, metadata={"title": "Role Reference"})
