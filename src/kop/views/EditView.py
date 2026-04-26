@@ -179,9 +179,11 @@ class AsyncEditScreen(Screen):
     async def on_resource_edit_resource_update(self, event: ResourceEdit.ResourceUpdate) -> None:
         event.stop()
         loading_modal = UpdateLoadingModal()
+        update_success = False
         await self.app.push_screen(loading_modal)
         try:
             await asyncio.to_thread(self.update_resource, event.playload)
+            update_success = True
         except Exception as e:
             if self.app.screen is loading_modal:
                 await loading_modal.dismiss()
@@ -190,6 +192,12 @@ class AsyncEditScreen(Screen):
         finally:
             if self.app.screen is loading_modal:
                 await loading_modal.dismiss()
+        if update_success:
+            resource = event.playload.resource or {}
+            metadata = resource.get("metadata", {})
+            name = metadata.get("name", "resource")
+            self.notify(f"Update {name} success", severity="information")
+            self.app.pop_screen()
 
 
 class ResourceEditScreen(AsyncEditScreen):
