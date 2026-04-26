@@ -66,7 +66,6 @@ class AsyncEditScreen(Screen):
     def on_resource_edit_resource_update(self, event: ResourceEdit.ResourceUpdate) -> None:
         try:
             res = self.update_resource(event.playload)
-            print('on_resource_edit_resource_update:', res)
         except Exception as e:
             self.notify(f"Update resource failed: {e}", severity="error")
             return
