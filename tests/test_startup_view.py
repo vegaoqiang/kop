@@ -283,6 +283,24 @@ def test_fetch_cluster_version_returns_trimmed_git_version_and_closes_client(
     assert created_clients[0].closed is True
 
 
+def test_fetch_cluster_version_uses_mock_env_without_kube_api(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    base = _config("cluster-a", "/tmp/cluster-a.yaml", contexts=["ctx-a"])
+    screen = ConfigView(kubeconfigs=[base])
+    monkeypatch.setenv("KOP_MOCK_CLUSTER_VERSION", "v9.9.9-{name}")
+
+    def _fail_if_called(**_kwargs):
+        raise AssertionError("load_kube_config should not be called when mock version is enabled")
+
+    monkeypatch.setattr(startup_view.kube_config, "load_kube_config", _fail_if_called)
+
+    version, error = screen._fetch_cluster_version(base)
+
+    assert version == "v9.9.9-cluster-a"
+    assert error == ""
+
+
 def test_add_cluster_screen_prefills_name_and_content_on_mount(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

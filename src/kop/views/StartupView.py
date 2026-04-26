@@ -1,4 +1,5 @@
 import asyncio
+import os
 from queue import Empty, Queue
 from pathlib import Path
 from threading import Thread
@@ -105,6 +106,12 @@ class ConfigView(Screen):
     ]
 
     KubeConfigs: Reactive[list[ConfigModel]] = Reactive([], recompose=True)
+    # for testing cluster version display in cluster card, set 
+    # env `KOP_MOCK_CLUSTER_VERSION` to a non-empty value, 
+    # example: `v1.30.0-{name}`, `{name}` will be replaced with 
+    # cluster name.
+    # use example: KOP_MOCK_CLUSTER_VERSION='v1.30.9-{name}' kop
+    MOCK_VERSION_ENV = "KOP_MOCK_CLUSTER_VERSION"
 
     def __init__(self, kubeconfigs: list[ConfigModel] = [], column_length: int = 4, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -396,6 +403,8 @@ class ConfigView(Screen):
             return "", f"Connection timed out after {timeout:.1f}s."
 
     def _fetch_cluster_version(self, config: ConfigModel, context: Optional[str] = None) -> tuple[str, str]:
+        if mock_version := self._get_mock_cluster_version(config):
+            return mock_version, ""
         context = context or config.current_context
         configuration = client.Configuration()
         api_client: Optional[client.ApiClient] = None
@@ -417,6 +426,16 @@ class ConfigView(Screen):
         finally:
             if api_client:
                 api_client.close()
+
+    def _get_mock_cluster_version(self, config: ConfigModel) -> str:
+        raw_version = os.getenv(self.MOCK_VERSION_ENV, "").strip()
+        if not raw_version:
+            return ""
+        # Support patterns such as "v1.30.0-{name}" to make cards easier to distinguish.
+        try:
+            return raw_version.format(name=config.name)
+        except Exception:
+            return raw_version
 
 
 class DeleteConfigConfirmScreen(ModalScreen):
