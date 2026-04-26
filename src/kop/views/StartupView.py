@@ -544,9 +544,9 @@ class AddClusterScreen(Screen):
         yield Label("Paste Your Cluster Config Content")
         yield TextArea(language="yaml")
         yield Horizontal(
-            Button(label="Save", variant="default", id="save", tooltip="Save cluster config"),
             Button(label="Cancel", variant="default", id="cancel", tooltip="Cancel and go back to previous screen"),
             Button(label="Clear", variant="default", id="clear", tooltip="Clear cluster config content"),
+            Button(label="Save", variant="default", id="save", tooltip="Save cluster config"),            
             id="button_group"
         )
         yield Footer()
