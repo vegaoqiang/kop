@@ -1,10 +1,122 @@
 from textual import work
 from textual.worker import Worker, WorkerState, get_current_worker
-from textual.screen import Screen
+from textual.screen import Screen, ModalScreen
 from textual.app import ComposeResult
-from textual.widgets import LoadingIndicator
+from textual.widgets import LoadingIndicator, Label, Button
+from textual.containers import Grid
+from textual.binding import Binding
+from textual import on
 from kop.widgets.Edit import ResourceEdit, PlayLoad
 from typing import Callable, Optional
+import asyncio
+
+
+
+
+class UpdateLoadingModal(ModalScreen):
+    DEFAULT_CSS = """
+        UpdateLoadingModal {
+            align: center middle;
+            background: $background 55%;
+        }
+
+        #dialog {
+            grid-size: 1;
+            grid-gutter: 1 1;
+            grid-rows: 3 5 3;
+            padding: 0 1;
+            width: 68;
+            height: 14;
+            border: solid $secondary;
+            background: $surface;
+            content-align: center middle;
+        }
+
+        #title {
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+        }
+
+        #content {
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+        }
+    """
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label("Updating Resource", id="title"),
+            LoadingIndicator(),
+            Label("Saving changes, please wait...", id="content"),
+            id="dialog",
+        )
+
+
+class UpdateFailedModal(ModalScreen):
+    DEFAULT_CSS = """
+        UpdateFailedModal {
+            align: center middle;
+            background: $background 55%;
+        }
+
+        #dialog {
+            grid-size: 1;
+            grid-gutter: 1 1;
+            grid-rows: 3 8 3;
+            padding: 0 1;
+            width: 76;
+            height: 18;
+            border: solid $error;
+            background: $surface;
+        }
+
+        #title {
+            height: 1fr;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+        }
+
+        #content {
+            height: 1fr;
+            width: 1fr;
+            content-align: left top;
+        }
+
+        #confirm {
+            width: 1fr;
+        }
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Close", show=False),
+    ]
+
+    def __init__(self, reason: str) -> None:
+        super().__init__()
+        self.reason = reason
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label("Update Resource Failed", id="title"),
+            Label(f"Failed to save changes: {self.reason}", id="content"),
+            Button("Confirm", variant="default", id="confirm"),
+            id="dialog",
+        )
+
+    def action_close(self) -> None:
+        self.dismiss()
+
+    @on(Button.Pressed, "#confirm")
+    def action_confirm(self) -> None:
+        self.dismiss()
+
+    def on_mount(self) -> None:
+        grid = self.query_one("#dialog", Grid)
+        grid.border_subtitle = "Press [b]Esc[/b] to close"
 
 
 
@@ -63,12 +175,21 @@ class AsyncEditScreen(Screen):
         """
         raise NotImplementedError
     
-    def on_resource_edit_resource_update(self, event: ResourceEdit.ResourceUpdate) -> None:
+    @on(ResourceEdit.ResourceUpdate)
+    async def on_resource_edit_resource_update(self, event: ResourceEdit.ResourceUpdate) -> None:
+        event.stop()
+        loading_modal = UpdateLoadingModal()
+        await self.app.push_screen(loading_modal)
         try:
-            res = self.update_resource(event.playload)
+            await asyncio.to_thread(self.update_resource, event.playload)
         except Exception as e:
-            self.notify(f"Update resource failed: {e}", severity="error")
+            if self.app.screen is loading_modal:
+                await loading_modal.dismiss()
+            await self.app.push_screen(UpdateFailedModal(str(e)))
             return
+        finally:
+            if self.app.screen is loading_modal:
+                await loading_modal.dismiss()
 
 
 class ResourceEditScreen(AsyncEditScreen):
@@ -101,7 +222,4 @@ class ResourceEditScreen(AsyncEditScreen):
             namespace=playload.resource['metadata']['namespace'], 
             body=playload.resource,
             field_manager="kop",
-            # dry_run='All' if playload.dry_run else '',
-            # force=False,
-            # _content_type="application/apply-patch+yaml",
         )
