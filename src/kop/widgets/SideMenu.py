@@ -79,7 +79,7 @@ class SideMenu(Static):
         self.set_reactive(SideMenu.display_menu, MENU)
 
     def compose(self) -> ComposeResult:
-        yield Input(id="search_menu", placeholder="Press / to search menu", tooltip="ctrl+u clear search")
+        yield Input(id="search_menu", placeholder="Press / to search Kinds", tooltip="ctrl+u clear search")
         with ListView(id="side_menu"):
             for menu in self.display_menu:
                 yield ListItem(Label(menu.name), id=menu.id, name=menu.name)    
@@ -203,7 +203,7 @@ class SideMenu(Static):
         self.post_message(self.ResourceEvent(menu_id, menu_name))
 
     def _update_input_placeholder(self) -> None:
-        placeholders = ["Press / to search menu", "ctrl+u clear search"]
+        placeholders = ["Press / to search Kinds", "ctrl+u clear search"]
         search_menu = self.query_one("#search_menu", Input)
         
         _placeholder_index = 0
