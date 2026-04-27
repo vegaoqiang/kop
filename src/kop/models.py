@@ -195,15 +195,20 @@ class ViewModel:
     
     @staticmethod
     def make_containers(data) -> List["ContainerModel"]:
-        # when resource created and status is pending, data.status.container_statuses is None
-        if data.spec.containers and data.status.container_statuses:
-            return [ContainerModel(
-                    _raw=_c, 
-                    container_statuses=ContainerStatusModel(_raw=_status)) 
-                    for _c, _status in zip(data.spec.containers, data.status.container_statuses)]
-        return [ContainerModel(
-                    _raw=_c, 
-                    container_statuses=None) for _c in data.spec.containers]
+        containers = data.spec.containers or []
+        statuses = data.status.container_statuses if data.status else []
+        status_index = {st.name: st for st in statuses} if statuses else {}
+        return [
+            ContainerModel(
+                _raw=container,
+                container_status=(
+                    ContainerStatusModel(_raw=status_index[container.name])
+                    if status_index.get(container.name)
+                    else None
+                ),
+            )
+            for container in containers
+        ]
                                  
     @classmethod
     def clean(cls, data):
@@ -317,7 +322,7 @@ class ContainerModel(ViewModel):
     environmnet: Union[List[V1EnvVar], str] = field(default="", metadata={"title": "Environment"})
     arguments: str = field(default="", metadata={"title": "Arguments"})
     command: str = field(default="", metadata={"title": "Command"})
-    container_statuses: Optional[ContainerStatusModel] = field(default=None, metadata={"title": "Status"})
+    container_status: Optional[V1ContainerStatus] = field(default=None, metadata={"title": "Status"})
     ports: Optional[List[V1ContainerPort]] = field(default=None, metadata={"title": "Port"})
     volume_mounts: Optional[List[V1VolumeMount]] = field(default=None, metadata={"title": "Volume Mount"})
     resources: Optional[V1ResourceRequirements] = field(default=None, metadata={"title": "Resources"})
@@ -325,7 +330,7 @@ class ContainerModel(ViewModel):
 
 
     # _raw is used to cache the raw container data
-    _raw: Optional[V1Container] = field(default=None, repr=False)
+    _raw: Optional[Any] = field(default=None, repr=False)
 
     @classmethod
     def clean(cls, data: V1Container) -> "ContainerModel":
@@ -336,12 +341,14 @@ class ContainerModel(ViewModel):
             environmnet=data.env, # type: ignore
             arguments=data.args, # type: ignore
             command=data.command, # type: ignore
-            probe={'liveness': data.liveness_probe, 
-                   'readiness': data.readiness_probe, 
-                   'startup': data.startup_probe},
-            ports=data.ports,
-            volume_mounts=data.volume_mounts,
-            resources=data.resources
+            probe={
+                "liveness": getattr(data, "liveness_probe", None),
+                "readiness": getattr(data, "readiness_probe", None),
+                "startup": getattr(data, "startup_probe", None),
+            },
+            ports=getattr(data, "ports", None),
+            volume_mounts=getattr(data, "volume_mounts", None),
+            resources=getattr(data, "resources", None),
         )
     
     def lazy_clean(self):
@@ -373,7 +380,7 @@ class PodViewModel(ViewModel):
             namespace=data.metadata.namespace, # type: ignore
             node=data.spec.node_name or "", # type: ignore
             status=cls.get_pod_status(data), # type: ignore
-            containers=[ContainerModel(_raw=cs) for cs in data.spec.containers], # type: ignore
+            containers=cls._make_containers(data.spec.containers or [], data.status.container_statuses if data.status else []), # type: ignore
             restarts=str(sum(cs.restart_count for cs in data.status.container_statuses)) if data.status.container_statuses else "", # type: ignore
             controlled_by=data.metadata.owner_references[0].kind if data.metadata.owner_references else "", # type: ignore
             qos=data.status.qos_class, # type: ignore
@@ -398,7 +405,20 @@ class PodViewModel(ViewModel):
             return status.phase
 
         return "Unknown"
-
+    
+    @staticmethod
+    def _make_containers(containers: List[Any], status: Optional[List[V1ContainerStatus]]) -> List[ContainerModel]:
+        status_index = {st.name: st for st in status} if status else {}
+        result = []
+        for cs in containers:
+            container_status = status_index.get(cs.name)
+            result.append(
+                ContainerModel(
+                    _raw=cs,
+                    container_status=container_status if container_status else None,
+                )
+            )
+        return result
 
 @dataclass
 class PodDetailModel(PodViewModel):
@@ -411,6 +431,8 @@ class PodDetailModel(PodViewModel):
     node_selector: list = field(default_factory=list, metadata={"title": "Node Selector"})
     tolerations: list[V1Toleration] = field(default_factory=list, metadata={"title": "Tolerations"})
     affinities: str = field(default="", metadata={"title": "Affinities"})
+    init_containers: list[ContainerModel] = field(default_factory=list, metadata={"title": "Init Containers"})
+    ephemeral_containers: list[ContainerModel] = field(default_factory=list, metadata={"title": "Ephemeral Containers"})
 
     _raw: Optional[V1Pod] = field(default=None, repr=False)
 
@@ -427,7 +449,10 @@ class PodDetailModel(PodViewModel):
             'node_selector': data.spec.node_selector,
             'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
-            'containers': cls.make_containers(data)
+            # 'containers': cls.make_containers(data),
+            # 'containers': cls._make_containers(data.spec.containers, data.status.container_statuses) if data.spec.containers else [],
+            'init_containers': cls._make_containers(data.spec.init_containers, data.status.init_container_statuses) if data.spec.init_containers else [],
+            'ephemeral_containers': cls._make_containers(data.spec.ephemeral_containers, data.status.ephemeral_container_statuses) if data.spec.ephemeral_containers else [],
         })
         base["_raw"] = data
         return cls(**base)

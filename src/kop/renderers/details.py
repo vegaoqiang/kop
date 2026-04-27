@@ -20,10 +20,16 @@ from typing import Optional
 
 
 
+@RendererRegistry.register_renderer('container_status')
 @RendererRegistry.register_renderer('container_statuses')
-def render_container_status(title: str, desc: list[ContainerStatusModel]) -> ComposeResult:   
-    for item in desc:
-        yield from container_status(desc=item)
+def render_container_status(title: str, desc) -> ComposeResult:
+    if not desc:
+        return
+    if isinstance(desc, list):
+        for item in desc:
+            yield from container_status(desc=item)
+        return
+    yield from container_status(desc=desc)
 
 
 def container_status(desc: ContainerStatusModel) -> ComposeResult:
@@ -60,6 +66,8 @@ def render_tolerations(title: str, desc: list) -> ComposeResult:
 
 
 @RendererRegistry.register_renderer('containers')
+@RendererRegistry.register_renderer('init_containers')
+@RendererRegistry.register_renderer('ephemeral_containers')
 def render_containers(title: str, desc: list[ContainerModel]) -> ComposeResult:
     box = Container()
     box.border_title = title
