@@ -36,6 +36,11 @@ def container_status_formatter(desc):
         return str(value)
 
     def _format_state_value(state_value):
+        color_map = {
+            "running": "green",
+            "terminated": "red",
+            "waiting": "yellow",
+        }
         if state_value is None:
             return DEFAULT_CHAR
 
@@ -44,13 +49,13 @@ def container_status_formatter(desc):
         elif not isinstance(state_value, dict):
             return str(state_value)
 
-        details: list[str] = []
+        details: list[Text] = []
         for state_name, metrics in state_value.items():
             compact = _compact_non_none(metrics)
             if compact is None:
                 continue
-            details.append(f"{state_name}: {compact}")
-        return "\n".join(details) if details else DEFAULT_CHAR
+            details.append(Text(f"{state_name}: {compact}", style=color_map.get(state_name, "white")))
+        return Text("\n").join(details) if details else DEFAULT_CHAR
 
     if not desc:
         return DEFAULT_CHAR
