@@ -12,6 +12,61 @@ from typing import Optional
 DEFAULT_CHAR = '-'
 
 
+def container_status_formatter(desc):
+    def _compact_non_none(value):
+        if value is None:
+            return None
+        if hasattr(value, "to_dict"):
+            value = value.to_dict()
+        if isinstance(value, dict):
+            parts = []
+            for k, v in value.items():
+                compact = _compact_non_none(v)
+                if compact is None:
+                    continue
+                parts.append(f"{k}={compact}")
+            return ", ".join(parts) if parts else None
+        if isinstance(value, (list, tuple)):
+            parts = []
+            for item in value:
+                compact = _compact_non_none(item)
+                if compact is not None:
+                    parts.append(compact)
+            return ", ".join(parts) if parts else None
+        return str(value)
+
+    def _format_state_value(state_value):
+        if state_value is None:
+            return DEFAULT_CHAR
+
+        if hasattr(state_value, "to_dict"):
+            state_value = state_value.to_dict()
+        elif not isinstance(state_value, dict):
+            return str(state_value)
+
+        details: list[str] = []
+        for state_name, metrics in state_value.items():
+            compact = _compact_non_none(metrics)
+            if compact is None:
+                continue
+            details.append(f"{state_name}: {compact}")
+        return "\n".join(details) if details else DEFAULT_CHAR
+
+    if not desc:
+        return DEFAULT_CHAR
+
+    table = Table().grid(expand=True)
+    table.add_column(justify="left")
+    table.add_column(justify="left")
+
+    table.add_row("Ready", str(desc.ready) if desc.ready is not None else DEFAULT_CHAR)
+    table.add_row("Started", str(desc.started) if desc.started is not None else DEFAULT_CHAR)
+    table.add_row("Restart Count", str(desc.restart_count) if desc.restart_count is not None else DEFAULT_CHAR)
+    table.add_row("State", _format_state_value(desc.state))
+    table.add_row("Last State", _format_state_value(desc.last_state))
+    return Panel(table)
+
+
 def tolerations_formatter(desc):
     table = Table()
     for col in desc[0].attribute_map.values():

@@ -354,7 +354,10 @@ class ContainerModel(ViewModel):
     def lazy_clean(self):
         if not self._raw:
             raise ValueError("No raw container data to clean.")
-        return self.__class__.clean(self._raw)
+        cleaned = self.__class__.clean(self._raw)
+        # Preserve associated runtime status injected during container/status join.
+        cleaned.container_status = self.container_status
+        return cleaned
 
 
 @dataclass
@@ -450,7 +453,6 @@ class PodDetailModel(PodViewModel):
             'tolerations': [item for item in data.spec.tolerations],
             'affinities': data.spec.affinity,
             # 'containers': cls.make_containers(data),
-            # 'containers': cls._make_containers(data.spec.containers, data.status.container_statuses) if data.spec.containers else [],
             'init_containers': cls._make_containers(data.spec.init_containers, data.status.init_container_statuses) if data.spec.init_containers else [],
             'ephemeral_containers': cls._make_containers(data.spec.ephemeral_containers, data.status.ephemeral_container_statuses) if data.spec.ephemeral_containers else [],
         })

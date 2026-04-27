@@ -20,27 +20,31 @@ from typing import Optional
 
 
 
+# @RendererRegistry.register_renderer('container_status')
+# @RendererRegistry.register_renderer('container_statuses')
+# def render_container_status(title: str, desc) -> ComposeResult:
+#     if not desc:
+#         return
+#     if isinstance(desc, list):
+#         for item in desc:
+#             yield from container_status(desc=item)
+#         return
+#     yield from container_status(desc=desc)
+
+
+# def container_status(desc: ContainerStatusModel) -> ComposeResult:
+#     desc = desc.lazy_clean()
+#     columns = desc.get_columns()
+#     for col in columns:
+#         field_value = desc.get(col.field)
+#         if not field_value:
+#             continue
+#         renderer = RendererRegistry.get_renderer(col.field)
+#         yield from renderer(title=col.title, desc=field_value)
+
 @RendererRegistry.register_renderer('container_status')
-@RendererRegistry.register_renderer('container_statuses')
 def render_container_status(title: str, desc) -> ComposeResult:
-    if not desc:
-        return
-    if isinstance(desc, list):
-        for item in desc:
-            yield from container_status(desc=item)
-        return
-    yield from container_status(desc=desc)
-
-
-def container_status(desc: ContainerStatusModel) -> ComposeResult:
-    desc = desc.lazy_clean()
-    columns = desc.get_columns()
-    for col in columns:
-        field_value = desc.get(col.field)
-        if not field_value:
-            continue
-        renderer = RendererRegistry.get_renderer(col.field)
-        yield from renderer(title=col.title, desc=field_value)
+    yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.container_status_formatter))
 
 
 def render_default(title: str, desc) -> ComposeResult:
@@ -78,6 +82,8 @@ def render_containers(title: str, desc: list[ContainerModel]) -> ComposeResult:
         for index, container in enumerate(desc):
             container = container.lazy_clean()
             columns = container.get_detail_columns()
+            if container.container_status and container.container_status.ready is False:
+                box.styles.border = ("heavy", "red")
             for col in columns:
                 field_value = container.get(col.field)
                 if not field_value:
