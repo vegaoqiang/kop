@@ -56,14 +56,14 @@ def container_status_formatter(desc):
         return DEFAULT_CHAR
 
     table = Table().grid(expand=True)
-    table.add_column(justify="left")
-    table.add_column(justify="left")
+    table.add_column(justify="left", ratio=30)
+    table.add_column(justify="left", ratio=70)
 
-    table.add_row("Ready", str(desc.ready) if desc.ready is not None else DEFAULT_CHAR)
-    table.add_row("Started", str(desc.started) if desc.started is not None else DEFAULT_CHAR)
-    table.add_row("Restart Count", str(desc.restart_count) if desc.restart_count is not None else DEFAULT_CHAR)
-    table.add_row("State", _format_state_value(desc.state))
-    table.add_row("Last State", _format_state_value(desc.last_state))
+    table.add_row(Text("Ready", style="bold"), Text(str(desc.ready), style="green" if desc.ready else "red") if desc.ready is not None else DEFAULT_CHAR)
+    table.add_row(Text("Started", style="bold"), Text(str(desc.started), style="green" if desc.started else "red") if desc.started is not None else DEFAULT_CHAR)
+    table.add_row(Text("Restarts", style="bold"), str(desc.restart_count) if desc.restart_count is not None else DEFAULT_CHAR)
+    table.add_row(Text("State", style="bold"), _format_state_value(desc.state))
+    table.add_row(Text("Last State", style="bold"), _format_state_value(desc.last_state))
     return Panel(table)
 
 

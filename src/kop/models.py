@@ -322,7 +322,7 @@ class ContainerModel(ViewModel):
     environmnet: Union[List[V1EnvVar], str] = field(default="", metadata={"title": "Environment"})
     arguments: str = field(default="", metadata={"title": "Arguments"})
     command: str = field(default="", metadata={"title": "Command"})
-    container_status: Optional[V1ContainerStatus] = field(default=None, metadata={"title": "Status"})
+    container_status: Optional[V1ContainerStatus] = field(default=None, metadata={"title": "Status", "after": "image"})
     ports: Optional[List[V1ContainerPort]] = field(default=None, metadata={"title": "Port"})
     volume_mounts: Optional[List[V1VolumeMount]] = field(default=None, metadata={"title": "Volume Mount"})
     resources: Optional[V1ResourceRequirements] = field(default=None, metadata={"title": "Resources"})
