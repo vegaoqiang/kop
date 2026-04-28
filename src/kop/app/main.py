@@ -115,10 +115,10 @@ def valid_file(path: str) -> str:
 
 
 def run() -> None:
+    print(f"\033]0;kop\007", end="", flush=True)
     kop = Kop(config_file=get_args())
     kop.run()
 
 
 if __name__ == "__main__":
-    print(f"\033]0;kop\007", end="", flush=True)
     run()
