@@ -120,4 +120,5 @@ def run() -> None:
 
 
 if __name__ == "__main__":
+    print(f"\033]0;kop\007", end="", flush=True)
     run()
