@@ -366,7 +366,8 @@ class PodViewModel(ViewModel):
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     created: str = field(metadata={"title": "Created", "width": 5, "column": False})
     node: str = field(metadata={"title": "Node", "width": 10})
-    containers: Union[str, List[ContainerModel]] = field(metadata={"title": "Containers", "width": 9, "after": "affinities"})
+    containers: Union[str, List[ContainerModel]] = field(metadata={"title": "Containers", "width": 9, "after": "affinities", "column": False})
+    all_container_status: Optional[List[V1ContainerStatus]] = field(metadata={"title": "Containers", "width": 20, "detail": False, "renderer": f.container_status_renderer})
     restarts: str = field(metadata={"title": "Restarts", "width": 8})
     controlled_by: str = field(metadata={"title": "ControlledBy", "width": 9})
     qos: str = field(metadata={"title": "QoS", "width": 9})
@@ -384,6 +385,7 @@ class PodViewModel(ViewModel):
             node=data.spec.node_name or "", # type: ignore
             status=cls.get_pod_status(data), # type: ignore
             containers=cls._make_containers(data.spec.containers or [], data.status.container_statuses if data.status else []), # type: ignore
+            all_container_status=data.status,
             restarts=str(sum(cs.restart_count for cs in data.status.container_statuses)) if data.status.container_statuses else "", # type: ignore
             controlled_by=data.metadata.owner_references[0].kind if data.metadata.owner_references else "", # type: ignore
             qos=data.status.qos_class, # type: ignore

@@ -28,6 +28,33 @@ def pod_status_renderer(value: str):
     return text.append(value, style=color)
 
 
+def container_status_renderer(value):
+    if not value:
+        return ""
+    init_container_statuses = value.init_container_statuses
+    ephemeral_container_statuses = value.ephemeral_container_statuses
+    if init_container_statuses is None:
+        init_container_statuses = []
+    if ephemeral_container_statuses is None:
+        ephemeral_container_statuses = []
+
+    all_container_status = value.container_statuses + init_container_statuses + ephemeral_container_statuses
+    status_texts = []
+    for cs in all_container_status:
+        if cs.ready and cs.started:
+            status_texts.append(Text("◼︎", style="bold green"))
+        elif cs.state.waiting:
+            status_texts.append(Text("◼︎", style="bold yellow"))
+        elif cs.state.terminated and cs.state.terminated.exit_code != 0:
+            status_texts.append(Text("◼︎", style="bold red"))
+        elif cs.state.terminated and cs.state.terminated.exit_code == 0:
+            status_texts.append(Text("◼︎", style="bold blue"))
+        elif cs.state.running:
+            status_texts.append(Text("◼︎", style="bold green"))
+        else:
+            status_texts.append(Text("◼︎", style="bold yellow"))
+    return Text(" ").join(status_texts)
+
 def deployment_conditions_renderer(value):
     color_map = {
         "Available": "rgb(0,255,0)",
