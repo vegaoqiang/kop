@@ -94,7 +94,7 @@ class ConfigView(Screen):
         }
     """
 
-    SUB_TITLE = "Kubernetes Clusters"
+    SUB_TITLE = "Startup"
 
     BINDINGS = [
         Binding(key='a', action='add', description='Add New Cluster'),
@@ -128,7 +128,7 @@ class ConfigView(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Label("Kubernetes Clusters", id="title")
+        yield Label("Registered Kubernetes Clusters", id="title")
         with VerticalScroll(id="config"):
             if not self.KubeConfigs:
                 yield Label("No Kubernetes Cluster Found, Please Add or Sync your kubeconfigs", id="empty")
