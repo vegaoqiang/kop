@@ -1,3 +1,5 @@
+from queue import Queue, Empty
+from threading import Thread
 from textual import work
 from textual.events import Key
 from textual.screen import Screen
@@ -18,6 +20,8 @@ from typing import Optional, Tuple
 
 
 class ResourceView(Screen):
+
+    RESOURCE_FETCH_TIMEOUT = 3.0
 
     DEFAULT_CSS = """
         SideMenu {
@@ -114,6 +118,33 @@ class ResourceView(Screen):
         cleaned.sort(key=lambda vm: vm.name)
         return factory, data, cleaned
 
+    def _fetch_resource_with_timeout(
+        self,
+        resource_type: str,
+        namespace: Optional[str],
+        keyword: Optional[str],
+        timeout: float,
+    ) -> Tuple[Optional[BaseFactory], Optional[object], list]:
+        """Run kubernetes fetch in a daemon thread so app shutdown isn't blocked by stuck API calls."""
+        result: Queue[Tuple[str, object]] = Queue(maxsize=1)
+
+        def _runner() -> None:
+            try:
+                result.put(("ok", self._fetch_resource(resource_type, namespace, keyword)))
+            except Exception as exc:
+                result.put(("error", exc))
+
+        thread = Thread(target=_runner, daemon=True, name=f"resource-fetch-{resource_type}")
+        thread.start()
+
+        try:
+            status, payload = result.get(timeout=timeout)
+        except Empty:
+            raise TimeoutError(f"Connection timed out after {timeout:.1f}s.")
+        if status == "error":
+            raise payload
+        return payload
+
     def _set_loading(self, is_loading: bool) -> None:
         if not self.panel:
             return
@@ -165,7 +196,12 @@ class ResourceView(Screen):
     def _load_resource_worker(self, request_id: int, resource_type: str, namespace: Optional[str], keyword: Optional[str]) -> None:
         worker = get_current_worker()
         try:
-            factory, data, cleaned = self._fetch_resource(resource_type, namespace, keyword)
+            factory, data, cleaned = self._fetch_resource_with_timeout(
+                resource_type,
+                namespace,
+                keyword,
+                timeout=self.RESOURCE_FETCH_TIMEOUT,
+            )
         except Exception as e:
             if not worker.is_cancelled:
                 self.app.call_from_thread(self._handle_resource_error, request_id, e)
