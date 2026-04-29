@@ -5,7 +5,7 @@
 `kop` is a terminal-based (TUI) Kubernetes operations platform. Its goal is to provide an interactive experience similar to desktop cluster management tools, but fully within the terminal command line, aiming to solve the problem of conveniently operating Kubernetes clusters when no desktop environment is available.
 
 
-## Environment Requirements
+## Requirements
 
 - Python `>=3.9`
 - Terminal environment with TUI support (TrueColor/xterm-256color/Mouse Tracking)
@@ -46,7 +46,7 @@ kop --kubeconfig /path/to/kubeconfig.yaml
 
 In this mode, the file path and kubeconfig validity are verified, and after validation it enters the resource view directly.
 
-## Basic Operations and Shortcuts
+## Operations and Shortcuts
 
 ### Startup Page (Cluster List)
 
