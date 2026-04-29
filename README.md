@@ -68,7 +68,7 @@ In this mode, the file path and kubeconfig validity are verified, and after vali
 
 Tip: Available actions differ by resource in the details/operation panel. The bottom of the interface shows available key hints.
 
-## Version Compatibility Matrix
+## Kubernetes Version Compatibility Matrix
 
 
 ## FAQ
