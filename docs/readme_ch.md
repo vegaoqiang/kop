@@ -8,7 +8,6 @@
 ## 环境要求
 
 - Python `>=3.9`
-- 可用 kubeconfig 文件
 - 终端环境支持 TUI（TrueColor/xterm-256color/Mouse Tracking）
 
 ## 安装
