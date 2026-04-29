@@ -73,6 +73,22 @@ kop --kubeconfig /path/to/kubeconfig.yaml
 ## 常见问题
 
 ### 通过鼠标点击实效
+在macOS上如果使用iTerm2通过SSH登陆远程主机执行kop，有可能存在鼠标点击不可用的情况，这是由于在`Linux`环境下，大多数命令行程序通过`$TERM`变量来判断终端支持什么功能（如色彩、加粗等）,常见的数值是`xterm-256color`, `xterm-256color`是一个通用标准，它并没有涵盖所有现代终端的扩展功能（比如高级鼠标协议、同步更新等）。`Textual`是一个非常先进的 TUI（文本用户界面）框架。为了提供最佳体验，它会尝试探测当前运行的具体是哪个终端。对于`iTerm2`它支持许多非标准的高级特性。`Textual`内部有一套优化逻辑，当它检测到`TERM_PROGRAM=iTerm.app`时，会切换到针对`iTerm2`优化的交互模式。如果`Textual`没看到`TERM_PROGRAM=iTerm.app`，它可能不敢贸然开启某些高级交互功能，或者由于某些配置冲突，它未能正确回退到通用鼠标模式。
+
+解决方案:
+
+1. 手动在远程主机上执行：`export TERM_PROGRAM=iTerm.app`，重新执行`kop`后鼠标点击应该会恢复正常。
+2. 修改Mac本地SSH配置：`~/.ssh/config`, 添加：
+
+```shell
+Host *
+    SendEnv TERM_PROGRAM
+```
+编辑远程主机的`sshd`配置：`/etc/ssh/sshd_config`, 添加：
+```shell
+AcceptEnv TERM_PROGRAM
+```
+重启`sshd`服务服务后，断开远程主机重新连接后执行`kop`鼠标应该会恢复点击。
 
 
 ### Why doesn't kop look good on macOS?
