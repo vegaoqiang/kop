@@ -1,5 +1,5 @@
 [project]
-name = "kop"
+name = "kop-cli"
 version = "0.1.0-alpha.1"
 description = "Terminal-based kubernetes operation platform"
 readme = "README.md"

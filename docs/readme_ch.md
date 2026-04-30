@@ -13,7 +13,7 @@
 ## 安装
 
 ```bash
-pip install kop
+pip install kop-cli
 ```
 
 安装完成后可直接使用命令：
