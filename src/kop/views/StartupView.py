@@ -257,7 +257,7 @@ class ConfigView(Screen):
     @on(Button.Pressed, "#add")
     @work
     async def action_add(self):
-        config_model = await self.app.push_screen_wait(AddClusterScreen())
+        config_model = await self.app.push_screen_wait(AddClusterScreen(action="Add"))
         self.update_kubeconfigs(config_model)
 
     @on(Button.Pressed, "#edit")
@@ -500,7 +500,7 @@ class AddClusterScreen(Screen):
         AddClusterScreen {
             align: center middle;
         }
-        Label {
+        #cluster_name_label, #cluster_config_label {
             color: green;
             text-style: bold;
             margin: 1 0 0 1;
@@ -518,21 +518,30 @@ class AddClusterScreen(Screen):
         Toast {
             align: right top;
         }
+        #title {
+            text-style: bold;
+            content-align: center middle;
+            border: round $secondary;
+            height: 3;
+            width: 1fr;
+        }
     """
 
     BINDINGS = [
-        ("ctrl+s", "save", "Save"),
         ("ctrl+l", "clear", "Clear"), # clear TextArea content
+        ("ctrl+s", "save", "Save"),
         # ("meta+l", "clear", "Clear"),
         ("escape", "close", "Cancel"),
     ]
 
-    def __init__(self, config: Optional[ConfigModel] = None):
+    def __init__(self, config: Optional[ConfigModel] = None,  action: Optional[str] = "Edit", **kwargs):
         super().__init__()
         self.config = config
+        self.action = action
 
     def compose(self) -> ComposeResult:
-        yield Label("Input Your Cluster Name")
+        yield Label(f"{self.action} Cluster Config", id="title")
+        yield Label("Input Your Cluster Name", id="cluster_name_label")
         yield Input(
             placeholder="Cluster Name (Optional)",
             name="cluster_name",
@@ -541,11 +550,11 @@ class AddClusterScreen(Screen):
             valid_empty=False,
             validate_on=["changed"],
             max_length=24)
-        yield Label("Paste Your Cluster Config Content")
+        yield Label("Paste Your Cluster Config Content", id="cluster_config_label")
         yield TextArea(language="yaml")
         yield Horizontal(
-            Button(label="Cancel", variant="default", id="cancel", tooltip="Cancel and go back to previous screen"),
             Button(label="Clear", variant="default", id="clear", tooltip="Clear cluster config content"),
+            Button(label="Cancel", variant="default", id="cancel", tooltip="Cancel and go back to previous screen"),
             Button(label="Save", variant="default", id="save", tooltip="Save cluster config"),            
             id="button_group"
         )
