@@ -662,7 +662,7 @@ class SyncClusterScreen(ModalScreen):
     def _apply_container_border(self) -> None:
         container = self.query_one("#container", Container)
         container.border_subtitle = "↑↓ navigate • Enter to select • Space to expand"
-        container.border_title = "Select a directory or file to sync"
+        container.border_title = "Select a directory or kubeconfig to sync"
         container.styles.border_title_style = "bold"
 
     def action_close(self):
