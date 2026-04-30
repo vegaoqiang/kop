@@ -1,6 +1,6 @@
 from textual import on
 from textual.app import ComposeResult
-from textual.widgets import TextArea, Static, Button
+from textual.widgets import TextArea, Static, Button, Label
 from textual.containers import Horizontal
 from textual.binding import Binding
 from textual.message import Message
@@ -35,18 +35,28 @@ class ResourceEdit(Static):
             width: 1fr;
             margin-right: 1;
         }
+        #title {
+            height: 3;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+            border: solid $primary;
+            background: $surface;
+        }
     """
 
     BINDINGS = [
         Binding("escape", "close", "Cancel", show=False),
     ]
 
-    def __init__(self, language: str = "yaml", resource: dict = {}, **kwargs):
+    def __init__(self, language: str = "yaml", resource: dict = {}, title: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
         self.language = language
         self.resource = resource
+        self.title = title or "Edit"
 
     def compose(self) -> ComposeResult:
+        yield Label(f"{self.title} {self.resource.get("metadata", {}).get("name", "Unknown")}" , id="title")
         yield TextArea.code_editor(language=self.language)
         yield Horizontal(
             Button(label="Cancel", variant="default", id="cancel"),
@@ -60,7 +70,9 @@ class ResourceEdit(Static):
         except Exception as e:
             self.notify(f"Dump resource failed: {e}", severity="error")
             return
-        self.query_one(TextArea).text = resource_yml
+        text_area = self.query_one(TextArea)
+        text_area.text = resource_yml
+        text_area.focus()
 
 
     @on(Button.Pressed, "#cancel")
