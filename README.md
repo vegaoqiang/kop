@@ -1,5 +1,9 @@
 ![sample](/images/sample.png)
 
+[![PyPI version](https://badge.fury.io/py/kop-cli.svg)](https://badge.fury.io/py/kop-cli)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/kop-cli)
+![OS support](https://img.shields.io/badge/OS-macOS%20Linux%20Windows-red)
+
 # kop
 
 `kop` is a terminal-based (TUI) Kubernetes operations platform. Its goal is to provide an interactive experience similar to desktop cluster management tools, but fully within the terminal command line, aiming to solve the problem of conveniently operating Kubernetes clusters when no desktop environment is available.

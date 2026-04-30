@@ -1,5 +1,9 @@
 ![sample](/images/sample.png)
 
+[![PyPI version](https://badge.fury.io/py/kop-cli.svg)](https://badge.fury.io/py/kop-cli)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/kop-cli)
+![OS support](https://img.shields.io/badge/OS-macOS%20Linux%20Windows-red)
+
 # kop
 
 `kop` 是一个基于终端（TUI）的 Kubernetes 运维工具，目标是提供类似桌面集群管理工具的交互体验，但完全运行在终端命令行中，旨在解决没有桌面环境下能轻松便利的运维Kubernetes集群问题。
