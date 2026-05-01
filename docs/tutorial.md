@@ -36,3 +36,5 @@ In the `Startup` view, after selecting a cluster, you can delete the selected cl
 
 ## Connect Cluster
 In the `Startup` view, after selecting the target cluster, connect to the cluster by clicking the `[Connect]` button or pressing the `'c'` key. Once the connection is successful, kop will enter the cluster resource view.
+
+>When starting kop, specify the cluster configuration file using `--kubeconfig /path/to/kubeconfig`. kop will then use this file to directly access the Kubernetes resource view.
