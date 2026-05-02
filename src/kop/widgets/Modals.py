@@ -62,7 +62,7 @@ class Option(ModalScreen):
             Label(f"Choose a container for {self.action}", id="title"),
             OptionList(*self.options, id="option_list"),
             Button("Cancel", id="cancel"),
-            Button("Choose", variant="success", id="choose"),
+            Button("Choose", variant="default", id="choose"),
             id="option_dialog"
         )
 
