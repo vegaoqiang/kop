@@ -9,11 +9,21 @@ from kubernetes.client import CoreV1Api
 
 class PodLogs:
 
-    def __init__(self, api_client, pod_name: str, namespace: str, container_name: Optional[str] = None):
+    def __init__(
+        self,
+        api_client,
+        pod_name: str,
+        namespace: str,
+        container_name: Optional[str] = None,
+        previous: bool = False,
+        show_timestamps: bool = False,
+    ):
         self.core_api = CoreV1Api(api_client=api_client)
         self.pod_name = pod_name
         self.namespace = namespace
         self.container_name = container_name
+        self.previous = previous
+        self.show_timestamps = show_timestamps
         self.w = None
 
 
@@ -25,6 +35,7 @@ class PodLogs:
             timestamps=timestamps,
             follow=follow,
             tail_lines=tail_lines,
+            previous=self.previous,
         )
 
     def read_logs(self, timestamps: bool = False, tail_lines: int = 100):
@@ -72,6 +83,17 @@ class LogController:
         self._stop_event.set()
         if self.pod_logs.w:
             self.pod_logs.w.stop()
+        if self._thread and self._thread.is_alive():
+            self._thread.join(timeout=0.5)
+
+    def restart(self, previous: bool) -> None:
+        self.stop()
+        self.pod_logs.previous = previous
+        self._queue = queue.Queue()
+        self._event_queue = queue.Queue()
+        self._stop_event = threading.Event()
+        self._thread = None
+        self.start()
 
     def _run(self) -> None:
         try:

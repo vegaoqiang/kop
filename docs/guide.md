@@ -76,16 +76,18 @@ Most kinds support edit.
 
 ## Open Pod logs
 
-View logs from running pod containers.
+View logs from pod containers.
 
 1. Open `Pods` and select pod resource.
 2. Press `l` (`Logs`).
 3. If the pod has multiple containers, select one container.
-4. Observe logs in the log screen.
+4. Observe `current` logs in the log screen.
+5. Press `p` to toggle between `current` and `previous` logs.
 
 Note
 
-Logs are available only when pod status is `Running`.
+Logs are fetched directly from Kubernetes API. For restarted containers, `kop`
+lets you choose `current` or `previous` logs.
 
 
 ## Open Pod shell

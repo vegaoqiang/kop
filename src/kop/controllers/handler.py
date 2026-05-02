@@ -20,6 +20,7 @@ from kop.widgets.Modals import (
 )
 from kubernetes import client
 from typing import Optional
+from kop.provider.logs import PodLogs
 
 
 
@@ -369,12 +370,29 @@ class PodActionHandler(BaseActionHandlerMixin):
                 
     @staticmethod
     def log(action, resource: PodViewModel, app):
-        if resource.status != "Running":
-            app.notify("Pod is not running", severity="error")
-            return
-        
+        def open_log_screen(container_name: str, previous: bool = False) -> None:
+            try:
+                # Probe the API first; this keeps errors in-place instead of opening an empty log view.
+                PodLogs(
+                    app.endpoint.api_client,
+                    resource.name,
+                    resource.namespace,
+                    container_name=container_name,
+                    previous=previous,
+                ).read_logs(tail_lines=1)
+                app.push_screen(
+                    PodLog(
+                        client=app.endpoint,
+                        pod=resource,
+                        container_name=container_name,
+                        previous=previous,
+                    )
+                )
+            except Exception as e:
+                app.notify(f"Failed to get pod logs: {e}", severity="error")
+
         def option_callback(container_name: str) -> None:
-            app.push_screen(PodLog(client=app.endpoint, pod=resource, container_name=container_name))
+            open_log_screen(container_name=container_name, previous=False)
 
         if len(resource.containers) == 1:
             container_obj = resource.containers[0].lazy_clean()

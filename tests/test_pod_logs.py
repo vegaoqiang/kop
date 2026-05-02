@@ -21,6 +21,7 @@ def test_log_params_builds_expected_payload():
         "timestamps": True,
         "follow": True,
         "tail_lines": 50,
+        "previous": False,
     }
 
 
@@ -45,6 +46,7 @@ def test_read_logs_calls_k8s_api():
         timestamps=False,
         follow=False,
         tail_lines=10,
+        previous=False,
     )
     assert result == "log content"
 
@@ -97,7 +99,22 @@ def test_watch_logs_passes_expected_stream_params():
         timestamps=True,
         follow=True,
         tail_lines=7,
+        previous=False,
     )
+
+
+def test_log_params_support_previous():
+    with patch("kop.provider.logs.CoreV1Api", return_value=MagicMock()):
+        pod_logs = PodLogs(
+            api_client=MagicMock(),
+            pod_name="pod-a",
+            namespace="ns-a",
+            container_name="c-a",
+            previous=True,
+        )
+
+    params = pod_logs._log_params()
+    assert params["previous"] is True
 
 
 def test_watch_logs_stops_and_resets_when_stream_raises():

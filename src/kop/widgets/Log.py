@@ -9,8 +9,8 @@ import asyncio
 
 class Logs(Log):
     
-    def __init__(self, log_controller: LogController):
-        super().__init__()
+    def __init__(self, log_controller: LogController, **kwargs):
+        super().__init__(**kwargs)
         self.log_controller = log_controller
     
     def on_mount(self) -> None:
@@ -19,6 +19,10 @@ class Logs(Log):
 
     def on_unmount(self) -> None:
         self.log_controller.stop()
+
+    def switch_mode(self, previous: bool) -> None:
+        self.clear()
+        self.log_controller.restart(previous=previous)
 
     @work(exclusive=True)
     async def start_logs(self):
