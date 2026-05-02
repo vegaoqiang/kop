@@ -951,7 +951,7 @@ class IngressClassViewModel(ViewModel):
     def clean(cls, data: V1IngressClass) -> "IngressClassViewModel":
         return cls(
             name=data.metadata.name,
-            default="✔️" if data.metadata.annotations.get('ingressclass.kubernetes.io/is-default-class') == "true" else "",
+            default="⭐" if data.metadata.annotations.get('ingressclass.kubernetes.io/is-default-class') == "true" else "",
             namespace=data.spec.parameters.namespace if data.spec.parameters and data.spec.parameters.scope == "Namespace" else "",
             controller=data.spec.controller,
             scope=data.spec.parameters.scope if data.spec.parameters else "",
@@ -1134,7 +1134,7 @@ class StorageClassViewModel(ViewModel):
     @staticmethod
     def _get_default(data: V1StorageClass) -> str:
         if data.metadata.annotations.get('storageclass.kubernetes.io/is-default-class') == 'true':
-            return '✔️'
+            return '⭐'
         return ''
 
 
