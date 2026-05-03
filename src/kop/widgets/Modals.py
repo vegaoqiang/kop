@@ -39,7 +39,7 @@ class Option(ModalScreen):
             padding: 0 1;
             height: 15;
             width: 60;
-            border: thick $background 80%;
+            border: solid $secondary;
             background: $surface;
         }
         #cancel, #choose {
@@ -65,6 +65,10 @@ class Option(ModalScreen):
             Button("Choose", variant="default", id="choose"),
             id="option_dialog"
         )
+    
+    def on_mount(self) -> None:
+        option = self.query_one("#option_dialog", Grid)
+        option.border_subtitle = "↑ ↓ to Navigate • Enter to Choose"
 
     @on(Button.Pressed, "#cancel")
     def action_close(self):
