@@ -2,6 +2,7 @@ from textual import on
 from textual.binding import Binding
 from textual.screen import Screen
 from textual.app import ComposeResult
+from textual.timer import Timer
 from datetime import datetime
 from textual.widgets import Label, Button, Checkbox, Select, Input
 from textual.containers import Horizontal, Grid
@@ -53,6 +54,8 @@ class PodLog(Screen):
         Binding(key="d", action="download", description="Download Logs", show=False),
         Binding(key="p", action="toggle_previous", description="Toggle Current/Previous", show=False),
         Binding(key="t", action="toggle_timestamps", description="Toggle Timestamps", show=False),
+        Binding(key="n", action="next_match", description="Next Match", show=False),
+        Binding(key="N", action="prev_match", description="Previous Match", show=False),
     ]
 
     def __init__(self, 
@@ -63,6 +66,7 @@ class PodLog(Screen):
                  show_timestamps: bool = False) -> None:
         super().__init__()
         self.container_names = [c.lazy_clean().name for c in pod.containers]
+        self.search_timer: Timer | None = None
         self.pod_logs = PodLogs(
             client.api_client,
             pod.name,
@@ -97,7 +101,7 @@ class PodLog(Screen):
 
     def on_mount(self) -> None:
         pod_logs = self.query_one("#pod-logs", Logs)
-        pod_logs.border_subtitle = "Esc close • D download logs • P toggle current/previous logs • T toggle timestamps"
+        pod_logs.border_subtitle = "Esc close • D download • P previous • T timestamps • N/Shift+N next/prev match"
 
     def action_close(self) -> None:
         self.app.pop_screen()
@@ -175,3 +179,39 @@ class PodLog(Screen):
         logs_widget = self.query_one("#pod-logs", Logs)
         logs_widget.switch_mode()
         self.notify(f"Switched to container {event.value}", severity="information")
+
+    @on(Input.Changed, "#log-filter")
+    def on_log_filter_changed(self, event: Input.Changed) -> None:
+        event.stop()
+        if self.search_timer:
+            self.search_timer.stop()
+            self.search_timer = None
+
+        query = event.value
+        def _apply_search() -> None:
+            logs_widget = self.query_one("#pod-logs", Logs)
+            total = logs_widget.set_filter(query)
+            if query.strip():
+                current, count = logs_widget.get_match_position()
+                if count:
+                    self.notify(f"Matches: {current}/{count}", severity="information")
+                else:
+                    self.notify("No matched log lines", severity="warning")
+
+        self.search_timer = self.set_timer(0.2, _apply_search)
+
+    def action_next_match(self) -> None:
+        logs_widget = self.query_one("#pod-logs", Logs)
+        if not logs_widget.jump_next_match():
+            self.notify("No matched log lines", severity="warning")
+            return
+        current, count = logs_widget.get_match_position()
+        self.notify(f"Matches: {current}/{count}", severity="information")
+
+    def action_prev_match(self) -> None:
+        logs_widget = self.query_one("#pod-logs", Logs)
+        if not logs_widget.jump_prev_match():
+            self.notify("No matched log lines", severity="warning")
+            return
+        current, count = logs_widget.get_match_position()
+        self.notify(f"Matches: {current}/{count}", severity="information")
