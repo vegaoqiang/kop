@@ -62,6 +62,7 @@ class PodLog(Screen):
                  previous: bool = False, 
                  show_timestamps: bool = False) -> None:
         super().__init__()
+        self.container_names = [c.lazy_clean().name for c in pod.containers]
         self.pod_logs = PodLogs(
             client.api_client,
             pod.name,
@@ -75,7 +76,13 @@ class PodLog(Screen):
     def compose(self) -> ComposeResult:
         yield Grid(
             Label(f"Logs for {self.pod_logs.pod_name} ({self.pod_logs.namespace})", id="log-title"),
-            Select([], prompt="Select Container", id="container-select"),
+            Select(
+                options=[(name, name) for name in self.container_names],
+                value=self.pod_logs.container_name,
+                allow_blank=False,
+                prompt="Select Container",
+                id="container-select",
+            ),
             Input(placeholder="Filter logs...", id="log-filter"),
              id="header"
         )
@@ -158,3 +165,13 @@ class PodLog(Screen):
         logs_widget.switch_mode(show_timestamps=event.value)
         state = "enabled" if event.value else "disabled"
         self.notify(f"Timestamps {state}", severity="information")
+
+    @on(Select.Changed, "#container-select")
+    def on_container_changed(self, event: Select.Changed) -> None:
+        event.stop()
+        if event.value == Select.NULL or event.value == self.pod_logs.container_name:
+            return
+        self.pod_logs.container_name = str(event.value)
+        logs_widget = self.query_one("#pod-logs", Logs)
+        logs_widget.switch_mode()
+        self.notify(f"Switched to container {event.value}", severity="information")
