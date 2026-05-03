@@ -1,3 +1,5 @@
+from textual import on
+from textual.binding import Binding
 from textual.screen import Screen
 from textual.app import ComposeResult
 from textual.widgets import Label, Button, Checkbox, Select, Input
@@ -37,14 +39,24 @@ class PodLog(Screen):
             content-align: center middle;
             color: $block-cursor-background;
         }
+        #pod-logs {
+            height: 1fr;
+            width: 1fr;
+            border: solid $secondary;
+        }
     """
 
     BINDINGS = [
-        ("escape", "close", "Close"),
-        ("p", "toggle_previous", "Toggle Current/Previous"),
+        Binding(key="escape", action="close", description="Close"),
+        Binding(key="p", action="toggle_previous", description="Toggle Current/Previous"),
     ]
 
-    def __init__(self, client: KbsAuthLoader, pod: PodViewModel, container_name: str, previous: bool = False) -> None:
+    def __init__(self, 
+                 client: KbsAuthLoader, 
+                 pod: PodViewModel, 
+                 container_name: str, 
+                 previous: bool = False, 
+                 show_timestamps: bool = False) -> None:
         super().__init__()
         self.pod_logs = PodLogs(
             client.api_client,
@@ -52,6 +64,7 @@ class PodLog(Screen):
             pod.namespace,
             container_name,
             previous=previous,
+            show_timestamps=show_timestamps
         )
         
 
@@ -71,6 +84,11 @@ class PodLog(Screen):
             id="controls"
         )
 
+    def on_mount(self) -> None:
+        pod_logs = self.query_one("#pod-logs", Logs)
+        pod_logs.border_subtitle = "Esc to close • P to toggle current/previous logs • T to toggle timestamps"
+
+    @on(Button.Pressed, "#close-btn")
     def action_close(self) -> None:
         self.app.pop_screen()
 
