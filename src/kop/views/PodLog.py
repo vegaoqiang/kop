@@ -56,6 +56,8 @@ class PodLog(Screen):
         Binding(key="t", action="toggle_timestamps", description="Toggle Timestamps", show=False),
         Binding(key="n", action="next_match", description="Next Match", show=False),
         Binding(key="N", action="prev_match", description="Previous Match", show=False),
+        Binding(key="/", action="focus_filter", description="Focus Filter Input", show=False),
+        Binding(key="]", action="select_container", description="Select Container", show=False),
     ]
 
     def __init__(self, 
@@ -87,7 +89,7 @@ class PodLog(Screen):
                 prompt="Select Container",
                 id="container-select",
             ),
-            Input(placeholder="Filter logs...", id="log-filter"),
+            Input(placeholder="Press / to filter logs", id="log-filter"),
              id="header"
         )
         yield Logs(log_controller=LogController(pod_logs=self.pod_logs), id="pod-logs")
@@ -199,6 +201,14 @@ class PodLog(Screen):
                     self.notify("No matched log lines", severity="warning")
 
         self.search_timer = self.set_timer(0.2, _apply_search)
+    
+    def action_focus_filter(self) -> None:
+        self.query_one("#log-filter", Input).focus()
+    
+    def action_select_container(self) -> None:
+        select = self.query_one("#container-select", Select)
+        select.focus()
+        select.expanded = True
 
     def action_next_match(self) -> None:
         logs_widget = self.query_one("#pod-logs", Logs)
