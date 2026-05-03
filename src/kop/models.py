@@ -192,23 +192,6 @@ class ViewModel:
         created = start_time.strftime("%Y-%m-%d %H:%M:%S")
         age = ViewModel.get_age_text(start_time)
         return f"{created} ({age})"
-    
-    @staticmethod
-    def make_containers(data) -> List["ContainerModel"]:
-        containers = data.spec.containers or []
-        statuses = data.status.container_statuses if data.status else []
-        status_index = {st.name: st for st in statuses} if statuses else {}
-        return [
-            ContainerModel(
-                _raw=container,
-                container_status=(
-                    ContainerStatusModel(_raw=status_index[container.name])
-                    if status_index.get(container.name)
-                    else None
-                ),
-            )
-            for container in containers
-        ]
                                  
     @classmethod
     def clean(cls, data):
