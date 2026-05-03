@@ -32,7 +32,7 @@ class ResourceEdit(Static):
             padding-left: 1;
         }
         #save, #cancel {
-            width: 1fr;
+            width: auto;
             margin-right: 1;
         }
         #title {
