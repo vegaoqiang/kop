@@ -10,6 +10,7 @@ from kop.provider.logs import PodLogs
 from kop.provider.client import KbsAuthLoader
 from kop.models import PodViewModel
 from kop.widgets.Log import LogController
+from kop.widgets.Modals import DownloadDirectoryPicker
 
 
 
@@ -49,6 +50,7 @@ class PodLog(Screen):
 
     BINDINGS = [
         Binding(key="escape", action="close", description="Close", show=False),
+        Binding(key="d", action="download", description="Download Logs", show=False),
         Binding(key="p", action="toggle_previous", description="Toggle Current/Previous", show=False),
         Binding(key="t", action="toggle_timestamps", description="Toggle Timestamps", show=False),
     ]
@@ -88,7 +90,7 @@ class PodLog(Screen):
 
     def on_mount(self) -> None:
         pod_logs = self.query_one("#pod-logs", Logs)
-        pod_logs.border_subtitle = "Esc to close • P to toggle current/previous logs • T to toggle timestamps"
+        pod_logs.border_subtitle = "Esc close • D download logs • P toggle current/previous logs • T toggle timestamps"
 
     def action_close(self) -> None:
         self.app.pop_screen()
@@ -99,20 +101,29 @@ class PodLog(Screen):
 
     @on(Button.Pressed, "#download-btn")
     def on_download_pressed(self) -> None:
-        try:
-            content = self.pod_logs.read_logs(
-                timestamps=self.pod_logs.show_timestamps,
-                tail_lines=None,
-            )
-            mode = "previous" if self.pod_logs.previous else "current"
-            ts_mode = "ts" if self.pod_logs.show_timestamps else "nots"
-            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-            filename = f"{self.pod_logs.namespace}-{self.pod_logs.pod_name}-{self.pod_logs.container_name}-{mode}-{ts_mode}-{stamp}.log"
-            with open(filename, "w", encoding="utf-8") as f:
-                f.write(content or "")
-            self.notify(f"Downloaded logs to {filename}", severity="information")
-        except Exception as e:
-            self.notify(f"Download logs failed: {e}", severity="error")
+        def handle_directory_selected(selected_path) -> None:
+            if selected_path is None:
+                return
+            try:
+                content = self.pod_logs.read_logs(
+                    timestamps=self.pod_logs.show_timestamps,
+                    tail_lines=None,
+                )
+                mode = "previous" if self.pod_logs.previous else "current"
+                ts_mode = "ts" if self.pod_logs.show_timestamps else "nots"
+                stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+                filename = f"{self.pod_logs.namespace}-{self.pod_logs.pod_name}-{self.pod_logs.container_name}-{mode}-{ts_mode}-{stamp}.log"
+                filepath = selected_path / filename
+                with open(filepath, "w", encoding="utf-8") as f:
+                    f.write(content or "")
+                self.notify(f"Downloaded logs to {filepath}", severity="information")
+            except Exception as e:
+                self.notify(f"Download logs failed: {e}", severity="error")
+
+        self.app.push_screen(
+            DownloadDirectoryPicker(),
+            callback=handle_directory_selected,
+        )
 
     def action_toggle_previous(self) -> None:
         next_previous = not self.pod_logs.previous

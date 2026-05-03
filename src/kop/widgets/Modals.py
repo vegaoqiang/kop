@@ -1,10 +1,11 @@
 import random
+from pathlib import Path
 from textual import on
 from textual.binding import Binding
 from textual.screen import ModalScreen
 from textual.app import ComposeResult
 from textual.containers import Grid, Horizontal
-from textual.widgets import Button, OptionList, Label, Input, Switch, LoadingIndicator
+from textual.widgets import Button, OptionList, Label, Input, Switch, LoadingIndicator, DirectoryTree
 from textual.validation import Number
 from typing import Callable, Optional
 
@@ -567,3 +568,73 @@ class Scale(ModalScreen):
             self.query_one("#scale", Button).disabled = False
         else:
             self.query_one("#scale", Button).disabled = True
+
+
+class DownloadDirectoryPicker(ModalScreen):
+    DEFAULT_CSS = """
+        DownloadDirectoryPicker {
+            align: center middle;
+        }
+        #dialog {
+            width: 80;
+            height: 24;
+            border: solid $secondary;
+            background: $surface;
+            grid-size: 2 3;
+            grid-rows: 1 1fr 3;
+            grid-gutter: 1 1;
+            padding: 0 1;
+        }
+        #title {
+            column-span: 2;
+            text-style: bold;
+            content-align: center middle;
+        }
+        #tree {
+            column-span: 2;
+            height: 1fr;
+            width: 1fr;
+        }
+        #cancel, #confirm {
+            width: 1fr;
+        }
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+    ]
+
+    def __init__(self, initial_path: Optional[Path] = None):
+        super().__init__()
+        self.selected_path = initial_path or Path.home()
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Label("Select a local directory for downloaded logs", id="title"),
+            DirectoryTree(str(Path.home()), id="tree"),
+            Button("Cancel", id="cancel"),
+            Button("Download Here", variant="default", id="confirm"),
+            id="dialog",
+        )
+
+    def on_mount(self) -> None:
+        dialog = self.query_one("#dialog", Grid)
+        dialog.border_subtitle = "↑↓ Navigate • Space expand • Enter choose directory"
+
+    @on(DirectoryTree.DirectorySelected)
+    def directory_selected(self, event: DirectoryTree.DirectorySelected) -> None:
+        event.stop()
+        self.selected_path = Path(event.path)
+
+    @on(DirectoryTree.FileSelected)
+    def file_selected(self, event: DirectoryTree.FileSelected) -> None:
+        event.stop()
+        self.selected_path = Path(event.path).parent
+
+    @on(Button.Pressed, "#cancel")
+    def action_close(self):
+        self.app.pop_screen()
+
+    @on(Button.Pressed, "#confirm")
+    def action_confirm(self):
+        self.dismiss(self.selected_path)
