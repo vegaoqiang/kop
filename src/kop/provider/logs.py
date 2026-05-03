@@ -27,23 +27,30 @@ class PodLogs:
         self.w = None
 
 
-    def _log_params(self, timestamps: bool = False, follow: bool = False, tail_lines: int = 100):
-        return dict(
+    def _log_params(
+        self,
+        timestamps: Optional[bool] = None,
+        follow: bool = False,
+        tail_lines: Optional[int] = 100,
+    ):
+        params = dict(
             name=self.pod_name,
             namespace=self.namespace,
             container=self.container_name,
-            timestamps=timestamps,
+            timestamps=self.show_timestamps if timestamps is None else timestamps,
             follow=follow,
-            tail_lines=tail_lines,
             previous=self.previous,
         )
+        if tail_lines is not None:
+            params["tail_lines"] = tail_lines
+        return params
 
-    def read_logs(self, timestamps: bool = False, tail_lines: int = 100):
+    def read_logs(self, timestamps: Optional[bool] = None, tail_lines: Optional[int] = 100):
             return self.core_api.read_namespaced_pod_log(
                 **self._log_params(timestamps=timestamps, follow=False,tail_lines=tail_lines)
             )
 
-    def watch_logs(self, timestamps: bool = False, tail_lines: int = 100):
+    def watch_logs(self, timestamps: Optional[bool] = None, tail_lines: Optional[int] = 100):
         self.w = w = watch.Watch()
         try:
             for line in w.stream(
@@ -86,9 +93,12 @@ class LogController:
         if self._thread and self._thread.is_alive():
             self._thread.join(timeout=0.5)
 
-    def restart(self, previous: bool) -> None:
+    def restart(self, previous: Optional[bool] = None, show_timestamps: Optional[bool] = None) -> None:
         self.stop()
-        self.pod_logs.previous = previous
+        if previous is not None:
+            self.pod_logs.previous = previous
+        if show_timestamps is not None:
+            self.pod_logs.show_timestamps = show_timestamps
         self._queue = queue.Queue()
         self._event_queue = queue.Queue()
         self._stop_event = threading.Event()

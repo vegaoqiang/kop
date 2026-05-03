@@ -2,6 +2,7 @@ from textual import on
 from textual.binding import Binding
 from textual.screen import Screen
 from textual.app import ComposeResult
+from datetime import datetime
 from textual.widgets import Label, Button, Checkbox, Select, Input
 from textual.containers import Horizontal, Grid
 from kop.widgets.Log import Logs
@@ -47,8 +48,9 @@ class PodLog(Screen):
     """
 
     BINDINGS = [
-        Binding(key="escape", action="close", description="Close"),
-        Binding(key="p", action="toggle_previous", description="Toggle Current/Previous"),
+        Binding(key="escape", action="close", description="Close", show=False),
+        Binding(key="p", action="toggle_previous", description="Toggle Current/Previous", show=False),
+        Binding(key="t", action="toggle_timestamps", description="Toggle Timestamps", show=False),
     ]
 
     def __init__(self, 
@@ -88,13 +90,60 @@ class PodLog(Screen):
         pod_logs = self.query_one("#pod-logs", Logs)
         pod_logs.border_subtitle = "Esc to close • P to toggle current/previous logs • T to toggle timestamps"
 
-    @on(Button.Pressed, "#close-btn")
     def action_close(self) -> None:
         self.app.pop_screen()
+
+    @on(Button.Pressed, "#close-btn")
+    def on_close_pressed(self) -> None:
+        self.action_close()
+
+    @on(Button.Pressed, "#download-btn")
+    def on_download_pressed(self) -> None:
+        try:
+            content = self.pod_logs.read_logs(
+                timestamps=self.pod_logs.show_timestamps,
+                tail_lines=None,
+            )
+            mode = "previous" if self.pod_logs.previous else "current"
+            ts_mode = "ts" if self.pod_logs.show_timestamps else "nots"
+            stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+            filename = f"{self.pod_logs.namespace}-{self.pod_logs.pod_name}-{self.pod_logs.container_name}-{mode}-{ts_mode}-{stamp}.log"
+            with open(filename, "w", encoding="utf-8") as f:
+                f.write(content or "")
+            self.notify(f"Downloaded logs to {filename}", severity="information")
+        except Exception as e:
+            self.notify(f"Download logs failed: {e}", severity="error")
 
     def action_toggle_previous(self) -> None:
         next_previous = not self.pod_logs.previous
         logs_widget = self.query_one("#pod-logs", Logs)
         logs_widget.switch_mode(previous=next_previous)
+        self.query_one("#previous-toggle", Checkbox).value = next_previous
         mode = "previous" if next_previous else "current"
         self.notify(f"Switched to {mode} logs", severity="information")
+
+    def action_toggle_timestamps(self) -> None:
+        next_timestamps = not self.pod_logs.show_timestamps
+        logs_widget = self.query_one("#pod-logs", Logs)
+        logs_widget.switch_mode(show_timestamps=next_timestamps)
+        self.query_one("#timestamps-toggle", Checkbox).value = next_timestamps
+        state = "enabled" if next_timestamps else "disabled"
+        self.notify(f"Timestamps {state}", severity="information")
+
+    @on(Checkbox.Changed, "#previous-toggle")
+    def on_previous_toggle_changed(self, event: Checkbox.Changed) -> None:
+        if event.value == self.pod_logs.previous:
+            return
+        logs_widget = self.query_one("#pod-logs", Logs)
+        logs_widget.switch_mode(previous=event.value)
+        mode = "previous" if event.value else "current"
+        self.notify(f"Switched to {mode} logs", severity="information")
+
+    @on(Checkbox.Changed, "#timestamps-toggle")
+    def on_timestamps_toggle_changed(self, event: Checkbox.Changed) -> None:
+        if event.value == self.pod_logs.show_timestamps:
+            return
+        logs_widget = self.query_one("#pod-logs", Logs)
+        logs_widget.switch_mode(show_timestamps=event.value)
+        state = "enabled" if event.value else "disabled"
+        self.notify(f"Timestamps {state}", severity="information")

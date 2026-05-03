@@ -1,3 +1,4 @@
+from typing import Optional
 from textual import work
 from textual.worker import get_current_worker
 from textual.widgets import Log
@@ -20,9 +21,9 @@ class Logs(Log):
     def on_unmount(self) -> None:
         self.log_controller.stop()
 
-    def switch_mode(self, previous: bool) -> None:
+    def switch_mode(self, previous: Optional[bool] = None, show_timestamps: Optional[bool] = None) -> None:
         self.clear()
-        self.log_controller.restart(previous=previous)
+        self.log_controller.restart(previous=previous, show_timestamps=show_timestamps)
 
     @work(exclusive=True)
     async def start_logs(self):
