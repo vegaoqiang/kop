@@ -320,7 +320,7 @@ class NodeShellFailed(ModalScreen):
             padding: 0 1;
             width: 76;
             height: 17;
-            border: thick $background 80%;
+            border: solid $secondary;
             background: $surface;
         }
 
@@ -365,6 +365,12 @@ class NodeShellFailed(ModalScreen):
             Button("Retry", variant="default", id="retry"),
             id="dialog"
         )
+    
+    def on_mount(self) -> None:
+        dialog = self.query_one("#dialog", Grid)
+        dialog.border_subtitle = "ESC to Confirm • Enter to Retry"
+        # Focus the retry button by default, so user can just press Enter to close the dialog.
+        self.query_one("#retry", Button).focus()
 
     def _cleanup(self) -> None:
         if self.on_cleanup is None:
