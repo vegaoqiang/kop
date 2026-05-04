@@ -56,7 +56,10 @@ class ResourceEdit(Static):
         self.title = title or "Edit"
 
     def compose(self) -> ComposeResult:
-        yield Label(f"{self.title} {self.resource.get("metadata", {}).get("name", "Unknown")}" , id="title")
+        yield Label(
+            f"{self.title} {self.resource.get('metadata', {}).get('name', 'Unknown')}",
+            id="title",
+        )
         yield TextArea.code_editor(language=self.language)
         yield Horizontal(
             Button(label="Cancel", variant="default", id="cancel"),
