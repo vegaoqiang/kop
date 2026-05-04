@@ -4,8 +4,15 @@ from textual import on
 from textual.binding import Binding
 from textual.screen import ModalScreen
 from textual.app import ComposeResult
-from textual.containers import Grid, Horizontal
-from textual.widgets import Button, OptionList, Label, Input, Switch, LoadingIndicator, DirectoryTree
+from textual.containers import Grid
+from textual.widgets import (
+    Button, 
+    OptionList, 
+    Label, 
+    Input, 
+    Switch, 
+    LoadingIndicator, 
+    DirectoryTree)
 from textual.validation import Number
 from typing import Callable, Optional
 
@@ -167,7 +174,7 @@ class NodeShellConfirm(ModalScreen):
             padding: 0 1;
             width: 76;
             height: 17;
-            border: thick $background 80%;
+            border: solid $secondary;
             background: $surface;
         }
 
@@ -214,6 +221,12 @@ class NodeShellConfirm(ModalScreen):
             Button("Start Busybox Shell", variant="default", id="confirm"),
             id="dialog"
         )
+    
+    def on_mount(self) -> None:
+        dialog = self.query_one("#dialog", Grid)
+        dialog.border_subtitle = "ESC to Cancel • Enter to Start Busybox Shell"
+        # Focus the confirm button by default, so user can just press Enter to start the shell.
+        self.query_one("#confirm", Button).focus()
 
     @on(Button.Pressed, "#cancel")
     def action_close(self):
