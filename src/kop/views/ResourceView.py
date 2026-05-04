@@ -377,22 +377,3 @@ class ResourceView(Screen):
         """
         self.app.push_screen(getattr(self.app, "home"))
 
-
-class ResApp(App):
-  
-    def __init__(self, config_file: str, **kwargs):
-        super().__init__(**kwargs)
-        self.config_file = config_file
-        self.endpoint: KbsEndpoint = KbsEndpoint(config_file=config_file)
-
-    def on_mount(self) -> None:
-        """
-        cache the view instance, call after on handler
-        """
-        self.view = view = ResourceView()
-        self.push_screen(view)
-
-
-if __name__ == "__main__":
-    app = ResApp(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/34f789a7-2458-412d-8416-2a74ff26ae2c")
-    app.run()
