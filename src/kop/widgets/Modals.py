@@ -462,7 +462,6 @@ class PortForward(ModalScreen):
 
     BINDINGS = [
         Binding("escape", "close", "Cancel", show=False),
-        Binding("enter", "confirm", "Confirm", show=False),
     ]
 
     def __init__(self, dest_port: int):
@@ -496,7 +495,7 @@ class PortForward(ModalScreen):
         self.app.pop_screen()
 
     @on(Button.Pressed, "#start")
-    def on_start_press(self, event: Button.Pressed) -> None:
+    def on_start_press(self) -> None:
         local_port_input = self.query_one("#local_port", Input)
         open_in_browser = self.query_one("#open_in_browser", Switch).value
         local_port_text = local_port_input.value.strip()
@@ -518,6 +517,11 @@ class PortForward(ModalScreen):
             self.query_one("#start", Button).disabled = False
         else:
             self.query_one("#start", Button).disabled = True
+
+    @on(Input.Submitted, "#local_port")
+    def submit_local_port(self) -> None:
+        if not self.query_one("#start", Button).disabled:
+            self.on_start_press()
 
 
 class Scale(ModalScreen):
