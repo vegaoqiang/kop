@@ -1,0 +1,11 @@
+site_name: Kop Docs
+theme:
+  name: material
+plugins:
+  - search
+markdown_extensions:
+  - pymdownx.snippets:
+      base_path:
+        - .
+        - docs
+      check_paths: true
