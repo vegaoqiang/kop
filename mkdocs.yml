@@ -4,11 +4,20 @@ theme:
 plugins:
   - search
 markdown_extensions:
+  - admonition
   - pymdownx.snippets:
       base_path:
         - .
         - docs
       check_paths: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
 repo_url: https://github.com/vegaoqiang/kop
+nav:
+  - Home: index.md
+  - Getting Started: getting_started.md
+  - Tutorial: tutorial.md
+  - Guide: guide.md
 exclude_docs: |
   readme_ch.md
