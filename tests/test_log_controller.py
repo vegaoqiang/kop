@@ -95,6 +95,43 @@ def test_run_skips_empty_lines_and_collects_non_empty():
     assert controller.poll_logs() == ["x", "y"]
 
 
+def test_run_normalizes_structured_and_multiline_logs():
+    pod_logs = FakePodLogs(
+        lines=[
+            {"log": '{"level":"info","msg":"started"}\n'},
+            b"line-a\nline-b\n",
+            {"foo": "bar"},
+        ]
+    )
+    controller = LogController(pod_logs)
+
+    controller._run()
+
+    assert controller.poll_logs() == [
+        '{"level":"info","msg":"started"}',
+        "line-a",
+        "line-b",
+        '{"foo": "bar"}',
+    ]
+
+
+def test_run_strips_ansi_and_control_chars():
+    pod_logs = FakePodLogs(
+        lines=[
+            "\x1b[31mERR\x1b[0m message one\r\n",
+            "[0mplain-text\n",
+        ]
+    )
+    controller = LogController(pod_logs)
+
+    controller._run()
+
+    assert controller.poll_logs() == [
+        "ERR message one",
+        "[0mplain-text",
+    ]
+
+
 def test_poll_waits_for_first_item_and_flushes_queue():
     pod_logs = FakePodLogs(lines=[])
     controller = LogController(pod_logs)

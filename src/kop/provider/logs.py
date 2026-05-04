@@ -1,5 +1,7 @@
 import queue
 import threading
+import json
+import re
 from typing import Optional
 from kubernetes import watch
 from kubernetes.client import CoreV1Api
@@ -65,6 +67,8 @@ class PodLogs:
             
 
 class LogController:
+    _ANSI_ESCAPE_RE = re.compile(r"\x1B\[[0-?]*[ -/]*[@-~]")
+    _CONTROL_CHAR_RE = re.compile(r"[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]")
 
     def __init__(self, pod_logs: PodLogs):
         self.pod_logs = pod_logs
@@ -110,10 +114,43 @@ class LogController:
             for line in self.pod_logs.watch_logs():
                 if self._stop_event.is_set():
                     break
-                if line:
-                    self._queue.put(line)
+                for normalized_line in self._normalize_lines(line):
+                    self._queue.put(normalized_line)
         except Exception as e:
             self._event_queue.put(e)
+
+    def _normalize_lines(self, line: object) -> list[str]:
+        if line is None:
+            return []
+
+        text = self._sanitize_text(self._to_text(line)).strip()
+        if not text:
+            return []
+
+        return [part for part in text.splitlines() if part.strip()]
+
+    def _to_text(self, line: object) -> str:
+        if isinstance(line, str):
+            return line
+        if isinstance(line, bytes):
+            return line.decode("utf-8", errors="replace")
+        if isinstance(line, dict):
+            # Kubernetes watch payloads can be structured objects.
+            for key in ("log", "message", "msg"):
+                value = line.get(key)
+                if isinstance(value, str):
+                    return value
+            return json.dumps(line, ensure_ascii=False)
+        if isinstance(line, (list, tuple)):
+            return json.dumps(line, ensure_ascii=False)
+        return str(line)
+
+    def _sanitize_text(self, text: str) -> str:
+        # Strip ANSI style/control sequences from colored logs
+        # so textual Log keeps layout stable.
+        cleaned = self._ANSI_ESCAPE_RE.sub("", text)
+        cleaned = cleaned.replace("\r", "")
+        return self._CONTROL_CHAR_RE.sub("", cleaned)
 
     def poll(self, q: queue.Queue, timeout: float = 0) -> list[str]:
         """wait for new logs and return them"""
