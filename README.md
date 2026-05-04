@@ -51,9 +51,10 @@ kop --kubeconfig /path/to/kubeconfig.yaml
 In this mode, the file path and kubeconfig validity are verified, and after validation it enters the resource view directly.
 
 ## Operations and Shortcuts
-Please refer to the [Documentation](/docs/guide.md) for more detailed usage instructions.
-
+See demo video:
 [![Watch the demo](https://img.youtube.com/vi/sEXl9UQQxVc/maxresdefault.jpg)](https://www.youtube.com/watch?v=sEXl9UQQxVc)
+
+Please refer to the [Documentation](/docs/guide.md) for more detailed usage instructions.
 
 ### Startup Page (Cluster List)
 
