@@ -60,7 +60,7 @@ class ConfigModel:
                     name=cluster_name,
                     server=cluster_obj.get("server", ""),
                     contexts=contexts_by_cluster.get(cluster_name, []),
-                    current_context=yaml_obj.get("currnet-context", "default"),
+                    current_context=yaml_obj.get("current-context", "default"),
                     users=users_by_cluster.get(cluster_name, []),
                     version=cluster.get("version", ""),
                     path=str(path),
