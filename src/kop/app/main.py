@@ -49,15 +49,16 @@ class Kop(App):
     
 
 def get_app_version() -> str:
-    """Resolve Kop version from package metadata, with a pyproject fallback."""
+    """Resolve Kop version from installed metadata, with a source fallback."""
     try:
-        return version("kop")
+        return version("kop-cli")
     except PackageNotFoundError:
-        pyproject_path = Path(__file__).resolve().parents[3] / "pyproject.toml"
-        if pyproject_path.is_file():
-            with pyproject_path.open("r", encoding="utf-8") as f:
+        init_file = Path(__file__).resolve().parents[1] / "__init__.py"
+        if init_file.is_file():
+            with init_file.open("r", encoding="utf-8") as f:
                 for line in f:
-                    if line.strip().startswith("version ="):
+                    line = line.strip()
+                    if line.startswith("__version__"):
                         return line.split("=", 1)[1].strip().strip('"').strip("'")
     return "unknown"
 

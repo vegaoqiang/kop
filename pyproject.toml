@@ -1,6 +1,6 @@
 [project]
 name = "kop-cli"
-version = "0.1.0-alpha.1"
+dynamic = ["version"]
 description = "Terminal-based kubernetes operation platform"
 readme = "README.md"
 requires-python = ">=3.9"
@@ -71,3 +71,6 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/kop"]
+
+[tool.hatch.version]
+path = "src/kop/__init__.py"
