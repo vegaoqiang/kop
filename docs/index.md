@@ -1,5 +1,5 @@
 
-# kop
+# Introduction
 
 `kop` is a terminal-based (TUI) Kubernetes operations platform. Its goal is to provide an interactive experience similar to desktop cluster management tools, but fully within the terminal command line, aiming to solve the problem of conveniently operating Kubernetes clusters when no desktop environment is available.
 
@@ -10,6 +10,7 @@
 - Manage Kubernetes efficiently in remote sessions or servers without a desktop environment
 - Replace repetitive manual `kubectl` workflows with interactive operations
 - Stay inside a terminal-first DevOps workflow without context switching
+- Clickable with mouse (Under virtual terminal)
 
 ## Core Capabilities
 
@@ -24,7 +25,7 @@
 - [Tutorial](tutorial.md): step-by-step onboarding flow
 - [Guide](guide.md): task-oriented instructions for daily operations
 
-## Who It's For
+## Who It's For 
 
 - Developers and platform engineers who operate Kubernetes from the terminal
 - Teams that want a lower-friction Kubernetes operations experience

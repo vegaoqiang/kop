@@ -1,4 +1,4 @@
-site_name: Kop Docs
+site_name: Kop
 theme:
   name: material
 plugins:
@@ -9,3 +9,6 @@ markdown_extensions:
         - .
         - docs
       check_paths: true
+repo_url: https://github.com/vegaoqiang/kop
+exclude_docs: |
+  readme_ch.md

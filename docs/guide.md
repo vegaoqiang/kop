@@ -1,4 +1,4 @@
-# How to use `kop` for Kubernetes resource operations
+# Guide
 
 This guide contains task-oriented instructions for working with Kubernetes resources in `kop`.
 
