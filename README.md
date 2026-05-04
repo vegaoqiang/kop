@@ -1,4 +1,4 @@
-![sample](/images/sample.png)
+![sample](docs/images/sample.png)
 
 [![PyPI version](https://badge.fury.io/py/kop-cli.svg)](https://badge.fury.io/py/kop-cli)
 ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/kop-cli)
@@ -54,7 +54,7 @@ In this mode, the file path and kubeconfig validity are verified, and after vali
 See demo video:
 [![Watch the demo](https://img.youtube.com/vi/sEXl9UQQxVc/maxresdefault.jpg)](https://www.youtube.com/watch?v=sEXl9UQQxVc)
 
-Please refer to the [Documentation](/docs/guide.md) for more detailed usage instructions.
+Please refer to the [Documentation](https://vegaoqiang.github.io/kop/) for more detailed usage instructions.
 
 ### Startup Page (Cluster List)
 
