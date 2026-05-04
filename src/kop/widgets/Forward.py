@@ -16,6 +16,10 @@ class PodPortItem(ListItem):
         .-hidden {
             display: none;
         }
+        #start_forward, #stop_forward {
+            width: auto;
+            dock: right;
+        }
     """
 
     def __init__(self, item, **kwargs):
@@ -85,9 +89,6 @@ class DescPorts(Static):
         }
         Horizontal {
             height: auto;
-        }
-        Button {
-            dock: right;
         }
         Switch {
             height: 1fr;
