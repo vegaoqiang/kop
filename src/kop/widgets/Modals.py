@@ -139,7 +139,7 @@ class Confirm(ModalScreen):
 
     def on_mount(self) -> None:
         dialog = self.query_one("#dialog", Grid)
-        dialog.border_subtitle = "ESC to Cancel • Enter to Confirm"
+        dialog.border_subtitle = f"ESC to Cancel • Enter to {self.action_name}"
 
     @on(Button.Pressed, "#cancel")
     def action_close(self):
@@ -452,7 +452,7 @@ class PortForward(ModalScreen):
             padding: 0 1;
             width: 60;
             height: 17;
-            border: thick $background 80%;
+            border: solid $secondary;
             background: $surface;
         }
         #cancel, #start {
@@ -462,6 +462,7 @@ class PortForward(ModalScreen):
 
     BINDINGS = [
         Binding("escape", "close", "Cancel", show=False),
+        Binding("enter", "confirm", "Confirm", show=False),
     ]
 
     def __init__(self, dest_port: int):
@@ -482,6 +483,10 @@ class PortForward(ModalScreen):
             Button("Start", variant="primary", id="start", disabled=False),
             id="dialog"
         )
+
+    def on_mount(self) -> None:
+        dialog = self.query_one("#dialog", Grid)
+        dialog.border_subtitle = "ESC to Cancel • Enter to Start"
 
     def action_close(self):
         self.app.pop_screen()
