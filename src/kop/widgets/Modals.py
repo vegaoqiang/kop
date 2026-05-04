@@ -101,7 +101,7 @@ class Confirm(ModalScreen):
             padding: 0 1;
             width: 60;
             height: 11;
-            border: thick $background 80%;
+            border: solid $secondary;
             background: $surface;
         }
 
@@ -120,6 +120,7 @@ class Confirm(ModalScreen):
 
     BINDINGS = [
         Binding("escape", "close", "Cancel", show=False),
+        Binding("enter", "confirm", "Confirm", show=False),
     ]
 
     def __init__(self, data, action_name: str):
@@ -135,6 +136,10 @@ class Confirm(ModalScreen):
             Button(f"{self.action_name}", variant="error", id="confirm"),
             id="dialog"
         )
+
+    def on_mount(self) -> None:
+        dialog = self.query_one("#dialog", Grid)
+        dialog.border_subtitle = "ESC to Cancel • Enter to Confirm"
 
     @on(Button.Pressed, "#cancel")
     def action_close(self):
