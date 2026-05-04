@@ -20,28 +20,6 @@ from typing import Optional
 
 
 
-# @RendererRegistry.register_renderer('container_status')
-# @RendererRegistry.register_renderer('container_statuses')
-# def render_container_status(title: str, desc) -> ComposeResult:
-#     if not desc:
-#         return
-#     if isinstance(desc, list):
-#         for item in desc:
-#             yield from container_status(desc=item)
-#         return
-#     yield from container_status(desc=desc)
-
-
-# def container_status(desc: ContainerStatusModel) -> ComposeResult:
-#     desc = desc.lazy_clean()
-#     columns = desc.get_columns()
-#     for col in columns:
-#         field_value = desc.get(col.field)
-#         if not field_value:
-#             continue
-#         renderer = RendererRegistry.get_renderer(col.field)
-#         yield from renderer(title=col.title, desc=field_value)
-
 @RendererRegistry.register_renderer('container_status')
 def render_container_status(title: str, desc) -> ComposeResult:
     yield Row(title=Title(title), desc=Desc(desc=desc, formatter=formatter.container_status_formatter))
