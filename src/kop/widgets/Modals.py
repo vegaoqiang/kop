@@ -555,13 +555,17 @@ class Scale(ModalScreen):
             padding: 0 1;
             width: 60;
             height: 12;
-            border: thick $background 80%;
+            border: solid $secondary;
             background: $surface;
         }
         #scale, #cancel {
             width: 100%;
         }
     """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+    ]
 
     def __init__(self, row_data):
         self.row_data = row_data
@@ -579,13 +583,20 @@ class Scale(ModalScreen):
             Button("Scale", variant="primary", id="scale", disabled=True),
             id="dialog"
         )
+    
+    def on_mount(self) -> None:
+        dialog = self.query_one("#dialog", Grid)
+        dialog.border_subtitle = "ESC to Cancel • Enter to Scale"
+    
+    def action_close(self):
+        self.app.pop_screen()
 
     @on(Button.Pressed, "#cancel")
     def on_cancel_press(self, event: Button.Pressed) -> None:
         self.app.pop_screen()
 
     @on(Button.Pressed, "#scale")
-    def on_scale_press(self, event: Button.Pressed) -> None:
+    def on_scale_press(self) -> None:
         replicas_input = self.query_one("#new_replicas", Input)
         replicas_text = replicas_input.value.strip()
         if not replicas_text:
@@ -601,6 +612,11 @@ class Scale(ModalScreen):
             self.query_one("#scale", Button).disabled = False
         else:
             self.query_one("#scale", Button).disabled = True
+
+    @on(Input.Submitted, "#new_replicas")
+    def submit_replicas(self) -> None:
+        if not self.query_one("#scale", Button).disabled:
+            self.on_scale_press()
 
 
 class DownloadDirectoryPicker(ModalScreen):
