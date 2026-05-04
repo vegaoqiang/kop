@@ -53,7 +53,7 @@ In this mode, the file path and kubeconfig validity are verified, and after vali
 ## Operations and Shortcuts
 Please refer to the [Documentation](/docs/guide.md) for more detailed usage instructions.
 
-[![kop preview](http://img.youtube.com/vi/sEXl9UQQxVc/0.jpg)](https://www.youtube.com/watch?v=sEXl9UQQxVc)
+<iframe width="560" height="315" src="https://www.youtube.com/embed/sEXl9UQQxVc?si=D7aUdmNZEILQpjqv" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
 
 ### Startup Page (Cluster List)
 
