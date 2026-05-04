@@ -53,6 +53,8 @@ In this mode, the file path and kubeconfig validity are verified, and after vali
 ## Operations and Shortcuts
 Please refer to the [Documentation](/docs/guide.md) for more detailed usage instructions.
 
+[![kop preview](http://img.youtube.com/vi/sEXl9UQQxVc/0.jpg)](https://www.youtube.com/watch?v=sEXl9UQQxVc)
+
 ### Startup Page (Cluster List)
 
 - `a`: Add cluster
