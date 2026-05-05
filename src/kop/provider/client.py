@@ -130,12 +130,24 @@ class KbsAuthLoader:
         )
 
         self.api_client = client.ApiClient(configuration=self.configuration)
+        self._closed = False
 
+    def close(self) -> None:
+        """Explicitly close api client resources."""
+        if self._closed:
+            return
+        api_client = getattr(self, "api_client", None)
+        if api_client:
+            api_client.close()
+        self._closed = True
 
     def __del__(self):
-        """close api client when object destroyed"""
-        if self.api_client:
-            self.api_client.close()
+        """Best-effort fallback; runtime shutdown should call close() explicitly."""
+        try:
+            self.close()
+        except Exception:
+            # Suppress destructor-time exceptions.
+            pass
 
 
 class KbsEndpoint(KbsAuthLoader):

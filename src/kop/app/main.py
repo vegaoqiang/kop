@@ -27,6 +27,15 @@ class Kop(App):
         self.endpoint: Optional[KbsEndpoint] = None
         self.config_file = config_file
 
+    def _close_endpoint(self) -> None:
+        endpoint = self.endpoint
+        if not endpoint:
+            return
+        close = getattr(endpoint, "close", None)
+        if callable(close):
+            close()
+        self.endpoint = None
+
     def on_mount(self) -> None:
         if self.config_file:
             self.endpoint = KbsEndpoint(config_file=self.config_file)
@@ -39,6 +48,13 @@ class Kop(App):
             start_view
             )
         self.home = start_view
+
+    def on_unmount(self) -> None:
+        self._close_endpoint()
+
+    # def action_quit(self) -> None:
+    #     self._close_endpoint()
+    #     super().action_quit()
         
     
     def _get_configs(self) -> list[ConfigModel]:
