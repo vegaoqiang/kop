@@ -80,15 +80,18 @@ View logs from pod containers.
 
 1. Open `Pods` and select pod resource.
 2. Press `l` (`Logs`).
-3. If the pod has multiple containers, select one container.
-4. Observe `current` logs in the log screen.
-5. Press `p` to toggle between `current` and `previous` logs.
+3. Press `]` to switch other container in top panel.
+4. Press `/` to search log context in top panel, If multiple entries are matched, press `n`/`shift+n` to move the cursor between the next/previous entry. 
+5. Press `p` to toggle `previous` logs.
+6. Press `t` to show log timestamps
+7. Press `d` to download logs to local
 
 Note
 
 Logs are fetched directly from Kubernetes API. For restarted containers, `kop`
 lets you choose `current` or `previous` logs.
 
+![pod logs](images/guide/pod_logs.png)
 
 ## Open Pod shell
 
