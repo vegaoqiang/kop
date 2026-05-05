@@ -14,11 +14,11 @@ class PodAttachView(ScrollView):
 
     max_lines: Reactive[int] = Reactive(5000)
 
-    def __init__(self, attach):
+    def __init__(self, attach, **kwargs) -> None:
         """
         attach: PodAttach provider
         """
-        super().__init__()
+        super().__init__(**kwargs)
         self.attach = attach
         self.resp = None
         self.lines: list[str] = []
