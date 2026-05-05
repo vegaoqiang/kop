@@ -25,21 +25,12 @@ class PodAttachView(ScrollView):
         self._empty_hint_inserted = False
 
     def on_mount(self) -> None:
-        self.call_later(self._connect)
+        self.read_loop()
 
     def on_unmount(self) -> None:
         if self.resp:
             self.resp.close()
             self.resp = None
-
-    def _connect(self):
-        try:
-            self.resp = self.attach.connect()
-        except Exception as e:
-            self.notify(f"Attach failed: {e}", severity="error")
-            return
-        self._insert_empty_hint()
-        self.read_loop()
 
     def _insert_empty_hint(self):
         if self._empty_hint_inserted:
@@ -73,13 +64,23 @@ class PodAttachView(ScrollView):
         self.scroll_end(animate=False)
         self.refresh()
 
-    # ---------- read loop ----------
-
     @work(exclusive=True, thread=True)
     def read_loop(self):
         worker = get_current_worker()
+        self._empty_hint_inserted = False
+        try:
+            resp = self.attach.connect()
+            self.resp = resp
+        except Exception as e:
+            self.app.call_from_thread(
+                self.notify,
+                f"Attach failed: {e}",
+                severity="error",
+            )
+            return
+        self.app.call_from_thread(self._insert_empty_hint)
 
-        while self.resp.is_open() and worker.is_running:
+        while resp.is_open() and worker.is_running:
             try:
                 stdout = self.attach.read_stdout(timeout=0.2)
                 if stdout:
@@ -110,3 +111,11 @@ class PodAttachView(ScrollView):
         if event.key == "escape":
             self._exit()
         event.stop()
+
+    def switch_attach(self, attach) -> None:
+        self.attach.close()
+        self.attach = attach
+        self.resp = None
+        self.lines = []
+        self.refresh()
+        self.read_loop()

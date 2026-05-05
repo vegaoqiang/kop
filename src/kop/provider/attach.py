@@ -31,4 +31,12 @@ class PodAttach(PodExec):
         except ApiException as e:
             raise RuntimeError(f"Connection failed: {e}")
         return self.resp
-    
+
+    def close(self):
+        if not self.resp:
+            return
+        try:
+            # attach session does not need stdin EOF, direct close avoids UI stalls.
+            self.resp.close()
+        finally:
+            self.resp = None
