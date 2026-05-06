@@ -280,9 +280,18 @@ class PodFacotry(BaseFactory):
                     action="delete", 
                     key="d")]
 
-    def fetch(self, namespace: Optional[str] = None):
+    def fetch(
+        self,
+        namespace: Optional[str] = None,
+        limit: Optional[int] = None,
+        continue_token: Optional[str] = None,
+    ):
         # client = self._client.core_v1()
-        return self.endpoint.list_pods(namespace=namespace)
+        return self.endpoint.list_pods(
+            namespace=namespace,
+            limit=limit,
+            continue_token=continue_token,
+        )
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_pods(name=name, namespace=namespace)

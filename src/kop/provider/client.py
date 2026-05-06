@@ -183,6 +183,8 @@ class KbsEndpoint(KbsAuthLoader):
         async_req: bool = False,
         field_selector: Optional[str] = None,
         label_selector: Optional[str] = None,
+        limit: Optional[int] = None,
+        continue_token: Optional[str] = None,
     ):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         if namespace:
@@ -192,12 +194,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 field_selector=field_selector,
                 label_selector=label_selector,
+                limit=limit,
+                _continue=continue_token,
             )
         return endpoint.list_pod_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             field_selector=field_selector,
             label_selector=label_selector,
+            limit=limit,
+            _continue=continue_token,
         )
     
     def delete_pods(self, name: str,

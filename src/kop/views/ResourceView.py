@@ -22,6 +22,7 @@ from typing import Optional, Tuple
 class ResourceView(Screen):
 
     RESOURCE_FETCH_TIMEOUT = 3.0
+    RESOURCE_PAGE_SIZE = 100
 
     DEFAULT_CSS = """
         SideMenu {
@@ -86,6 +87,8 @@ class ResourceView(Screen):
         self.endpoint: Optional[KbsEndpoint] = getattr(self.app, "endpoint", None)
         self.namespace = None
         self.resource_type: Optional[str] = None
+        self.page_index: int = 0
+        self.resource_pages: dict[str, list[tuple[object, list, Optional[str]]]] = {}
 
     def compose(self) -> ComposeResult: 
             yield Header()
@@ -99,6 +102,7 @@ class ResourceView(Screen):
     
     def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
         self.resource_type = resource_type = event.menu_id
+        self._reset_resource_pagination(resource_type, self.namespace)
         self._set_loading(True)
         self._load_resource(resource_type=resource_type, show_loading=False)
         self.call_after_refresh(self._update_resource_panel, event.menu_name)
@@ -106,12 +110,32 @@ class ResourceView(Screen):
         if hasattr(self, "timer"):
             self.timer.resume()
 
-    def _fetch_resource(self, resource_type: str, namespace: Optional[str], keyword: Optional[str]) -> Tuple[Optional[BaseFactory], Optional[object], list]:
+    def _resource_cache_key(self, resource_type: str, namespace: Optional[str]) -> str:
+        return f"{resource_type}:{namespace or '__all_namespaces__'}"
+
+    def _reset_resource_pagination(self, resource_type: str, namespace: Optional[str]) -> None:
+        self.page_index = 0
+        self.resource_pages[self._resource_cache_key(resource_type, namespace)] = []
+
+    def _fetch_resource(
+        self,
+        resource_type: str,
+        namespace: Optional[str],
+        keyword: Optional[str],
+        continue_token: Optional[str] = None,
+    ) -> Tuple[Optional[BaseFactory], Optional[object], list]:
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
             return None, None, []
         factory = factory_cls(self.endpoint)
-        data = factory.fetch(namespace=namespace)
+        try:
+            data = factory.fetch(
+                namespace=namespace,
+                limit=self.RESOURCE_PAGE_SIZE,
+                continue_token=continue_token,
+            )
+        except TypeError:
+            data = factory.fetch(namespace=namespace)
         if keyword:
             data = factory.filter(data, keyword)
         cleaned = factory.clean(data)
@@ -124,13 +148,24 @@ class ResourceView(Screen):
         namespace: Optional[str],
         keyword: Optional[str],
         timeout: float,
+        continue_token: Optional[str] = None,
     ) -> Tuple[Optional[BaseFactory], Optional[object], list]:
         """Run kubernetes fetch in a daemon thread so app shutdown isn't blocked by stuck API calls."""
         result: Queue[Tuple[str, object]] = Queue(maxsize=1)
 
         def _runner() -> None:
             try:
-                result.put(("ok", self._fetch_resource(resource_type, namespace, keyword)))
+                result.put(
+                    (
+                        "ok",
+                        self._fetch_resource(
+                            resource_type,
+                            namespace,
+                            keyword,
+                            continue_token=continue_token,
+                        ),
+                    )
+                )
             except Exception as exc:
                 result.put(("error", exc))
 
@@ -165,7 +200,16 @@ class ResourceView(Screen):
         if self.table:
             self.table.display = True
 
-    def _apply_resource(self, request_id: int, resource_type: str, factory: Optional[BaseFactory], data: Optional[object], cleaned: list) -> None:
+    def _apply_resource(
+        self,
+        request_id: int,
+        resource_type: str,
+        namespace: Optional[str],
+        page_index: int,
+        factory: Optional[BaseFactory],
+        data: Optional[object],
+        cleaned: list,
+    ) -> None:
         if request_id != self._resource_request_id:
             return
         self._set_loading(False)
@@ -174,6 +218,17 @@ class ResourceView(Screen):
 
         self.FACTORY_CACHE = factory
         self.data = data
+        next_token = getattr(getattr(data, "metadata", None), "_continue", None)
+        cache_key = self._resource_cache_key(resource_type, namespace)
+        pages = self.resource_pages.setdefault(cache_key, [])
+        page_entry = (data, cleaned, next_token)
+        if page_index < len(pages):
+            pages[page_index] = page_entry
+            del pages[page_index + 1 :]
+        else:
+            pages.append(page_entry)
+        self.page_index = page_index
+
         if not self.table or self._table_resource_type != resource_type:
             self.table = table = factory.create_renderer(data)
             self._table_resource_type = resource_type
@@ -193,7 +248,15 @@ class ResourceView(Screen):
         self.notify(f"Load {self.resource_type} failed: {exc}", severity="error")
 
     @work(thread=True, exclusive=True)
-    def _load_resource_worker(self, request_id: int, resource_type: str, namespace: Optional[str], keyword: Optional[str]) -> None:
+    def _load_resource_worker(
+        self,
+        request_id: int,
+        resource_type: str,
+        namespace: Optional[str],
+        keyword: Optional[str],
+        continue_token: Optional[str],
+        page_index: int,
+    ) -> None:
         worker = get_current_worker()
         try:
             factory, data, cleaned = self._fetch_resource_with_timeout(
@@ -201,6 +264,7 @@ class ResourceView(Screen):
                 namespace,
                 keyword,
                 timeout=self.RESOURCE_FETCH_TIMEOUT,
+                continue_token=continue_token,
             )
         except Exception as e:
             if not worker.is_cancelled:
@@ -208,20 +272,74 @@ class ResourceView(Screen):
             return
         if worker.is_cancelled:
             return
-        self.app.call_from_thread(self._apply_resource, request_id, resource_type, factory, data, cleaned)
+        self.app.call_from_thread(
+            self._apply_resource,
+            request_id,
+            resource_type,
+            namespace,
+            page_index,
+            factory,
+            data,
+            cleaned,
+        )
 
-    def _load_resource(self, resource_type: str, show_loading: bool = False) -> None:
+    def _load_resource(
+        self,
+        resource_type: str,
+        show_loading: bool = False,
+        continue_token: Optional[str] = None,
+        page_index: int = 0,
+    ) -> None:
         self._resource_request_id += 1
         request_id = self._resource_request_id
         if show_loading:
             self._set_loading(True)
-        self._load_resource_worker(request_id, resource_type, self.namespace, self.keyword)
+        self._load_resource_worker(
+            request_id,
+            resource_type,
+            self.namespace,
+            self.keyword,
+            continue_token,
+            page_index,
+        )
+
+    def _show_cached_page(self, page_index: int) -> bool:
+        if not self.resource_type:
+            return False
+        cache_key = self._resource_cache_key(self.resource_type, self.namespace)
+        pages = self.resource_pages.get(cache_key, [])
+        if page_index < 0 or page_index >= len(pages):
+            return False
+        data, cleaned, _ = pages[page_index]
+        self.data = data
+        self.page_index = page_index
+        if self.table:
+            self.table.raw_data = data.items
+            self.table.data = cleaned
+        if self.panel:
+            self.panel.resource_count = len(data.items)
+        return True
         
     
     def _update_resource(self) -> None:
         if not self.resource_type:
             return
-        self._load_resource(self.resource_type, show_loading=False)
+        continue_token: Optional[str] = None
+        if self.page_index > 0:
+            cache_key = self._resource_cache_key(self.resource_type, self.namespace)
+            pages = self.resource_pages.get(cache_key, [])
+            prev_index = self.page_index - 1
+            if prev_index >= len(pages):
+                return
+            continue_token = pages[prev_index][2]
+            if not continue_token:
+                return
+        self._load_resource(
+            self.resource_type,
+            show_loading=False,
+            continue_token=continue_token,
+            page_index=self.page_index,
+        )
 
     def on_mount(self) -> None:
         self.timer = self.set_interval(
@@ -249,6 +367,40 @@ class ResourceView(Screen):
                 self.query_one("#search_menu").focus()
             else:
                 self.query_one("#search_input").focus()
+        if event.key == "n":
+            self.action_next_page()
+        if event.key == "p":
+            self.action_prev_page()
+
+    def action_next_page(self) -> None:
+        if not self.resource_type or isinstance(self.app.focused, Input):
+            return
+        cache_key = self._resource_cache_key(self.resource_type, self.namespace)
+        pages = self.resource_pages.get(cache_key, [])
+        target_index = self.page_index + 1
+        if target_index < len(pages):
+            self._show_cached_page(target_index)
+            return
+        if not pages:
+            self._load_resource(self.resource_type, show_loading=True, continue_token=None, page_index=0)
+            return
+        next_token = pages[self.page_index][2]
+        if not next_token:
+            self.notify("No more resources", severity="information")
+            return
+        self._load_resource(
+            self.resource_type,
+            show_loading=True,
+            continue_token=next_token,
+            page_index=target_index,
+        )
+
+    def action_prev_page(self) -> None:
+        if not self.resource_type or isinstance(self.app.focused, Input):
+            return
+        target_index = self.page_index - 1
+        if not self._show_cached_page(target_index):
+            self.notify("Already at first page", severity="information")
 
     def action_new_resource(self) -> None:
         """
@@ -353,6 +505,7 @@ class ResourceView(Screen):
             selected_namespace = None
         self.namespace = selected_namespace
         if self.resource_type:
+            self._reset_resource_pagination(self.resource_type, self.namespace)
             self._load_resource(self.resource_type, show_loading=True)
 
     async def on_resource_panel_search_resource(self, event: ResourcePanel.SearchResource) -> None:
@@ -376,4 +529,3 @@ class ResourceView(Screen):
         go back to home screen
         """
         self.app.push_screen(getattr(self.app, "home"))
-
