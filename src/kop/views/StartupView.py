@@ -258,7 +258,11 @@ class ConfigView(Screen):
     @work
     async def action_add(self):
         config_model = await self.app.push_screen_wait(AddClusterScreen(action="Add"))
-        self.update_kubeconfigs(config_model)
+        if isinstance(config_model, list):
+            for item in config_model:
+                self.update_kubeconfigs(item)
+        else:
+            self.update_kubeconfigs(config_model)
 
     @on(Button.Pressed, "#edit")
     @work
