@@ -542,6 +542,7 @@ class AddClusterScreen(Screen):
         super().__init__()
         self.config = config
         self.action = action
+        self._validate_timer = None
 
     def compose(self) -> ComposeResult:
         yield Label(f"{self.action} Cluster Config", id="title")
@@ -624,13 +625,20 @@ class AddClusterScreen(Screen):
 
     @on(TextArea.Changed)
     def validate_config_content(self, event: TextArea.Changed) -> None:
-        if not ClusterContentValidator(event.text_area.text).validate:
+        if self._validate_timer:
+            self._validate_timer.stop()
+        text = event.text_area.text
+        self._validate_timer = self.set_timer(3.0, lambda: self._do_validate_config_content(text))
+
+    def _do_validate_config_content(self, text: str) -> None:
+        self._validate_timer = None
+        if not ClusterContentValidator(text).validate:
             self.notify(
-                'Invalid Cluster Config Content',
+                "Invalid Cluster Config Content",
                 severity="error",
                 timeout=3,
-                markup=False
-                )
+                markup=False,
+            )
             
 
 class SyncClusterScreen(ModalScreen):
