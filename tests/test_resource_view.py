@@ -90,6 +90,48 @@ def test_fetch_resource_filters_and_sorts(monkeypatch) -> None:
     asyncio.run(_run())
 
 
+def test_fetch_resource_uses_dynamic_page_size_from_screen_height(monkeypatch) -> None:
+    app = ResourceHarnessApp()
+    called: list[tuple[int | None, str | None]] = []
+
+    class FakeFactory:
+        resource_type = "pods"
+
+        def __init__(self, endpoint: object) -> None:
+            self.endpoint = endpoint
+
+        def fetch(self, namespace=None, limit=None, continue_token=None):
+            called.append((limit, continue_token))
+            return SimpleNamespace(
+                items=[SimpleNamespace(name="a")],
+                metadata=SimpleNamespace(_continue=None),
+            )
+
+        def clean(self, data):
+            return [SimpleNamespace(name=item.name) for item in data.items]
+
+        def filter(self, data, keyword):
+            return data
+
+    monkeypatch.setattr(
+        ResourceRegistry,
+        "get_factory",
+        lambda resource_type: FakeFactory if resource_type == "pods" else None,
+    )
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)):
+            view = app.view
+            assert view is not None
+            _factory, _data, _cleaned = view._fetch_resource("pods", None, None)
+
+    asyncio.run(_run())
+
+    assert called
+    assert called[0][0] == 35
+    assert called[0][1] is None
+
+
 def test_action_new_resource_warns_when_no_resource_type(monkeypatch) -> None:
     app = ResourceHarnessApp()
     notifications: list[tuple[str, str]] = []
@@ -310,6 +352,7 @@ def test_mock_pods_over_200_items_with_pagination_tokens(monkeypatch) -> None:
         async with app.run_test(size=(120, 40)):
             view = app.view
             assert view is not None
+            monkeypatch.setattr(view, "_get_page_size", lambda: 100)
 
             _, page1, cleaned1 = view._fetch_resource("pods", None, None)
             assert len(page1.items) == 100

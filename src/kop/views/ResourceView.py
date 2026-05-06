@@ -22,7 +22,7 @@ from typing import Optional, Tuple
 class ResourceView(Screen):
 
     RESOURCE_FETCH_TIMEOUT = 3.0
-    RESOURCE_PAGE_SIZE = 100
+    RESERVED_HEIGHT = 6  # panel(3) + footer+header(2) + table header(1)
 
     DEFAULT_CSS = """
         SideMenu {
@@ -117,6 +117,11 @@ class ResourceView(Screen):
         self.page_index = 0
         self.resource_pages[self._resource_cache_key(resource_type, namespace)] = []
 
+    def _get_page_size(self) -> int:
+        height = getattr(getattr(self, "size", None), "height", 0) or 0
+        # rows = screen height - panel(3) - footer/header(1) - table header(1)
+        return max(1, height - self.RESERVED_HEIGHT)
+
     def _fetch_resource(
         self,
         resource_type: str,
@@ -131,7 +136,7 @@ class ResourceView(Screen):
         try:
             data = factory.fetch(
                 namespace=namespace,
-                limit=self.RESOURCE_PAGE_SIZE,
+                limit=self._get_page_size(),
                 continue_token=continue_token,
             )
         except TypeError:
