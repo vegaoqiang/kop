@@ -184,9 +184,27 @@ class TableRenderer(Vertical):
 
 
     async def watch_data(self, old_value: list, new_value: list) -> None:
-        new_value_map: dict[str, dict] = {row.name: row for row in new_value}
-
         list_view = self.query_one(ListView)
+        new_value_map: dict[str, dict] = {row.name: row for row in new_value}
+        old_names = set(self.row_map.keys())
+        new_names = set(new_value_map.keys())
+        shared_count = len(old_names & new_names)
+
+        # Fast path for page switches: avoid many async pop/insert operations.
+        # If most rows are different, clear once and rebuild once.
+        if old_names and new_names and shared_count <= max(3, len(new_names) // 10):
+            self.picked_row = None
+            await list_view.clear()
+            self.row_map.clear()
+            rows: list[BaseRow] = []
+            for row_data in new_value:
+                row = BaseRow(row_data=row_data, columns=self.columns)
+                self.row_map[row_data.name] = row
+                rows.append(row)
+            if rows:
+                await list_view.extend(rows)
+            list_view.index = None
+            return
 
         # remove a row if it is not in new_value
         for name in list(self.row_map):
@@ -210,8 +228,8 @@ class TableRenderer(Vertical):
         # add new row if it is not in self.row_map
         # update row if it is in self.row_map
         list_view = self.query_one(ListView)
-        for name, new_row_data in new_value_map.items():
-            new_index = self.data.index(new_row_data)
+        for new_index, new_row_data in enumerate(new_value):
+            name = new_row_data.name
             if name in self.row_map:
                 row = self.row_map[name]
                 row.update_row_data(new_row_data)
