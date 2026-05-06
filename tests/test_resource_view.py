@@ -272,3 +272,105 @@ def test_delete_resource_success_resets_existing_timers_and_notifies(monkeypatch
     asyncio.run(_run())
 
     assert notifications[-1] == ("Delete pods pod-a success", "information")
+
+
+def test_mock_pods_over_200_items_with_pagination_tokens(monkeypatch) -> None:
+    app = ResourceHarnessApp()
+    total = 250
+    all_items = [SimpleNamespace(name=f"pod-{i:03d}") for i in range(total)]
+
+    class FakeFactory:
+        resource_type = "pods"
+
+        def __init__(self, endpoint: object) -> None:
+            self.endpoint = endpoint
+
+        def fetch(self, namespace=None, limit=100, continue_token=None):
+            start = int(continue_token or 0)
+            end = min(start + limit, len(all_items))
+            next_token = str(end) if end < len(all_items) else None
+            return SimpleNamespace(
+                items=all_items[start:end],
+                metadata=SimpleNamespace(_continue=next_token),
+            )
+
+        def clean(self, data):
+            return [SimpleNamespace(name=item.name) for item in data.items]
+
+        def filter(self, data, keyword):
+            return data
+
+    monkeypatch.setattr(
+        ResourceRegistry,
+        "get_factory",
+        lambda resource_type: FakeFactory if resource_type == "pods" else None,
+    )
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)):
+            view = app.view
+            assert view is not None
+
+            _, page1, cleaned1 = view._fetch_resource("pods", None, None)
+            assert len(page1.items) == 100
+            assert len(cleaned1) == 100
+            assert page1.metadata._continue == "100"
+
+            _, page2, cleaned2 = view._fetch_resource("pods", None, None, continue_token=page1.metadata._continue)
+            assert len(page2.items) == 100
+            assert len(cleaned2) == 100
+            assert page2.metadata._continue == "200"
+
+            _, page3, cleaned3 = view._fetch_resource("pods", None, None, continue_token=page2.metadata._continue)
+            assert len(page3.items) == 50
+            assert len(cleaned3) == 50
+            assert page3.metadata._continue is None
+
+    asyncio.run(_run())
+
+
+def test_mock_pod_pagination_next_and_prev_from_cached_pages() -> None:
+    app = ResourceHarnessApp()
+
+    def _page(start: int, end: int, next_token: str | None):
+        rows = [SimpleNamespace(name=f"pod-{i:03d}") for i in range(start, end)]
+        return (
+            SimpleNamespace(items=rows, metadata=SimpleNamespace(_continue=next_token)),
+            rows,
+            next_token,
+        )
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)):
+            view = app.view
+            assert view is not None
+
+            view.resource_type = "pods"
+            view.namespace = None
+            key = view._resource_cache_key("pods", None)
+            view.resource_pages[key] = [
+                _page(0, 100, "100"),
+                _page(100, 200, "200"),
+                _page(200, 250, None),
+            ]
+            view.page_index = 0
+            view.data = view.resource_pages[key][0][0]
+            view.table = SimpleNamespace(raw_data=[], data=[])
+            view.panel = SimpleNamespace(resource_count=0)
+
+            view.action_next_page()
+            assert view.page_index == 1
+            assert len(view.table.data) == 100
+            assert view.table.data[0].name == "pod-100"
+
+            view.action_next_page()
+            assert view.page_index == 2
+            assert len(view.table.data) == 50
+            assert view.table.data[0].name == "pod-200"
+
+            view.action_prev_page()
+            assert view.page_index == 1
+            assert len(view.table.data) == 100
+            assert view.table.data[0].name == "pod-100"
+
+    asyncio.run(_run())
