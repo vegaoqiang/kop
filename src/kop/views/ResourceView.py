@@ -55,6 +55,8 @@ class ResourceView(Screen):
 
     BINDINGS = [
         Binding(key="c", action="new_resource", description="Create", show=True),
+        Binding(key="p", action="prev_page", description="Previous Page", show=True),
+        Binding(key="n", action="next_page", description="Next Page", show=True),
         Binding(key="escape", action="home", description="Go back startup", show=True),
     ]
 
@@ -116,6 +118,33 @@ class ResourceView(Screen):
     def _reset_resource_pagination(self, resource_type: str, namespace: Optional[str]) -> None:
         self.page_index = 0
         self.resource_pages[self._resource_cache_key(resource_type, namespace)] = []
+        self.refresh_bindings()
+
+    def _has_prev_page(self) -> bool:
+        if not self.resource_type:
+            return False
+        return self.page_index > 0
+
+    def _has_next_page(self) -> bool:
+        if not self.resource_type:
+            return False
+        cache_key = self._resource_cache_key(self.resource_type, self.namespace)
+        pages = self.resource_pages.get(cache_key, [])
+        if not pages:
+            return False
+        target_index = self.page_index + 1
+        if target_index < len(pages):
+            return True
+        if self.page_index >= len(pages):
+            return False
+        return bool(pages[self.page_index][2])
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> Optional[bool]:
+        if action == "prev_page":
+            return self._has_prev_page()
+        if action == "next_page":
+            return self._has_next_page()
+        return None
 
     def _get_page_size(self) -> int:
         height = getattr(getattr(self, "size", None), "height", 0) or 0
@@ -233,6 +262,7 @@ class ResourceView(Screen):
         else:
             pages.append(page_entry)
         self.page_index = page_index
+        self.refresh_bindings()
 
         if not self.table or self._table_resource_type != resource_type:
             self.table = table = factory.create_renderer(data)
@@ -323,6 +353,7 @@ class ResourceView(Screen):
             self.table.data = cleaned
         if self.panel:
             self.panel.resource_count = len(data.items)
+        self.refresh_bindings()
         return True
         
     
@@ -372,10 +403,6 @@ class ResourceView(Screen):
                 self.query_one("#search_menu").focus()
             else:
                 self.query_one("#search_input").focus()
-        if event.key == "n":
-            self.action_next_page()
-        if event.key == "p":
-            self.action_prev_page()
 
     def action_next_page(self) -> None:
         if not self.resource_type or isinstance(self.app.focused, Input):

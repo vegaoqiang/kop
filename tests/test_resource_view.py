@@ -417,3 +417,41 @@ def test_mock_pod_pagination_next_and_prev_from_cached_pages() -> None:
             assert view.table.data[0].name == "pod-100"
 
     asyncio.run(_run())
+
+
+def test_pagination_bindings_visibility_changes_by_page() -> None:
+    app = ResourceHarnessApp()
+
+    def _page(start: int, end: int, next_token: str | None):
+        rows = [SimpleNamespace(name=f"pod-{i:03d}") for i in range(start, end)]
+        return (
+            SimpleNamespace(items=rows, metadata=SimpleNamespace(_continue=next_token)),
+            rows,
+            next_token,
+        )
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)):
+            view = app.view
+            assert view is not None
+
+            view.resource_type = "pods"
+            key = view._resource_cache_key("pods", None)
+            view.resource_pages[key] = [
+                _page(0, 100, "100"),
+                _page(100, 200, "200"),
+                _page(200, 250, None),
+            ]
+            view.page_index = 0
+            assert view.check_action("prev_page", ()) is False
+            assert view.check_action("next_page", ()) is True
+
+            view.page_index = 1
+            assert view.check_action("prev_page", ()) is True
+            assert view.check_action("next_page", ()) is True
+
+            view.page_index = 2
+            assert view.check_action("prev_page", ()) is True
+            assert view.check_action("next_page", ()) is False
+
+    asyncio.run(_run())
