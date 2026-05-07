@@ -128,7 +128,7 @@ def test_fetch_resource_uses_dynamic_page_size_from_screen_height(monkeypatch) -
     asyncio.run(_run())
 
     assert called
-    assert called[0][0] == 35
+    assert called[0][0] == 34 # Assuming 40 lines height - (panel(3) + footer+header(2) + table header(1)) = 34 
     assert called[0][1] is None
 
 

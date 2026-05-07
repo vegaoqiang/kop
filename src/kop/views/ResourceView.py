@@ -168,7 +168,7 @@ class ResourceView(Screen):
 
     def _get_page_size(self) -> int:
         height = getattr(getattr(self, "size", None), "height", 0) or 0
-        # rows = screen height - panel(3) - footer/header(1) - table header(1)
+        # rows = screen height - panel(3) - footer+header(2) - table header(1)
         return max(1, height - self.RESERVED_HEIGHT)
 
     def _fetch_resource(
