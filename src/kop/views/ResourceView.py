@@ -1,5 +1,6 @@
 from queue import Queue, Empty
 from threading import Thread
+from dataclasses import replace
 from textual import work
 from textual.events import Key
 from textual.screen import Screen
@@ -89,6 +90,7 @@ class ResourceView(Screen):
         self.endpoint: Optional[KbsEndpoint] = getattr(self.app, "endpoint", None)
         self.namespace = None
         self.resource_type: Optional[str] = None
+        self.resource_kind_name: Optional[str] = None
         self.page_index: int = 0
         self.resource_pages: dict[str, list[tuple[object, list, Optional[str]]]] = {}
 
@@ -104,6 +106,7 @@ class ResourceView(Screen):
     
     def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
         self.resource_type = resource_type = event.menu_id
+        self.resource_kind_name = event.menu_name
         self._reset_resource_pagination(resource_type, self.namespace)
         self._set_loading(True)
         self._load_resource(resource_type=resource_type, show_loading=False)
@@ -144,7 +147,24 @@ class ResourceView(Screen):
             return self._has_prev_page()
         if action == "next_page":
             return self._has_next_page()
-        return None
+        return True
+
+    @property
+    def active_bindings(self):
+        bindings = super().active_bindings
+        create_binding = bindings.get("c")
+        if not create_binding:
+            return bindings
+        kind_name = self.resource_kind_name or (
+            self.resource_type.capitalize() if self.resource_type else ""
+        )
+        description = "Create"
+        if kind_name:
+            description = f"Create {kind_name}"
+        bindings["c"] = create_binding._replace(
+            binding=replace(create_binding.binding, description=description)
+        )
+        return bindings
 
     def _get_page_size(self) -> int:
         height = getattr(getattr(self, "size", None), "height", 0) or 0

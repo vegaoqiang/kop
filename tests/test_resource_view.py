@@ -204,6 +204,27 @@ def test_action_new_resource_pushes_edit_screen_and_wires_fetcher_creator(monkey
     assert notifications[-1] == ("Create pods pod-a success", "information")
 
 
+def test_create_binding_description_updates_with_selected_resource_kind() -> None:
+    app = ResourceHarnessApp()
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)):
+            view = app.view
+            assert view is not None
+
+            view.resource_type = None
+            view.resource_kind_name = None
+            initial_description = view.active_bindings["c"].binding.description
+            assert initial_description == "Create"
+
+            event = SimpleNamespace(menu_id="pods", menu_name="Pod")
+            view.on_side_menu_resource_event(event)
+            description = view.active_bindings["c"].binding.description
+            assert description == "Create Pod"
+
+    asyncio.run(_run())
+
+
 def test_on_resource_panel_require_namespace_updates_options() -> None:
     endpoint = SimpleNamespace(
         list_namespaces=lambda: SimpleNamespace(
