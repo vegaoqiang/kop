@@ -34,7 +34,10 @@ class ConfigRow(Horizontal):
         ConfigItem {
             height: 5;
             width: 1fr;
-            min-width: 33%;
+        }
+        #grid {
+            height: 5;
+            grid-size: 3 1;
         }
     """
 
@@ -44,9 +47,10 @@ class ConfigRow(Horizontal):
 
 
     def compose(self) -> ComposeResult:
-        for item in self.config:
-            yield ConfigItem(item)
-            
+        with Grid(id="grid"):
+            for item in self.config:
+                yield ConfigItem(item)
+                
 
 class ConfigView(Screen):
     """
