@@ -208,6 +208,9 @@ class ConfigView(Screen):
         if not self.selected:
             self.notify("Please select a cluster to delete", severity="error")
             return
+        if Config().is_default_config(self.selected):
+            self.notify("Cannot delete default kubeconfig in ~/.kube/config", severity="warning")
+            return
         if not await self.app.push_screen_wait(DeleteConfigConfirmScreen(self.selected)):
             return
         Config().delete_config(config_path=self.selected.path)

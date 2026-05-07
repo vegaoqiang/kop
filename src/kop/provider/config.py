@@ -137,6 +137,12 @@ class Config:
         if self.kube_default_path.joinpath("config") == path:
             return 
         path.unlink()
+    
+    def is_default_config(self, config: ConfigModel) -> bool:
+        """
+        check if the config is default config in user home path .kube
+        """
+        return self.kube_default_path.joinpath("config") == Path(config.path)
 
     def get_configs(self) -> list[ConfigModel]:
         """
