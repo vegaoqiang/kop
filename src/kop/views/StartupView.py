@@ -33,7 +33,8 @@ class ConfigRow(Horizontal):
     DEFAULT_CSS = """
         ConfigItem {
             height: 5;
-            width: 25%;
+            width: 1fr;
+            min-width: 33%;
         }
     """
 
@@ -113,7 +114,7 @@ class ConfigView(Screen):
     # use example: KOP_MOCK_CLUSTER_VERSION='v1.30.9-{name}' kop
     MOCK_VERSION_ENV = "KOP_MOCK_CLUSTER_VERSION"
 
-    def __init__(self, kubeconfigs: list[ConfigModel] = [], column_length: int = 4, **kwargs) -> None:
+    def __init__(self, kubeconfigs: list[ConfigModel] = [], column_length: int = 3, **kwargs) -> None:
         super().__init__(**kwargs)
         self.column_length = column_length
         if kubeconfigs:
