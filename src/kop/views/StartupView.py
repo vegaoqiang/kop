@@ -152,9 +152,10 @@ class ConfigView(Screen):
         self._focus_item()
         self.call_after_refresh(self._set_container_title)
 
-        if self.KubeConfigs:
-            self.call_after_refresh(self._schedule_version_refresh)
-            self.updater = self.set_interval(10, self._schedule_version_refresh)
+        # if self.KubeConfigs:
+        # self.call_after_refresh(self._schedule_version_refresh)
+        # self.updater = self.set_interval(10, self._schedule_version_refresh)
+        self.call_after_refresh(self.__schedule_version_task)
 
     def on_unmount(self) -> None:
         self._cancel_task()
@@ -168,6 +169,10 @@ class ConfigView(Screen):
         if self.version_worker:
             self.version_worker.cancel()
             self.version_worker = None
+    
+    def __schedule_version_task(self) -> None:
+        self._schedule_version_refresh()
+        self.updater = self.set_interval(10, self._schedule_version_refresh)
     
     def _schedule_version_refresh(self) -> None:
         if not self.KubeConfigs:
