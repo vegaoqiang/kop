@@ -217,9 +217,14 @@ class ConfigView(Screen):
             return
         if not await self.app.push_screen_wait(DeleteConfigConfirmScreen(self.selected)):
             return
+        delete_idx = self.KubeConfigs.index(self.selected)
         Config().delete_config(config_path=self.selected.path)
         self.KubeConfigs.remove(self.selected)
         self.mutate_reactive(ConfigView.KubeConfigs)
+        
+        self.selected = None
+        self.selected_item = None
+        self.call_after_refresh(self._focus_after_delete, delete_idx)
 
     @work(group="connect", exclusive=True)
     @on(Button.Pressed, "#connect")
@@ -337,6 +342,13 @@ class ConfigView(Screen):
         except Exception:
             return
         config_item.focus()
+
+    def _focus_after_delete(self, delete_idx: int) -> None:
+        items = list(self.query(ConfigItem))
+        if not items:
+            return
+        target_idx = min(delete_idx, len(items) - 1)
+        items[target_idx].focus()
 
     def _set_container_title(self) -> None:
         container = self.query_one("#config", VerticalScroll)

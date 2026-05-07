@@ -225,6 +225,86 @@ def test_arrow_keys_move_focus_between_config_items() -> None:
     asyncio.run(_run())
 
 
+def test_delete_moves_focus_to_next_item(monkeypatch: pytest.MonkeyPatch) -> None:
+    configs = [
+        _config("cluster-1", "/tmp/c1.yaml"),
+        _config("cluster-2", "/tmp/c2.yaml"),
+        _config("cluster-3", "/tmp/c3.yaml"),
+    ]
+    screen = ConfigView(kubeconfigs=configs, column_length=3)
+    app = StartupHarnessApp(screen)
+
+    monkeypatch.setattr(Config, "delete_config", lambda self, config_path: None)
+    monkeypatch.setattr(Config, "is_default_config", lambda self, cfg: False)
+
+    async def _fake_push_screen_wait(self: App, popup):
+        if isinstance(popup, DeleteConfigConfirmScreen):
+            return True
+        return None
+
+    monkeypatch.setattr(app, "push_screen_wait", MethodType(_fake_push_screen_wait, app))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            items = list(screen.query(ConfigItem))
+
+            items[1].focus()
+            await pilot.pause()
+            assert screen.selected is not None
+            assert screen.selected.name == "cluster-2"
+
+            await pilot.click("#delete")
+            await pilot.pause()
+
+            assert [cfg.name for cfg in screen.KubeConfigs] == ["cluster-1", "cluster-3"]
+            focused = app.focused
+            assert isinstance(focused, ConfigItem)
+            assert focused.config.name == "cluster-3"
+
+    asyncio.run(_run())
+
+
+def test_delete_last_item_moves_focus_to_previous_item(monkeypatch: pytest.MonkeyPatch) -> None:
+    configs = [
+        _config("cluster-1", "/tmp/c1.yaml"),
+        _config("cluster-2", "/tmp/c2.yaml"),
+        _config("cluster-3", "/tmp/c3.yaml"),
+    ]
+    screen = ConfigView(kubeconfigs=configs, column_length=3)
+    app = StartupHarnessApp(screen)
+
+    monkeypatch.setattr(Config, "delete_config", lambda self, config_path: None)
+    monkeypatch.setattr(Config, "is_default_config", lambda self, cfg: False)
+
+    async def _fake_push_screen_wait(self: App, popup):
+        if isinstance(popup, DeleteConfigConfirmScreen):
+            return True
+        return None
+
+    monkeypatch.setattr(app, "push_screen_wait", MethodType(_fake_push_screen_wait, app))
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            items = list(screen.query(ConfigItem))
+
+            items[2].focus()
+            await pilot.pause()
+            assert screen.selected is not None
+            assert screen.selected.name == "cluster-3"
+
+            await pilot.click("#delete")
+            await pilot.pause()
+
+            assert [cfg.name for cfg in screen.KubeConfigs] == ["cluster-1", "cluster-2"]
+            focused = app.focused
+            assert isinstance(focused, ConfigItem)
+            assert focused.config.name == "cluster-2"
+
+    asyncio.run(_run())
+
+
 def test_fetch_cluster_version_returns_trimmed_git_version_and_closes_client(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
