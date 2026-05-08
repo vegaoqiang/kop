@@ -261,6 +261,10 @@ class ConfigView(Screen):
             selected.connection_error = ""
             if self.app.screen is loading_screen:
                 await loading_screen.dismiss()
+                
+            endpoint = getattr(self.app, "endpoint", None)
+            if endpoint and isinstance(endpoint, KbsEndpoint):
+                endpoint.close()
             setattr(self.app, "endpoint", KbsEndpoint(config_file=selected.path, context=context))
             view = ResourceView()
             # set cluster name to sub title

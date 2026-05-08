@@ -580,4 +580,4 @@ class ResourceView(Screen):
         """
         go back to home screen
         """
-        self.app.push_screen(getattr(self.app, "home"))
+        self.app.switch_screen(getattr(self.app, "home"))
