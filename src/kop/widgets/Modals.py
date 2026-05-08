@@ -147,6 +147,7 @@ class Confirm(ModalScreen):
     def on_mount(self) -> None:
         dialog = self.query_one("#dialog", Grid)
         dialog.border_subtitle = f"ESC to Cancel • Enter to {self.action_name}"
+        self.query_one("#confirm", Button).focus()
 
     @on(Button.Pressed, "#cancel")
     def action_close(self):

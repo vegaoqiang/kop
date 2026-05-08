@@ -221,7 +221,7 @@ class ConfigView(Screen):
         Config().delete_config(config_path=self.selected.path)
         self.KubeConfigs.remove(self.selected)
         self.mutate_reactive(ConfigView.KubeConfigs)
-        
+
         self.selected = None
         self.selected_item = None
         self.call_after_refresh(self._focus_after_delete, delete_idx)
@@ -486,7 +486,7 @@ class DeleteConfigConfirmScreen(ModalScreen):
             padding: 0 1;
             width: 60;
             height: 11;
-            border: thick $background 80%;
+            border: solid $secondary 80%;
             background: $surface;
         }
         #confirm {
@@ -512,6 +512,12 @@ class DeleteConfigConfirmScreen(ModalScreen):
             Button(label="Yes", variant="error", id="yes"),
             id="dialog"
         )
+    
+    def on_mount(self) -> None:
+        dialog = self.query_one("#dialog", Grid)
+        dialog.border_subtitle = "Esc to Cancel • Enter to Delete"
+
+        self.query_one("#yes", Button).focus()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "yes":
