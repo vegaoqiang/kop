@@ -191,9 +191,8 @@ class ConfigView(Screen):
         this on_screen_resume func will take focus to selected_item, but after time self.notify will 
         pop up a message box indicating that the edit was successful, which will steal focus.
         """
-        if not self.selected_item:
-            return
-        self.selected_item.focus()
+        if self.selected_item:
+            self.selected_item.focus()
 
         # restart updater when screen resume
         if self.updater:
