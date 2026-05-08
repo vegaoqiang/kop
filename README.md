@@ -29,7 +29,7 @@ kop --version
 
 ## Usage
 
-### 1. Default Startup (Read Local Configuration)
+### 1. Startup
 
 ```bash
 kop
@@ -42,7 +42,7 @@ By default, it will load:
 
 If no available cluster is found, you can import configuration from the startup page via `Add` or `Sync`.
 
-### 2. Start Directly with a Specified kubeconfig
+### 2. Start with a Specified kubeconfig
 
 ```bash
 kop --kubeconfig /path/to/kubeconfig.yaml
@@ -75,8 +75,6 @@ Please refer to the [Documentation](https://vegaoqiang.github.io/kop/) for more 
 
 Tip: Available actions differ by resource in the details/operation panel. The bottom of the interface shows available key hints.
 
-## Kubernetes Version Compatibility Matrix
-
 
 ## FAQ
 
@@ -106,16 +104,18 @@ After restarting the `sshd` service, disconnect and reconnect to the remote host
 ### Why doesn't kop look good on macOS?
 kop is built with Textual for terminal UI. Please refer to the Textual FAQ section about display issues in the default macOS terminal for fixes: https://textual.textualize.io/FAQ/#why-doesnt-textual-look-good-on-macos
 
-### Abnormal display on physical terminals
-You may use kop on a physical terminal (a monitor connected to a server via a VGA cable) and find kop UI rendering issues or even crashes. This is because Linux kernel built-in virtual terminals (`tty1`~`tty6`):
+### Abnormal display on Linux console
+You may use kop on Linux console (a monitor connected to a server via a VGA cable) and find kop UI rendering issues or even crashes. This is because Linux kernel built-in virtual terminals (`tty1`~`tty6`):
 * ❌ Do not support True Color (24-bit)
 * ❌ Do not support 256 colors
 * ✅ Only support 16 colors (sometimes even only 8)
 * ✅ Rendering is controlled by the kernel (not by a terminal emulator)
 
-There is currently no good solution. If you must use kop on a physical terminal, one compromise is `kmscon`.
+see [font-for-textual](https://github.com/jsatchell/font-for-textual) for solution. 
 
-Kmscon is a simple terminal emulator based on linux kernel mode setting (KMS). It is an attempt to replace the in-kernel VT implementation with a userspace console. See https://github.com/kmscon/kmscon
+<!-- There is currently no good solution. If you must use kop on a physical terminal, one compromise is `kmscon`.
+
+Kmscon is a simple terminal emulator based on linux kernel mode setting (KMS). It is an attempt to replace the in-kernel VT implementation with a userspace console. See https://github.com/kmscon/kmscon -->
 
 
 ## Roadmap
