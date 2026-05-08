@@ -1,5 +1,6 @@
 from textual.screen import Screen
 from textual.app import ComposeResult
+from textual.widgets import Label
 from kop.widgets.Pty import PodPty
 from kop.provider.client import KbsAuthLoader
 from kop.provider.exec import PodExec
@@ -10,6 +11,22 @@ from typing import Optional, Callable, Union
 
 
 class PodTerminal(Screen):
+
+    DEFAULT_CSS = """
+        #terminal-title {
+            height: 3;
+            width: 1fr;
+            text-style: bold;
+            text-overflow: ellipsis;
+            content-align: center middle;
+            border: solid $secondary;
+        }
+        #pod-terminal {
+            height: 1fr;
+            width: 1fr;
+            border: solid $secondary;
+        }
+    """
     
     def __init__(
         self,
@@ -30,7 +47,12 @@ class PodTerminal(Screen):
             )
 
     def compose(self) -> ComposeResult:
-        yield PodPty(exec=self.exec)
+        yield Label(f"Terminal for {self.exec.pod} ({self.exec.namespace})", id="terminal-title")
+        yield PodPty(exec=self.exec, id="pod-terminal")
+
+    def on_mount(self) -> None:
+        pod_terminal = self.query_one("#pod-terminal", PodPty)
+        pod_terminal.border_subtitle = "Press Ctrl+D or Type exit to Close"
 
     def on_unmount(self) -> None:
         if self.on_close is None:

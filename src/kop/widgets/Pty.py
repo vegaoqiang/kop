@@ -69,8 +69,8 @@ class PodPty(ScrollView):
     # definde the PodTerminal max history line
     ScrollBackLines: Reactive[int] = Reactive(1000)
 
-    def __init__(self, exec: PodExec):
-        super().__init__()
+    def __init__(self, exec: PodExec, **kwargs) -> None:
+        super().__init__(**kwargs)
         # The virtual size (scrollable size) of the Widget. This means how many lines the PodTerminal Widget can scroll.
         self.virtual_size = Size(0, 0)
         self.exec = exec
