@@ -51,33 +51,63 @@ class ConfigItem(Focusable):
         table.add_row(f"[b]Server[/b]", f"[cyan]{config.server}")
         table.add_row(f"[b]Users[/b]", f"[cyan]{','.join(config.users)}")
         self._table = table
-        self.panel = panel = Panel(
-            self._table,
-            expand=True,
-            title=self._build_title(config.version),
-            title_align="right",
-        )
-        super().__init__(panel, **kwargs)
+        super().__init__("", **kwargs)
         self.config = config
+        # Initialize display state from model so recomposed items keep status.
+        self.version = config.version
+        if config.version:
+            self.ready = True
+        elif config.connection_error:
+            self.ready = False
 
     def on_focus(self) -> None:
         self.post_message(ConfigItem.Selected(self.config).set_sender(self))
 
+    def render(self):
+        version = self.version or self.config.version
+        ready = self.ready
+        if ready is None:
+            if version:
+                ready = True
+            elif self.config.connection_error:
+                ready = False
+
+        # title = self._build_title(version)
+        title_str = version
+        if ready is False and not version:
+            title_str = "NotReady"
+        title = self._build_title(title=title_str)
+
+        border_style = "none"
+        if ready is not None:
+            border_style = "green" if ready else "red"
+
+        panel = Panel(
+            self._table,
+            expand=True,
+            title=title,
+            title_align="right",
+            border_style=border_style
+        )
+
+        return panel
+
     @staticmethod
-    def _build_title(version: str = "") -> str:
-        if not version:
+    def _build_title(title: str = "") -> str:
+        if not title:
             return "[b]☸[/b]"
-        return f"[b]☸[/b] {version}"
+        return f"[b]☸[/b] {title}"
 
     def watch_ready(self, value: bool) -> None:
-        self.panel.border_style = "green" if value else "red"
-        if value == False:
-            # set NotReady into title
-            self.panel.title = self._build_title(version="NotReady")
+        if value is not None:
+            self.config.connection_error = "" if value else (self.config.connection_error or "NotReady")
+        self.refresh()
 
     def watch_version(self, value: str) -> None:
-        self.panel.title = self._build_title(value)
-        self.update(self.panel)
+        self.config.version = value
+        if value:
+            self.config.connection_error = ""
+        self.refresh()
 
         
     class Selected(Message):
