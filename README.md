@@ -111,11 +111,9 @@ You may use kop on Linux console (a monitor connected to a server via a VGA cabl
 * ✅ Only support 16 colors (sometimes even only 8)
 * ✅ Rendering is controlled by the kernel (not by a terminal emulator)
 
-see [font-for-textual](https://github.com/jsatchell/font-for-textual) for solution. 
+There is currently no good solution. If you must use kop on a physical terminal, one compromise is `kmscon`.
 
-<!-- There is currently no good solution. If you must use kop on a physical terminal, one compromise is `kmscon`.
-
-Kmscon is a simple terminal emulator based on linux kernel mode setting (KMS). It is an attempt to replace the in-kernel VT implementation with a userspace console. See https://github.com/kmscon/kmscon -->
+Kmscon is a simple terminal emulator based on linux kernel mode setting (KMS). It is an attempt to replace the in-kernel VT implementation with a userspace console. See https://github.com/kmscon/kmscon
 
 
 ## Roadmap
