@@ -121,7 +121,7 @@ Kmscon is a simple terminal emulator based on linux kernel mode setting (KMS). I
 ### Features
 * Upload local files to pod containers
 * Download files from pod containers to local
-* Multi-task window support
+* Multi-task workspace support
 
 
 
