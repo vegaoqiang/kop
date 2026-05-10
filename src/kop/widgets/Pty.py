@@ -94,7 +94,7 @@ class PodPty(ScrollView):
         if character := event.character:
             self.resp.write_stdin(character)
         else:
-            self.resp.write_stdin(ANSI_KEYMAP[key])
+            self.resp.write_stdin(ANSI_KEYMAP.get(key, ""))
 
         self._follow_cursor()
 
