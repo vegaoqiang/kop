@@ -21,6 +21,7 @@ from kop.widgets.Modals import (
 from kubernetes import client
 from typing import Optional
 from kop.provider.logs import PodLogs
+from kop.views.ActionWorkspace import ActionWorkspace
 
 
 
@@ -36,6 +37,15 @@ class BaseActionHandlerMixin(ABC):
         super().__init_subclass__()
         if cls.resource_type is not None:
             ActionRegistry.register(cls)
+
+    @classmethod
+    def get_action_workspace(cls, app) -> ActionWorkspace:
+        action_workspace = getattr(app, "action_workspace", None)
+        if action_workspace is None:
+            action_workspace = ActionWorkspace()
+            setattr(app, "action_workspace", action_workspace)
+            app.install_screen(action_workspace, name="action_workspace")
+        return action_workspace
 
 
 class NodeActionHandler(BaseActionHandlerMixin):
@@ -410,7 +420,12 @@ class PodActionHandler(BaseActionHandlerMixin):
             return
         
         def option_callback(container_name: str) -> None:
-            app.push_screen(PodTerminal(client=app.endpoint, data=resource, container_name=container_name))
+            action_workspace = PodActionHandler.get_action_workspace(app)
+            action_workspace.add_pane(
+                title=f"Container \\[{container_name}] - Pod \\[{resource.name}]",
+                widget=PodTerminal(client=app.endpoint, data=resource, container_name=container_name))
+            app.push_screen(action_workspace)
+            # app.push_screen(PodTerminal(client=app.endpoint, data=resource, container_name=container_name))
 
         if len(resource.containers) == 1:
             container_obj = resource.containers[0].lazy_clean()

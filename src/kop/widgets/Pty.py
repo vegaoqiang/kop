@@ -215,12 +215,12 @@ class PodPty(ScrollView):
 
 
     async def on_mouse_scroll_up(self, event: events.MouseScrollUp):
-        print('self.scroll_y:', self.scroll_y)
+        # print('self.scroll_y:', self.scroll_y)
         self.follow_cursor = False
 
 
     async def on_mouse_scroll_down(self, event: events.MouseScrollDown):
-        print('self.scroll_y:', self.scroll_y)
+        # print('self.scroll_y:', self.scroll_y)
         # todo: only scroll when the cursor is in the bottom
         # why self.te_screen.lines - 1? because the line number start from 0 
         if self.te_screen.cursor.y >= self.te_screen.lines - 1:

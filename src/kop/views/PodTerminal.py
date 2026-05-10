@@ -1,6 +1,6 @@
 from textual.screen import Screen
 from textual.app import ComposeResult
-from textual.widgets import Label
+from textual.widgets import Label, Static
 from kop.widgets.Pty import PodPty
 from kop.provider.client import KbsAuthLoader
 from kop.provider.exec import PodExec
@@ -10,7 +10,7 @@ from typing import Optional, Callable, Union
 
 
 
-class PodTerminal(Screen):
+class PodTerminal(Static):
 
     DEFAULT_CSS = """
         #terminal-title {
