@@ -1,9 +1,11 @@
 from textual import on
+from textual import events
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.css.query import NoMatches
 from textual.screen import Screen
 from textual.widgets import TabbedContent, TabPane, Footer
+from textual.widgets._tabbed_content import ContentTab
 from textual.widget import Widget
 from uuid import uuid4
 
@@ -12,6 +14,7 @@ from uuid import uuid4
 
 class ActionWorkspace(Screen):
     """A workspace for actions."""
+    CLOSE_HIT_WIDTH = 2
 
     BINDINGS = [
         Binding("ctrl+tab", "switch_tab('next')", "Next Tab"),
@@ -43,7 +46,7 @@ class ActionWorkspace(Screen):
         self._pending_panes.clear()
 
     def add_pane(self, title: str, widget: Widget) -> None:
-        pane = TabPane(title, widget, id=f"action-pane-{uuid4().hex}")
+        pane = TabPane(self._tab_title(title), widget, id=f"action-pane-{uuid4().hex}")
         if self.is_mounted:
             try:
                 tabbed_content = self.query_one("#tabbed-content", TabbedContent)
@@ -72,6 +75,26 @@ class ActionWorkspace(Screen):
         tabbed_content.remove_pane(active_tab_id)
         if tabbed_content.tab_count == 0:
             self.action_back_resource()
+
+    @on(events.Click, "ContentTab")
+    def on_content_tab_click(self, event: events.Click) -> None:
+        tab = event.widget
+        if not isinstance(tab, ContentTab):
+            return
+        if event.x < (tab.size.width - self.CLOSE_HIT_WIDTH):
+            return
+        pane_id = ContentTab.sans_prefix(tab.id or "")
+        if not pane_id:
+            return
+        tabbed_content = self.query_one("#tabbed-content", TabbedContent)
+        tabbed_content.remove_pane(pane_id)
+        if tabbed_content.tab_count == 0:
+            self.action_back_resource()
+        event.stop()
+        event.prevent_default()
+
+    def _tab_title(self, title: str) -> str:
+        return title if title.endswith(" [red]☓[/red]") else f"{title} [red]☓[/red]"
 
 
 if __name__ == "__main__":
