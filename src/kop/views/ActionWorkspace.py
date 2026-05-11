@@ -29,18 +29,18 @@ class ActionWorkspace(Screen):
         yield TabbedContent(id="tabbed-content")
         yield Footer()
     
-    def on_mount(self) -> None:
-        self._flush_pending_panes()
+    async def on_mount(self) -> None:
+        await self._flush_pending_panes()
 
-    def on_show(self) -> None:
-        self._flush_pending_panes()
+    async def on_show(self) -> None:
+        await self._flush_pending_panes()
     
-    def _flush_pending_panes(self) -> None:
+    async def _flush_pending_panes(self) -> None:
         if not self._pending_panes:
             return
         tabbed_content = self.query_one("#tabbed-content", TabbedContent)
         for pane in self._pending_panes:
-            tabbed_content.add_pane(pane)
+            await tabbed_content.add_pane(pane)
             if pane.id:
                 tabbed_content.active = pane.id
         self._pending_panes.clear()
@@ -58,24 +58,24 @@ class ActionWorkspace(Screen):
             return
         self._pending_panes.append(pane)
 
-    def action_back_resource(self) -> None:
+    async def action_back_resource(self) -> None:
         try:
-            self.app.pop_screen()
+            await self.app.pop_screen()
             return
         except Exception:
             resource_view = getattr(self.app, "view", None)
             if resource_view is not None:
-                self.app.switch_screen(resource_view)
+                await self.app.switch_screen(resource_view)
 
-    def action_close_current_tab(self) -> None:
+    async def action_close_current_tab(self) -> None:
         tabbed_content = self.query_one("#tabbed-content", TabbedContent)
         active_tab_id = tabbed_content.active
         if not active_tab_id:
             return
-        self._close_pane(active_tab_id)
+        await self._close_pane(active_tab_id)
 
     @on(events.Click, "ContentTab")
-    def on_content_tab_click(self, event: events.Click) -> None:
+    async def on_content_tab_click(self, event: events.Click) -> None:
         tab = event.widget
         if not isinstance(tab, ContentTab):
             return
@@ -84,14 +84,14 @@ class ActionWorkspace(Screen):
         pane_id = ContentTab.sans_prefix(tab.id or "")
         if not pane_id:
             return
-        self._close_pane(pane_id)
+        await self._close_pane(pane_id)
         event.stop()
         event.prevent_default()
 
     def _tab_title(self, title: str) -> str:
         return title if title.endswith(" [red]☓[/red]") else f"{title} [red]☓[/red]"
 
-    def _close_pane(self, pane_id: str) -> None:
+    async def _close_pane(self, pane_id: str) -> None:
         tabbed_content = self.query_one("#tabbed-content", TabbedContent)
         pane = tabbed_content.get_pane(pane_id)
         for widget in pane.query("*"):
@@ -102,9 +102,9 @@ class ActionWorkspace(Screen):
                 except Exception:
                     pass
                 break
-        tabbed_content.remove_pane(pane_id)
+        await tabbed_content.remove_pane(pane_id)
         if tabbed_content.tab_count == 0:
-            self.action_back_resource()
+            self.call_after_refresh(self.action_back_resource)
 
 
 if __name__ == "__main__":
