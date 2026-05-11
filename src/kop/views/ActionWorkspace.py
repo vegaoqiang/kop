@@ -31,6 +31,7 @@ class ActionWorkspace(Screen):
     ]
 
     _pending_panes: list[TabPane] = []
+    _pane_widgets: dict[str, Widget] = {}
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
@@ -55,6 +56,8 @@ class ActionWorkspace(Screen):
 
     def add_pane(self, title: str, widget: Widget) -> None:
         pane = TabPane(self._tab_title(title), widget, id=f"action-pane-{uuid4().hex}")
+        if pane.id:
+            self._pane_widgets[pane.id] = widget
         if self.is_mounted:
             try:
                 tabbed_content = self.query_one("#tabbed-content", TabbedContent)
@@ -122,14 +125,21 @@ class ActionWorkspace(Screen):
     async def _close_pane(self, pane_id: str) -> None:
         tabbed_content = self.query_one("#tabbed-content", TabbedContent)
         pane = tabbed_content.get_pane(pane_id)
-        for widget in pane.query("*"):
+        widget = self._pane_widgets.pop(pane_id, None)
+        if widget is None:
+            # Fallback for panes created before mapping existed or unexpected states.
+            for child in pane.children:
+                closer = getattr(child, "before_workspace_close", None)
+                if callable(closer):
+                    widget = child
+                    break
+        if widget is not None:
             closer = getattr(widget, "before_workspace_close", None)
             if callable(closer):
                 try:
                     closer()
                 except Exception:
                     pass
-                break
         await tabbed_content.remove_pane(pane_id)
         if tabbed_content.tab_count == 0:
             self.call_after_refresh(self.action_back_resource)
