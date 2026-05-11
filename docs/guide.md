@@ -119,6 +119,17 @@ Note
 
 Attach is available only when pod status is `Running`.
 
+## Forword Pod ports
+Forward the specified local port to the target pod port.
+
+1. Open `Pods` select pod resource.
+2. Click a `Pod` or `Enter` to open detail view
+3. Scroll down and find container ports
+4. Click `Forward` button to start forward
+
+![forward ports](images/guide/forward_port.png)
+
+
 
 ## Scale a Deployment or StatefulSet
 
