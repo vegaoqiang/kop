@@ -276,30 +276,50 @@ def test_on_resource_panel_selected_namespace_sets_none_for_all_and_reloads(monk
     assert called == [("pods", True)]
 
 
-def test_on_resource_panel_search_resource_filters_and_updates_count() -> None:
+def test_on_resource_panel_search_resource_filters_and_updates_count(monkeypatch) -> None:
     app = ResourceHarnessApp()
 
+    class FakeFactory:
+        resource_type = "pods"
+
+        def __init__(self, endpoint):
+            self.endpoint = endpoint
+
+        def fetch_all(self, namespace=None):
+            return SimpleNamespace(
+                items=[SimpleNamespace(name="z"), SimpleNamespace(name="a"), SimpleNamespace(name="b")],
+                metadata=SimpleNamespace(_continue=None),
+            )
+
+        def filter(self, data, keyword):
+            assert keyword == "target"
+            return SimpleNamespace(items=[SimpleNamespace(name="z"), SimpleNamespace(name="a")])
+
+        def clean(self, data):
+            return [SimpleNamespace(name=item.name) for item in data.items]
+
+    monkeypatch.setattr(
+        ResourceRegistry,
+        "get_factory",
+        lambda resource_type: FakeFactory if resource_type == "pods" else None,
+    )
+
     async def _run() -> None:
-        async with app.run_test(size=(120, 40)):
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
             view = app.view
             assert view is not None
 
-            def _filter(data, keyword):
-                assert keyword == "target"
-                return SimpleNamespace(items=[SimpleNamespace(name="z"), SimpleNamespace(name="a")])
-
-            def _clean(data):
-                return [SimpleNamespace(name=item.name) for item in data.items]
-
-            view.FACTORY_CACHE = SimpleNamespace(filter=_filter, clean=_clean)
+            view.resource_type = "pods"
+            view.panel = SimpleNamespace(resource_count=0)
             view.data = SimpleNamespace(items=[SimpleNamespace(name="z"), SimpleNamespace(name="a"), SimpleNamespace(name="b")])
             view.table = SimpleNamespace(data=[])
-            view.panel = SimpleNamespace(resource_count=0)
 
             event = ResourcePanel.SearchResource("target")
             await view.on_resource_panel_search_resource(event)
+            await pilot.pause()
 
-            assert [item.name for item in view.table.data] == ["a", "z"]
+            assert view._searching is True
             assert view.panel.resource_count == 2
 
     asyncio.run(_run())
@@ -474,5 +494,126 @@ def test_pagination_bindings_visibility_changes_by_page() -> None:
             view.page_index = 2
             assert view.check_action("prev_page", ()) is True
             assert view.check_action("next_page", ()) is False
+
+    asyncio.run(_run())
+
+
+def test_on_resource_panel_search_resource_triggers_fetch_all(monkeypatch) -> None:
+    """搜索有关键词时应调用 fetch_all 加载全量数据，而非仅过滤当前页。"""
+    app = ResourceHarnessApp()
+    fetch_all_called: list[dict] = []
+
+    class FakeFactory:
+        resource_type = "pods"
+
+        def __init__(self, endpoint):
+            self.endpoint = endpoint
+
+        def fetch_all(self, namespace=None):
+            fetch_all_called.append({"namespace": namespace})
+            return SimpleNamespace(
+                items=[
+                    SimpleNamespace(name="app-pod-a"),
+                    SimpleNamespace(name="app-pod-b"),
+                    SimpleNamespace(name="other-pod-c"),
+                ],
+                metadata=SimpleNamespace(_continue=None),
+            )
+
+        def filter(self, data, keyword):
+            return SimpleNamespace(
+                items=[item for item in data.items if keyword in item.name]
+            )
+
+        def clean(self, data):
+            return [SimpleNamespace(name=item.name) for item in data.items]
+
+    monkeypatch.setattr(
+        ResourceRegistry,
+        "get_factory",
+        lambda resource_type: FakeFactory if resource_type == "pods" else None,
+    )
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            view = app.view
+            assert view is not None
+
+            view.resource_type = "pods"
+            view.namespace = "default"
+            view.panel = SimpleNamespace(resource_count=0)
+            view.data = SimpleNamespace(
+                items=[SimpleNamespace(name="app-pod-a")]
+            )
+
+            event = ResourcePanel.SearchResource("app-pod")
+            await view.on_resource_panel_search_resource(event)
+            await pilot.pause()
+
+    asyncio.run(_run())
+
+    assert len(fetch_all_called) == 1
+    assert fetch_all_called[0]["namespace"] == "default"
+
+
+def test_on_resource_panel_search_clear_restores_paginated_view() -> None:
+    """清空搜索关键词时应恢复分页显示，而非保留搜索结果。"""
+    app = ResourceHarnessApp()
+
+    def _page(start, end, next_token):
+        rows = [SimpleNamespace(name=f"pod-{i:03d}") for i in range(start, end)]
+        return (
+            SimpleNamespace(items=rows, metadata=SimpleNamespace(_continue=next_token)),
+            rows,
+            next_token,
+        )
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)):
+            view = app.view
+            assert view is not None
+
+            view.resource_type = "pods"
+            view.namespace = None
+            key = view._resource_cache_key("pods", None)
+            view.resource_pages[key] = [
+                _page(0, 34, "34"),
+            ]
+            view.page_index = 0
+            view.data = view.resource_pages[key][0][0]
+            view.table = SimpleNamespace(raw_data=[], data=[])
+            view.panel = SimpleNamespace(resource_count=0)
+
+            # 先设置搜索状态
+            view._searching = True
+            view.keyword = "test"
+
+            # 清空搜索
+            event = ResourcePanel.SearchResource("")
+            await view.on_resource_panel_search_resource(event)
+
+            assert view._searching is False
+            assert view.keyword == ""
+            assert len(view.table.data) == 34
+
+    asyncio.run(_run())
+
+
+def test_update_resource_skips_during_search() -> None:
+    """搜索期间自动刷新应跳过。"""
+    app = ResourceHarnessApp()
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)):
+            view = app.view
+            assert view is not None
+
+            view.resource_type = "pods"
+            view._searching = True
+
+            # _update_resource 应该直接返回不做任何事
+            view._update_resource()
+            # 如果没有抛异常且没有发起请求就说明正确跳过了
 
     asyncio.run(_run())

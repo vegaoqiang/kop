@@ -8,6 +8,7 @@ from textual.binding import Binding
 from textual.app import ComposeResult, App
 from textual.containers import Vertical, Horizontal
 from textual.widgets import Footer, Header, Input, LoadingIndicator
+from textual.widget import Widget
 from textual.worker import get_current_worker
 from kop.widgets.SideMenu import SideMenu
 from kop.widgets.Panel import ResourcePanel
@@ -93,6 +94,8 @@ class ResourceView(Screen):
         self.resource_kind_name: Optional[str] = None
         self.page_index: int = 0
         self.resource_pages: dict[str, list[tuple[object, list, Optional[str]]]] = {}
+        self._searching: bool = False
+        self._search_request_id: int = 0
 
     def compose(self) -> ComposeResult: 
             yield Header()
@@ -235,7 +238,7 @@ class ResourceView(Screen):
         return payload
 
     def _set_loading(self, is_loading: bool) -> None:
-        if not self.panel:
+        if not self.panel or not isinstance(self.panel, Widget):
             return
         resource_container = self.query_one("#resource_container", Vertical)
         loading = next(iter(resource_container.query("#resource_loading")), None)
@@ -338,6 +341,60 @@ class ResourceView(Screen):
             cleaned,
         )
 
+    @work(thread=True, exclusive=True)
+    def _search_all_worker(
+        self,
+        request_id: int,
+        resource_type: str,
+        namespace: Optional[str],
+        keyword: str,
+    ) -> None:
+        worker = get_current_worker()
+        try:
+            factory_cls = ResourceRegistry.get_factory(resource_type)
+            if not factory_cls:
+                return
+            factory = factory_cls(self.endpoint)
+            data = factory.fetch_all(namespace=namespace)
+        except Exception as exc:
+            if not worker.is_cancelled:
+                self.app.call_from_thread(
+                    self._handle_resource_error, request_id, exc
+                )
+            return
+        if worker.is_cancelled:
+            return
+        filtered = factory.filter(data, keyword)
+        cleaned = factory.clean(filtered)
+        cleaned.sort(key=lambda vm: vm.name)
+        self.app.call_from_thread(
+            self._apply_search_result, request_id, factory, filtered, cleaned
+        )
+
+    def _apply_search_result(
+        self,
+        request_id: int,
+        factory,
+        filtered,
+        cleaned: list,
+    ) -> None:
+        if request_id != self._search_request_id:
+            return
+        self._set_loading(False)
+        self.FACTORY_CACHE = factory
+        if isinstance(self.panel, Widget) and (
+            not self.table or self._table_resource_type != self.resource_type
+        ):
+            self.table = factory.create_renderer(filtered)
+            self._table_resource_type = self.resource_type
+            resource_container = self.query_one("#resource_container", Vertical)
+            resource_container.remove_children(TableRenderer)
+            resource_container.mount(self.table, after=self.panel)
+        elif self.table:
+            self.table.raw_data = filtered.items
+            self.table.data = cleaned
+        self.panel.resource_count = len(filtered.items)
+
     def _load_resource(
         self,
         resource_type: str,
@@ -379,6 +436,8 @@ class ResourceView(Screen):
     
     def _update_resource(self) -> None:
         if not self.resource_type:
+            return
+        if self._searching:
             return
         continue_token: Optional[str] = None
         if self.page_index > 0:
@@ -563,18 +622,19 @@ class ResourceView(Screen):
     async def on_resource_panel_search_resource(self, event: ResourcePanel.SearchResource) -> None:
         event.stop()
         self.keyword = event.query
-        if not self.data or not self.table:
-            return
         if not self.keyword:
-            # keyword will be deleted on input
-            filtered = self.data
-        else:
-            filtered = self.FACTORY_CACHE.filter(self.data, self.keyword)
-        
-        cleaned = self.FACTORY_CACHE.clean(filtered)
-        cleaned.sort(key=lambda vm: vm.name)
-        self.table.data = cleaned
-        self.panel.resource_count = len(filtered.items)
+            self._searching = False
+            self._show_cached_page(self.page_index)
+            return
+        self._searching = True
+        self._search_request_id += 1
+        self._set_loading(True)
+        self._search_all_worker(
+            self._search_request_id,
+            self.resource_type,
+            self.namespace,
+            self.keyword,
+        )
 
     def action_home(self) -> None:
         """
