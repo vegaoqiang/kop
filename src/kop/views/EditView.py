@@ -2,7 +2,7 @@ from textual import work
 from textual.worker import Worker, WorkerState, get_current_worker
 from textual.screen import Screen, ModalScreen
 from textual.app import ComposeResult
-from textual.widgets import LoadingIndicator, Label, Button
+from textual.widgets import LoadingIndicator, Label, Button, Static
 from textual.containers import Grid
 from textual.binding import Binding
 from textual import on
@@ -121,7 +121,7 @@ class UpdateFailedModal(ModalScreen):
 
 
 
-class AsyncEditScreen(Screen):
+class AsyncEditScreen(Static):
     """
     Base screen for asynchronously loading a Kubernetes resource
     and editing it as YAML.

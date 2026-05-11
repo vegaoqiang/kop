@@ -25,6 +25,7 @@ class ResourceEdit(Static):
         TextArea {
             height: 1fr;
             width: 1fr;
+            border: solid $secondary;
         }
         Horizontal {
             height: auto;
@@ -49,6 +50,10 @@ class ResourceEdit(Static):
         Binding("escape", "close", "Cancel", show=False),
     ]
 
+    class Exited(Message):
+        def __init__(self) -> None:
+            super().__init__()
+
     def __init__(self, language: str = "yaml", resource: dict = {}, title: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
         self.language = language
@@ -56,10 +61,10 @@ class ResourceEdit(Static):
         self.title = title or "Edit"
 
     def compose(self) -> ComposeResult:
-        yield Label(
-            f"{self.title} {self.resource.get('metadata', {}).get('name', 'Unknown')}",
-            id="title",
-        )
+        # yield Label(
+        #     f"{self.title} {self.resource.get('metadata', {}).get('name', 'Unknown')}",
+        #     id="title",
+        # )
         yield TextArea.code_editor(language=self.language)
         yield Horizontal(
             Button(label="Cancel", variant="default", id="cancel"),
@@ -76,11 +81,13 @@ class ResourceEdit(Static):
         text_area = self.query_one(TextArea)
         text_area.text = resource_yml
         text_area.focus()
+        text_area.border_subtitle = "Esc to Cancel • Ctrl+S to Save"
 
 
     @on(Button.Pressed, "#cancel")
     def action_close(self) -> None:
-        self.app.pop_screen()
+        # self.app.pop_screen()
+        self.post_message(self.Exited())
 
     @on(Button.Pressed, "#save")
     def action_save(self, event: Button.Pressed) -> None:

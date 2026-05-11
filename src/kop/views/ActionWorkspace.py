@@ -10,6 +10,7 @@ from textual.widget import Widget
 from kop.widgets.Pty import PodPty
 from kop.views.PodLog import PodLog
 from kop.views.PodAttach import Attach
+from kop.widgets.Edit import ResourceEdit
 from uuid import uuid4
 
 
@@ -154,5 +155,6 @@ class ActionWorkspace(Screen):
     @on(PodPty.Exited)
     @on(PodLog.Exited)
     @on(Attach.Exited)
+    @on(ResourceEdit.Exited)
     async def on_action_widget_exited(self, _message: object) -> None:
         await self._close_active_pane()
