@@ -1,5 +1,6 @@
 from textual import work, events
 from textual.app import ComposeResult, App
+from textual.message import Message
 from textual.scroll_view import ScrollView
 from textual.reactive import Reactive
 from textual.worker import get_current_worker
@@ -64,6 +65,10 @@ ANSI_KEYMAP = {
 
 class PodPty(ScrollView):
 
+    class Exited(Message):
+        def __init__(self) -> None:
+            super().__init__()
+
     can_focus = True
 
     # definde the PodTerminal max history line
@@ -117,10 +122,7 @@ class PodPty(ScrollView):
     def _exit_pty(self):
         if self._closing_by_parent:
             return
-        try:
-            self.app.pop_screen()
-        except Exception as e:
-            self.app.exit()
+        self.post_message(self.Exited())
 
     def graceful_shutdown(self) -> None:
         """Best-effort shell exit before tab/pane removal."""
