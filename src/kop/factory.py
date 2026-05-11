@@ -101,11 +101,13 @@ class BaseFactory(ABC):
         return template
 
     FETCH_ALL_PAGE_SIZE = 100
+    MAX_FETCH_ALL_PAGES = 200
 
     def fetch_all(self, namespace=None):
         all_items = []
         continue_token = None
-        while True:
+        pages = 0
+        while pages < self.MAX_FETCH_ALL_PAGES:
             result = self.fetch(
                 namespace=namespace,
                 limit=self.FETCH_ALL_PAGE_SIZE,
@@ -117,6 +119,7 @@ class BaseFactory(ABC):
             )
             if not continue_token:
                 break
+            pages += 1
         merged = copy(result)
         merged.items = all_items
         return merged

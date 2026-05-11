@@ -110,6 +110,7 @@ class ResourceView(Screen):
     def on_side_menu_resource_event(self, event: SideMenu.ResourceEvent) -> None:
         self.resource_type = resource_type = event.menu_id
         self.resource_kind_name = event.menu_name
+        self._searching = False
         self._reset_resource_pagination(resource_type, self.namespace)
         self._set_loading(True)
         self._load_resource(resource_type=resource_type, show_loading=False)
@@ -302,6 +303,7 @@ class ResourceView(Screen):
     def _handle_resource_error(self, request_id: int, exc: Exception) -> None:
         if request_id != self._resource_request_id:
             return
+        self._searching = False
         self._set_loading(False)
         self.notify(f"Load {self.resource_type} failed: {exc}", severity="error")
 
@@ -616,6 +618,7 @@ class ResourceView(Screen):
             selected_namespace = None
         self.namespace = selected_namespace
         if self.resource_type:
+            self._searching = False
             self._reset_resource_pagination(self.resource_type, self.namespace)
             self._load_resource(self.resource_type, show_loading=True)
 
