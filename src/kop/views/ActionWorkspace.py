@@ -92,6 +92,14 @@ class ActionWorkspace(Screen):
         if direction == "previous":
             tabs.action_previous_tab()
 
+    @on(TabbedContent.TabActivated)
+    def on_tabbed_content_tab_activated(self, event: TabbedContent.TabActivated) -> None:
+        pane = event.pane
+        for widget in pane.query("*"):
+            if getattr(widget, "can_focus", False):
+                widget.focus()
+                break
+
     @on(events.Click, "ContentTab")
     async def on_content_tab_click(self, event: events.Click) -> None:
         tab = event.widget
