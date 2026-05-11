@@ -2,7 +2,8 @@ from textual import on
 from textual.binding import Binding
 from textual.screen import Screen
 from textual.app import ComposeResult
-from textual.widgets import Label, Button, Select
+from textual.message import Message
+from textual.widgets import Label, Button, Select, Static
 from textual.containers import Horizontal, Grid
 from kop.widgets.Attach import PodAttachView
 from kop.provider.client import KbsAuthLoader
@@ -12,7 +13,8 @@ from typing import Optional
 
 
 
-class Attach(Screen):
+
+class Attach(Static):
 
     DEFAULT_CSS = """
         #header {
@@ -45,6 +47,10 @@ class Attach(Screen):
         Binding("escape", "exit", "Exit attach view"),
         Binding("]", "select_container", "Select container"),
     ]
+
+    class Exited(Message):
+        def __init__(self) -> None:
+            super().__init__()
 
     def __init__(self, client: KbsAuthLoader, data: PodViewModel, container_name: Optional[str] = None) -> None:
         super().__init__()
@@ -85,8 +91,9 @@ class Attach(Screen):
 
     @on(Button.Pressed, "#exit-btn")
     def action_exit(self) -> None:
-        self.attach.close()
-        self.app.pop_screen()
+        self.post_message(self.Exited())
+        # self.attach.close()
+        # self.app.pop_screen()
 
     @on(Select.Changed, "#container-select")
     def on_container_changed(self, event: Select.Changed) -> None:
@@ -116,3 +123,6 @@ class Attach(Screen):
         self.query_one("#title", Label).update(
             f"Attaching to {self.container_name} container in pod {self.pod_name} {self.namespace}"
         )
+
+    def before_workspace_close(self) -> None:
+        self.attach.close()

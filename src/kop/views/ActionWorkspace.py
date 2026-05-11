@@ -9,6 +9,7 @@ from textual.widgets._tabbed_content import ContentTab, ContentTabs
 from textual.widget import Widget
 from kop.widgets.Pty import PodPty
 from kop.views.PodLog import PodLog
+from kop.views.PodAttach import Attach
 from uuid import uuid4
 
 
@@ -142,5 +143,6 @@ class ActionWorkspace(Screen):
 
     @on(PodPty.Exited)
     @on(PodLog.Exited)
+    @on(Attach.Exited)
     async def on_action_widget_exited(self, _message: object) -> None:
         await self._close_active_pane()
