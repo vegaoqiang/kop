@@ -479,7 +479,7 @@ class DeleteConfigConfirmScreen(ModalScreen):
         DeleteConfigConfirmScreen {
             align: center middle;
         }
-        Button {
+        #yes, #no {
             width: 100%;
         }
         #dialog {
