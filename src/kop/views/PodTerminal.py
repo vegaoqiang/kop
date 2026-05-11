@@ -47,7 +47,7 @@ class PodTerminal(Static):
             )
 
     def compose(self) -> ComposeResult:
-        yield Label(f"Terminal for {self.exec.pod} ({self.exec.namespace})", id="terminal-title")
+        # yield Label(f"Terminal for {self.exec.pod} ({self.exec.namespace})", id="terminal-title")
         yield PodPty(exec=self.exec, id="pod-terminal")
 
     def on_mount(self) -> None:

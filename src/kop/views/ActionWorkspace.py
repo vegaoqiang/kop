@@ -4,7 +4,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.css.query import NoMatches
 from textual.screen import Screen
-from textual.widgets import TabbedContent, TabPane, Footer
+from textual.widgets import TabbedContent, TabPane, Footer, Header
 from textual.widgets._tabbed_content import ContentTab
 from textual.widget import Widget
 from kop.widgets.Pty import PodPty
@@ -16,6 +16,8 @@ from uuid import uuid4
 class ActionWorkspace(Screen):
     """A workspace for actions."""
     CLOSE_HIT_WIDTH = 2
+    
+    SUB_TITLE = "Action Workspace"
 
     BINDINGS = [
         Binding("ctrl+tab", "switch_tab('next')", "Next Tab"),
@@ -27,6 +29,7 @@ class ActionWorkspace(Screen):
     _pending_panes: list[TabPane] = []
 
     def compose(self) -> ComposeResult:
+        yield Header(show_clock=True)
         yield TabbedContent(id="tabbed-content")
         yield Footer()
     
