@@ -114,12 +114,3 @@ class ActionWorkspace(Screen):
             return
         await self._close_pane(active_tab_id)
 
-
-if __name__ == "__main__":
-    from textual.app import App
-
-    class TestApp(App):
-        def on_mount(self) -> None:
-            self.push_screen(ActionWorkspace())
-
-    TestApp().run()
