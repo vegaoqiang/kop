@@ -3,7 +3,7 @@ name = "kop-cli"
 dynamic = ["version"]
 description = "Terminal-based kubernetes operation platform"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = "Apache-2.0"
 authors = [
   { name = "vegaoqiang", email = "vegaoqiang@gmail.com" },

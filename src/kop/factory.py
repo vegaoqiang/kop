@@ -100,6 +100,27 @@ class BaseFactory(ABC):
         metadata["namespace"] = namespace or "default"
         return template
 
+    FETCH_ALL_PAGE_SIZE = 100
+
+    def fetch_all(self, namespace=None):
+        all_items = []
+        continue_token = None
+        while True:
+            result = self.fetch(
+                namespace=namespace,
+                limit=self.FETCH_ALL_PAGE_SIZE,
+                continue_token=continue_token,
+            )
+            all_items.extend(result.items)
+            continue_token = getattr(
+                getattr(result, "metadata", None), "_continue", None
+            )
+            if not continue_token:
+                break
+        merged = copy(result)
+        merged.items = all_items
+        return merged
+
     def filter(self, raw, query: str):
         """
         Generic filter for kubernetes list response.
