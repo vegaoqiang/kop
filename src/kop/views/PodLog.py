@@ -232,4 +232,5 @@ class PodLog(Static):
         self.notify(f"Matches: {current}/{count}", severity="information")
 
     def before_workspace_close(self) -> None:
-        self.query_one("#pod-logs", Logs).log_controller.stop()
+        # Keep tab-close responsive; unmount will handle final teardown.
+        self.query_one("#pod-logs", Logs).log_controller.stop(wait=False)

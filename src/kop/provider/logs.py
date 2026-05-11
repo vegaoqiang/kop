@@ -90,12 +90,12 @@ class LogController:
         )
         self._thread.start()
 
-    def stop(self) -> None:
+    def stop(self, wait: bool = True, timeout: float = 0.5) -> None:
         self._stop_event.set()
         if self.pod_logs.w:
             self.pod_logs.w.stop()
-        if self._thread and self._thread.is_alive():
-            self._thread.join(timeout=0.5)
+        if wait and self._thread and self._thread.is_alive():
+            self._thread.join(timeout=timeout)
 
     def restart(self, previous: Optional[bool] = None, show_timestamps: Optional[bool] = None) -> None:
         self.stop()

@@ -36,7 +36,8 @@ class Logs(Log):
         self.start_logs()
 
     def on_unmount(self) -> None:
-        self.log_controller.stop()
+        # Avoid blocking UI teardown when log stream takes time to stop.
+        self.log_controller.stop(wait=False)
 
     def switch_mode(self, previous: Optional[bool] = None, show_timestamps: Optional[bool] = None) -> None:
         self.clear()
