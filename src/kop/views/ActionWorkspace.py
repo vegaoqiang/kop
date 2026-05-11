@@ -26,7 +26,7 @@ class ActionWorkspace(Screen):
         Binding("ctrl+left", "switch_tab('previous')", "Previous Tab", show=True),
         Binding("ctrl+f", "switch_tab('next')", "Next Tab", show=False),
         Binding("ctrl+b", "switch_tab('previous')", "Previous Tab", show=False),
-        Binding("ctrl+right_square_bracket", "back_resource", "Back to Resource"),
+        Binding("ctrl+escape", "back_resource", "Back to Resource"),
         Binding("ctrl+w", "close_current_tab", "Close Current Tab"),
     ]
 
