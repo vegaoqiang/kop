@@ -52,7 +52,17 @@ class PodTerminal(Static):
 
     def on_mount(self) -> None:
         pod_terminal = self.query_one("#pod-terminal", PodPty)
+        pod_terminal.focus()
         pod_terminal.border_subtitle = "Press Ctrl+D or Type exit to Close"
+
+    def graceful_shutdown(self) -> None:
+        pty = self.query_one_optional("#pod-terminal", PodPty)
+        if pty is not None:
+            pty.graceful_shutdown()
+
+    def before_workspace_close(self) -> None:
+        """Hook called by ActionWorkspace before closing the hosting tab."""
+        self.graceful_shutdown()
 
     def on_unmount(self) -> None:
         if self.on_close is None:

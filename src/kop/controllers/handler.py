@@ -422,7 +422,7 @@ class PodActionHandler(BaseActionHandlerMixin):
         def option_callback(container_name: str) -> None:
             action_workspace = PodActionHandler.get_action_workspace(app)
             action_workspace.add_pane(
-                title=f"Terminal for Pod {resource.name}\\[{container_name}]",
+                title=f"Terminal for {resource.namespace}/{resource.name}/{container_name}",
                 widget=PodTerminal(client=app.endpoint, data=resource, container_name=container_name))
             app.push_screen(action_workspace)
             # app.push_screen(PodTerminal(client=app.endpoint, data=resource, container_name=container_name))

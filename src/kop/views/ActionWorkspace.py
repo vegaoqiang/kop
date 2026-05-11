@@ -19,7 +19,7 @@ class ActionWorkspace(Screen):
     BINDINGS = [
         Binding("ctrl+tab", "switch_tab('next')", "Next Tab"),
         Binding("ctrl+shift+tab", "switch_tab('previous')", "Previous Tab"),
-        Binding("ctrl+]", "back_resource", "Back to Resource"),
+        Binding("ctrl+right_square_bracket", "back_resource", "Back to Resource"),
         Binding("ctrl+w", "close_current_tab", "Close Current Tab"),
     ]
 
@@ -72,9 +72,7 @@ class ActionWorkspace(Screen):
         active_tab_id = tabbed_content.active
         if not active_tab_id:
             return
-        tabbed_content.remove_pane(active_tab_id)
-        if tabbed_content.tab_count == 0:
-            self.action_back_resource()
+        self._close_pane(active_tab_id)
 
     @on(events.Click, "ContentTab")
     def on_content_tab_click(self, event: events.Click) -> None:
@@ -86,15 +84,27 @@ class ActionWorkspace(Screen):
         pane_id = ContentTab.sans_prefix(tab.id or "")
         if not pane_id:
             return
-        tabbed_content = self.query_one("#tabbed-content", TabbedContent)
-        tabbed_content.remove_pane(pane_id)
-        if tabbed_content.tab_count == 0:
-            self.action_back_resource()
+        self._close_pane(pane_id)
         event.stop()
         event.prevent_default()
 
     def _tab_title(self, title: str) -> str:
         return title if title.endswith(" [red]☓[/red]") else f"{title} [red]☓[/red]"
+
+    def _close_pane(self, pane_id: str) -> None:
+        tabbed_content = self.query_one("#tabbed-content", TabbedContent)
+        pane = tabbed_content.get_pane(pane_id)
+        for widget in pane.query("*"):
+            closer = getattr(widget, "before_workspace_close", None)
+            if callable(closer):
+                try:
+                    closer()
+                except Exception:
+                    pass
+                break
+        tabbed_content.remove_pane(pane_id)
+        if tabbed_content.tab_count == 0:
+            self.action_back_resource()
 
 
 if __name__ == "__main__":

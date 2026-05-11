@@ -80,6 +80,7 @@ class PodPty(ScrollView):
         self.cursor_abs_y = 0
         # self.app.scroll_sensitivity_y = 1
         self.follow_cursor: bool = True
+        self._closing_by_parent: bool = False
 
     def on_key(self, event: events.Key) -> None:
         if not self.resp or not self.resp.is_open():
@@ -107,14 +108,31 @@ class PodPty(ScrollView):
 
     def on_unmount(self) -> None:
         if self.resp:
-            self.resp.close()
+            try:
+                self.exec.close()
+            except Exception:
+                self.resp.close()
             self.resp = None
 
     def _exit_pty(self):
+        if self._closing_by_parent:
+            return
         try:
             self.app.pop_screen()
         except Exception as e:
             self.app.exit()
+
+    def graceful_shutdown(self) -> None:
+        """Best-effort shell exit before tab/pane removal."""
+        self._closing_by_parent = True
+        if not self.resp or not self.resp.is_open():
+            return
+        try:
+            # Ask shell to exit first, then send EOF.
+            self.resp.write_stdin("exit\r")
+            self.resp.write_stdin("\x04")
+        except Exception:
+            pass
 
     
     def _follow_cursor(self):
