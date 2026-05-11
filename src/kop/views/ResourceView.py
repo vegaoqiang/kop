@@ -58,6 +58,7 @@ class ResourceView(Screen):
         Binding(key="c", action="new_resource", description="Create", show=True),
         Binding(key="p", action="prev_page", description="Previous Page", show=True),
         Binding(key="n", action="next_page", description="Next Page", show=True),
+        Binding(key="o", action="workspace", description="Open Action Workspace", show=True),
         Binding(key="escape", action="home", description="Go back startup", show=True),
     ]
 
@@ -581,3 +582,15 @@ class ResourceView(Screen):
         go back to home screen
         """
         self.app.switch_screen(getattr(self.app, "home"))
+
+    def action_workspace(self) -> None:
+        """
+        open action workspace
+        """
+        if not self.resource_type or isinstance(self.app.focused, Input):
+            return
+        action_workspace = getattr(self.app, "action_workspace", None)
+        if not action_workspace:
+            self.notify("Action workspace is not available", severity="error")
+            return
+        self.app.push_screen(action_workspace)
