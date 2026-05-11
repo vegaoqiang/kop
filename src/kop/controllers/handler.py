@@ -47,6 +47,18 @@ class BaseActionHandlerMixin(ABC):
             app.install_screen(action_workspace, name="action_workspace")
         return action_workspace
 
+    @staticmethod
+    def open_edit_tab(app, resource, fetcher, updater) -> None:
+        name = getattr(resource, "name", "unknown")
+        namespace = getattr(resource, "namespace", None)
+        title = f"Edit {namespace}/{name}" if namespace else f"Edit {name}"
+        action_workspace = BaseActionHandlerMixin.get_action_workspace(app)
+        action_workspace.add_pane(
+            title=title,
+            widget=ResourceEditScreen(fetcher=fetcher, updater=updater),
+        )
+        app.push_screen(action_workspace)
+
 
 class NodeActionHandler(BaseActionHandlerMixin):
     """Action handler for Node resources"""
@@ -345,7 +357,7 @@ class NodeActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update node {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.NodeViewModel, app):
@@ -489,12 +501,7 @@ class PodActionHandler(BaseActionHandlerMixin):
                 app.notify(f"Update pod {resource.name} success", severity="information")
             except Exception as e:
                 raise e
-        action_workspace = PodActionHandler.get_action_workspace(app)
-        action_workspace.add_pane(
-            title=f"Edit {resource.namespace}/{resource.name}",
-            widget=ResourceEditScreen(fetcher=fetcher, updater=updater),
-        )
-        app.push_screen(action_workspace)
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
 
 
@@ -598,7 +605,7 @@ class DeploymentActionHandler(BaseActionHandlerMixin):
             # serialize deployment object to dict
             deployment=app.endpoint.api_client.sanitize_for_serialization(deployment)
             return deployment
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=app.view.FACTORY_CACHE.update))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, app.view.FACTORY_CACHE.update)
 
     
     @staticmethod
@@ -685,7 +692,7 @@ class DaemonSetActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update daemonset {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
 
     @staticmethod
@@ -809,7 +816,7 @@ class StatefueSetActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update statefulset {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.StatefulSetViewModel, app):
@@ -861,7 +868,7 @@ class JobActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update job {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.JobViewModel, app):
@@ -1014,7 +1021,7 @@ class CronJobActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update cronjob {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.CronJobViewModel, app):
@@ -1064,7 +1071,7 @@ class ConfigMapActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update configmap {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ConfigMapViewModel, app):
@@ -1114,7 +1121,7 @@ class SecretActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update secret {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.SecretViewModel, app):
@@ -1164,7 +1171,7 @@ class ServiceActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update service {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ServiceViewModel, app):
@@ -1214,7 +1221,7 @@ class IngressActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update ingress {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.IngressViewModel, app):
@@ -1304,7 +1311,7 @@ class IngressClassActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update ingressclass {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.IngressClassViewModel, app):
@@ -1362,7 +1369,7 @@ class NetworkPolicyActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update networkpolicy {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.NetworkPolicyViewModel, app):
@@ -1429,7 +1436,7 @@ class PersistentVolumeActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update persistentvolume {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.PersistentVolumeViewModel, app):
@@ -1487,7 +1494,7 @@ class PersistentVolumeClaimActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update persistentvolumeclaim {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.PersistentVolumeClaimViewModel, app):
@@ -1554,7 +1561,7 @@ class StorageClassActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update storageclass {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.StorageClassViewModel, app):
@@ -1618,7 +1625,7 @@ class NamespaceActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update namespace {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.NamespaceViewModel, app):
@@ -1676,7 +1683,7 @@ class ServiceAccountActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update serviceaccount {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ServiceAccountViewModel, app):
@@ -1737,7 +1744,7 @@ class RoleActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update role {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.RoleViewModel, app):
@@ -1804,7 +1811,7 @@ class ClusterRoleActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update clusterrole {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ClusterRoleViewModel, app):
@@ -1862,7 +1869,7 @@ class RoleBindingActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update rolebinding {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.RoleBindingViewModel, app):
@@ -1929,7 +1936,7 @@ class ClusterRoleBindingActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update clusterrolebinding {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ClusterRoleBindingViewModel, app):
