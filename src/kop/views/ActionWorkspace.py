@@ -8,6 +8,7 @@ from textual.widgets import TabbedContent, TabPane, Footer, Header
 from textual.widgets._tabbed_content import ContentTab, ContentTabs
 from textual.widget import Widget
 from kop.widgets.Pty import PodPty
+from kop.views.PodLog import PodLog
 from uuid import uuid4
 
 
@@ -132,9 +133,14 @@ class ActionWorkspace(Screen):
         if tabbed_content.tab_count == 0:
             self.call_after_refresh(self.action_back_resource)
 
-    async def on_pod_pty_exited(self, message: PodPty.Exited) -> None:
+    async def _close_active_pane(self) -> None:
         tabbed_content = self.query_one("#tabbed-content", TabbedContent)
         active_tab_id = tabbed_content.active
         if not active_tab_id:
             return
         await self._close_pane(active_tab_id)
+
+    @on(PodPty.Exited)
+    @on(PodLog.Exited)
+    async def on_action_widget_exited(self, _message: object) -> None:
+        await self._close_active_pane()

@@ -390,14 +390,17 @@ class PodActionHandler(BaseActionHandlerMixin):
                     container_name=container_name,
                     previous=previous,
                 ).read_logs(tail_lines=1)
-                app.push_screen(
-                    PodLog(
+                action_workspace = PodActionHandler.get_action_workspace(app)
+                action_workspace.add_pane(
+                    title=f"Logs for {resource.namespace}/{resource.name}/{container_name}",
+                    widget=PodLog(
                         client=app.endpoint,
                         pod=resource,
                         container_name=container_name,
                         previous=previous,
-                    )
+                    ),
                 )
+                app.push_screen(action_workspace)
             except Exception as e:
                 app.notify(f"Failed to get pod logs: {e}", severity="error")
 
@@ -443,7 +446,12 @@ class PodActionHandler(BaseActionHandlerMixin):
             return
 
         def option_callback(container_name: str) -> None:
-            app.push_screen(Attach(client=app.endpoint, data=resource, container_name=container_name))
+            action_workspace = PodActionHandler.get_action_workspace(app)
+            action_workspace.add_pane(
+                title=f"Attach to {resource.namespace}/{resource.name}/{container_name}",
+                widget=Attach(client=app.endpoint, data=resource, container_name=container_name),
+            )
+            app.push_screen(action_workspace)
 
         if len(resource.containers) == 1:
             container_obj = resource.containers[0].lazy_clean()
@@ -481,7 +489,12 @@ class PodActionHandler(BaseActionHandlerMixin):
                 app.notify(f"Update pod {resource.name} success", severity="information")
             except Exception as e:
                 raise e
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        action_workspace = PodActionHandler.get_action_workspace(app)
+        action_workspace.add_pane(
+            title=f"Edit {resource.namespace}/{resource.name}",
+            widget=ResourceEditScreen(fetcher=fetcher, updater=updater),
+        )
+        app.push_screen(action_workspace)
 
 
 
