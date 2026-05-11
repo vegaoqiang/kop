@@ -95,12 +95,21 @@ class PodPty(ScrollView):
         key = event.key
         if event.key == "ctrl+l":
             self._reset_screen()
+            event.stop().prevent_default()
             return
 
-        if character := event.character:
-            self.resp.write_stdin(character)
+        data = None
+        if event.character:
+            data = event.character
         else:
-            self.resp.write_stdin(ANSI_KEYMAP.get(key, ""))
+            data = ANSI_KEYMAP.get(key)
+
+        # Only consume keys that are actually forwarded to the shell.
+        # Unmapped shortcuts bubble up to parent (e.g. ActionWorkspace bindings).
+        if data is None:
+            return
+
+        self.resp.write_stdin(data)
 
         self._follow_cursor()
 
@@ -296,4 +305,3 @@ class PodPty(ScrollView):
                 self.notify(f"Read stdout failed: {e}", severity="error")
                 break
         self.app.call_from_thread(self._exit_pty)
-
