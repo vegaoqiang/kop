@@ -98,7 +98,7 @@ class LogController:
             self._thread.join(timeout=timeout)
 
     def restart(self, previous: Optional[bool] = None, show_timestamps: Optional[bool] = None) -> None:
-        self.stop()
+        self.stop(wait=False)
         if previous is not None:
             self.pod_logs.previous = previous
         if show_timestamps is not None:
