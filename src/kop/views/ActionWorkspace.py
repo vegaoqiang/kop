@@ -23,12 +23,10 @@ class ActionWorkspace(Screen):
     SUB_TITLE = "Action Workspace"
 
     BINDINGS = [
-        # Binding("ctrl+n", "switch_tab('next')", "Next Tab", show=True),
-        # Binding("ctrl+shift+n", "switch_tab('previous')", "Previous Tab", show=True),
-        Binding("ctrl+right_square_bracket", "switch_tab('next')", "Next Tab", show=True),
-        Binding("ctrl+left_square_bracket", "switch_tab('previous')", "Previous Tab", show=True),
         Binding("ctrl+escape", "back_resource", "Back to Resource"),
         Binding("ctrl+minus", "close_current_tab", "Close Tab"),
+        Binding("ctrl+right_square_bracket", "switch_tab('next')", "Next Tab", show=True),
+        Binding("ctrl+left_square_bracket", "switch_tab('previous')", "Previous Tab", show=True),
     ]
 
     _pending_panes: list[TabPane] = []
