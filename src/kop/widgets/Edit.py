@@ -48,6 +48,7 @@ class ResourceEdit(Static):
 
     BINDINGS = [
         Binding("escape", "close", "Cancel", show=False),
+        Binding("ctrl+s", "save", "Save", show=False),
     ]
 
     class Exited(Message):
@@ -90,7 +91,7 @@ class ResourceEdit(Static):
         self.post_message(self.Exited())
 
     @on(Button.Pressed, "#resourceedit-save")
-    def action_save(self, event: Button.Pressed) -> None:
+    def action_save(self) -> None:
         text = self.query_one(TextArea).text
         try:
             update_resource = safe_load(text)
