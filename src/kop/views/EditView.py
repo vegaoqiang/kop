@@ -193,7 +193,8 @@ class AsyncEditScreen(Static):
             if self.app.screen is loading_modal:
                 await loading_modal.dismiss()
         if update_success:
-            self.app.pop_screen()
+            # self.app.pop_screen()
+            self.post_message(ResourceEdit.Exited())
 
 
 class ResourceEditScreen(AsyncEditScreen):
