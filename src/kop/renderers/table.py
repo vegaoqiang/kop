@@ -192,18 +192,46 @@ class TableRenderer(Vertical):
 
         # Fast path for page switches: avoid many async pop/insert operations.
         # If most rows are different, clear once and rebuild once.
-        if old_names and new_names and shared_count <= max(3, len(new_names) // 10):
-            self.picked_row = None
+        if (
+            old_names
+            and new_names
+            and len(new_names) >= 5
+            and shared_count <= max(3, len(new_names) // 10)
+        ):
+            # try to restore the previous picked row after table rebuild
+            previous_index = list_view.index
+            previous_picked_name = (
+                self.picked_row.row_data.name
+                if self.picked_row and self.picked_row.row_data
+                else None
+            )
+
             await list_view.clear()
             self.row_map.clear()
             rows: list[BaseRow] = []
+            row_index_map: dict[str, int] = {}
             for row_data in new_value:
                 row = BaseRow(row_data=row_data, columns=self.columns)
                 self.row_map[row_data.name] = row
+                row_index_map[row_data.name] = len(rows)
                 rows.append(row)
             if rows:
                 await list_view.extend(rows)
-            list_view.index = None
+
+            # try to restore the previous picked row after table rebuild, the priority of restored row is: 
+            # 1. same name, 2. same index, 3. first row
+            restored_index = None
+            if previous_picked_name in row_index_map:
+                restored_index = row_index_map[previous_picked_name]
+            elif previous_index is not None and 0 <= previous_index < len(rows):
+                restored_index = previous_index
+            elif rows:
+                restored_index = 0
+
+            list_view.index = restored_index
+            self.picked_row = (
+                rows[restored_index] if restored_index is not None else None
+            )
             return
 
         # remove a row if it is not in new_value
