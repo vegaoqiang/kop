@@ -605,7 +605,14 @@ class DeploymentActionHandler(BaseActionHandlerMixin):
             # serialize deployment object to dict
             deployment=app.endpoint.api_client.sanitize_for_serialization(deployment)
             return deployment
-        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, app.view.FACTORY_CACHE.update)
+        def updater(**playload):
+            try:
+                app.view.FACTORY_CACHE.update(**playload)
+                app.notify(f"Update Deployment {resource.name} success", severity="information")
+            except Exception as e:
+                raise e
+
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     
     @staticmethod
