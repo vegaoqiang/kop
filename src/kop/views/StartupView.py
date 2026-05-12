@@ -700,14 +700,13 @@ class SyncClusterScreen(ModalScreen):
     def compose(self) -> ComposeResult:
         with Container(id="container"):
             yield CustomDirectoryTree(path=Path.home(), id="tree")
-            yield Footer(id="footer")
 
     def on_mount(self):
         self.call_after_refresh(self._apply_container_border)
 
     def _apply_container_border(self) -> None:
         container = self.query_one("#container", Container)
-        container.border_subtitle = "↑↓ navigate • Enter to select • Space to expand"
+        container.border_subtitle = "↑↓ Navigate • Enter to select • Space to expand • Esc to close"
         container.border_title = "Select a directory or kubeconfig to sync"
         container.styles.border_title_style = "bold"
 
