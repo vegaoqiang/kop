@@ -223,7 +223,7 @@ class ResourceEditScreen(AsyncEditScreen):
     def update_resource(self, playload: PlayLoad) -> None:
         return self.updater(
             name=playload.resource['metadata']['name'], 
-            namespace=playload.resource['metadata']['namespace'], 
+            namespace=playload.resource['metadata'].get('namespace', 'default'), 
             body=playload.resource,
             field_manager="kop",
         )
