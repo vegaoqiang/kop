@@ -5,7 +5,7 @@ from textual import work
 from textual.events import Key
 from textual.screen import Screen
 from textual.binding import Binding
-from textual.app import ComposeResult, App
+from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
 from textual.widgets import Footer, Header, Input, LoadingIndicator
 from textual.worker import get_current_worker
@@ -15,6 +15,7 @@ from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.provider.client import KbsEndpoint
 from kop.views.EditView import ResourceEditScreen
+from kop.controllers.handler import BaseActionHandlerMixin
 from typing import Optional, Tuple
 
 
@@ -495,9 +496,12 @@ class ResourceView(Screen):
             )
             return res
 
-        self.app.push_screen(
-            ResourceEditScreen(fetcher=fetcher, updater=creator)
+        action_workspace = BaseActionHandlerMixin.get_action_workspace(self.app)
+        action_workspace.add_pane(
+            title=f"Creating {factory.resource_kind}",
+            widget=ResourceEditScreen(fetcher=fetcher, updater=creator)
         )
+        self.app.push_screen(action_workspace)
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
         # open detail screen
