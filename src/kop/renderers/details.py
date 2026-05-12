@@ -1,4 +1,5 @@
 import json
+import base64
 from yaml import safe_load
 from textual.app import ComposeResult
 from textual.screen import ModalScreen
@@ -158,12 +159,24 @@ def render_configmap_data(title: str, desc: dict) -> ComposeResult:
         # pure plain text format language set None
         return None
 
+    def decode_b64_value(lang: Optional[str], value: str) -> str:
+        # lang is None means it's pure plain text maybe, the plain text may be base64 encoded,
+        #  try to decode it, if fail, return original value
+        if lang is None:
+            try:
+                return base64.b64decode(value).decode('utf-8')
+            except Exception:
+                return value
+        return value
+
+
     for key, value in desc.items():
+        lang = guess_data_language(key, value)
         yield Row(
             title=Title(key, expand=True),
             desc=DataEdit(
-                language=guess_data_language(key, value),
-                resource=value,
+                language=lang,
+                resource=decode_b64_value(lang, value),
                 data_key=key,
             ),
         )
