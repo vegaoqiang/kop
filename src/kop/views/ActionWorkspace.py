@@ -4,7 +4,7 @@ from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.css.query import NoMatches
 from textual.screen import Screen
-from textual.widgets import TabbedContent, TabPane, Footer, Header
+from textual.widgets import TabbedContent, TabPane, Footer, Header, Static
 from textual.widgets._tabbed_content import ContentTab, ContentTabs
 from textual.widget import Widget
 from kop.widgets.Pty import PodPty
@@ -19,6 +19,7 @@ from uuid import uuid4
 class ActionWorkspace(Screen):
     """A workspace for actions."""
     CLOSE_HIT_WIDTH = 2
+    EMPTY_HINT = "No tabs yet. Back to resource view to create one."
     
     SUB_TITLE = "Action Workspace"
 
@@ -28,6 +29,13 @@ class ActionWorkspace(Screen):
         Binding("ctrl+right_square_bracket", "switch_tab('next')", "Next Tab", show=True),
         Binding("ctrl+left_square_bracket", "switch_tab('previous')", "Previous Tab", show=True),
     ]
+    DEFAULT_CSS = """
+        #workspace-empty-hint {
+            width: 100%;
+            content-align: center middle;
+            text-style: dim;
+        }
+    """
 
     _pending_panes: list[TabPane] = []
     _pane_widgets: dict[str, Widget] = {}
@@ -35,6 +43,7 @@ class ActionWorkspace(Screen):
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         yield TabbedContent(id="tabbed-content")
+        yield Static(self.EMPTY_HINT, id="workspace-empty-hint")
         yield Footer()
     
     async def on_mount(self) -> None:
@@ -42,6 +51,10 @@ class ActionWorkspace(Screen):
 
     async def on_show(self) -> None:
         await self._flush_pending_panes()
+        self._update_empty_hint()
+
+    async def on_screen_resume(self) -> None:
+        self._update_empty_hint()
     
     async def _flush_pending_panes(self) -> None:
         if not self._pending_panes:
@@ -156,3 +169,11 @@ class ActionWorkspace(Screen):
     @on(ResourceEdit.Exited)
     async def on_action_widget_exited(self, _message: object) -> None:
         await self._close_active_pane()
+
+    def _update_empty_hint(self) -> None:
+        try:
+            tabbed_content = self.query_one("#tabbed-content", TabbedContent)
+            hint = self.query_one("#workspace-empty-hint", Static)
+        except NoMatches:
+            return
+        hint.display = tabbed_content.tab_count == 0
