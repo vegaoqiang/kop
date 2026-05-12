@@ -32,7 +32,7 @@ class ResourceEdit(Static):
             width: 1fr;
             padding-left: 1;
         }
-        #save, #cancel {
+        #resourceedit-save, #resourceedit-cancel {
             width: auto;
             margin-right: 1;
         }
@@ -67,8 +67,8 @@ class ResourceEdit(Static):
         # )
         yield TextArea.code_editor(language=self.language)
         yield Horizontal(
-            Button(label="Cancel", variant="default", id="cancel"),
-            Button(label="Save", variant="default", id="save"),
+            Button(label="Cancel", variant="default", id="resourceedit-cancel"),
+            Button(label="Save", variant="default", id="resourceedit-save"),
             id="button_group"
         )
 
@@ -84,12 +84,12 @@ class ResourceEdit(Static):
         text_area.border_subtitle = "Esc to Cancel • Ctrl+S to Save"
 
 
-    @on(Button.Pressed, "#cancel")
+    @on(Button.Pressed, "#resourceedit-cancel")
     def action_close(self) -> None:
         # self.app.pop_screen()
         self.post_message(self.Exited())
 
-    @on(Button.Pressed, "#save")
+    @on(Button.Pressed, "#resourceedit-save")
     def action_save(self, event: Button.Pressed) -> None:
         text = self.query_one(TextArea).text
         try:
