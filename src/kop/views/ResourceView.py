@@ -535,7 +535,6 @@ class ResourceView(Screen):
                     repeat=60
                     )
             self.notify(f"Delete {self.resource_type} {row_data.name} success", severity="information")
-            print("delete_resource:", self.app.screen.name)
             if self.app.screen.name == "DetailModalRenderer":
                 self.app.pop_screen()
         except Exception as e:
