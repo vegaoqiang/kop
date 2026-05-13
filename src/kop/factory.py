@@ -97,7 +97,8 @@ class BaseFactory(ABC):
         template = deepcopy(template)
 
         metadata = template.setdefault("metadata", {})
-        # metadata["namespace"] = namespace or "default"
+        if metadata.get("namespace", None) is not None and namespace is not None:
+            metadata["namespace"] = namespace
         return template
 
     def filter(self, raw, query: str):
