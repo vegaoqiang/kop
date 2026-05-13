@@ -10,6 +10,7 @@ from textual.screen import Screen
 from kop.registry import ResourceRegistry
 from kop.views.ResourceView import ResourceView
 from kop.widgets.Panel import ResourcePanel
+from kop.controllers.handler import BaseActionHandlerMixin
 
 
 class ResourceHarnessApp(App[None]):
@@ -57,6 +58,9 @@ def test_fetch_resource_filters_and_sorts(monkeypatch) -> None:
 
     class FakeFactory:
         resource_type = "pods"
+        resource_kind = "Pod"
+        resource_kind = "Pod"
+        resource_kind = "Pod"
 
         def __init__(self, endpoint: object) -> None:
             self.endpoint = endpoint
@@ -96,6 +100,7 @@ def test_fetch_resource_uses_dynamic_page_size_from_screen_height(monkeypatch) -
 
     class FakeFactory:
         resource_type = "pods"
+        resource_kind = "Pod"
 
         def __init__(self, endpoint: object) -> None:
             self.endpoint = endpoint
@@ -159,9 +164,11 @@ def test_action_new_resource_pushes_edit_screen_and_wires_fetcher_creator(monkey
     update_called: list[bool] = []
     notifications: list[tuple[str, str]] = []
     pushed_screens: list[object] = []
+    pane_widgets: list[object] = []
 
     class FakeFactory:
         resource_type = "pods"
+        resource_kind = "Pod"
 
         def __init__(self, endpoint: object) -> None:
             self.endpoint = endpoint
@@ -174,6 +181,11 @@ def test_action_new_resource_pushes_edit_screen_and_wires_fetcher_creator(monkey
             return {"ok": True}
 
     monkeypatch.setattr(ResourceRegistry, "get_factory", lambda _resource_type: FakeFactory)
+    monkeypatch.setattr(
+        BaseActionHandlerMixin,
+        "get_action_workspace",
+        lambda _app: SimpleNamespace(add_pane=lambda title, widget: pane_widgets.append(widget)),
+    )
 
     async def _run() -> None:
         async with app.run_test(size=(120, 40)) as pilot:
@@ -193,7 +205,8 @@ def test_action_new_resource_pushes_edit_screen_and_wires_fetcher_creator(monkey
     asyncio.run(_run())
 
     assert len(pushed_screens) == 1
-    edit_screen = pushed_screens[0]
+    assert len(pane_widgets) == 1
+    edit_screen = pane_widgets[0]
     fetched = edit_screen.fetcher()
     assert fetched == {"apiVersion": "v1", "metadata": {"namespace": "ns-a"}}
 
@@ -202,6 +215,60 @@ def test_action_new_resource_pushes_edit_screen_and_wires_fetcher_creator(monkey
     assert created_calls == [("ns-b", {"body": {"kind": "Pod"}})]
     assert update_called == [True]
     assert notifications[-1] == ("Create pods pod-a success", "information")
+
+
+def test_action_new_resource_refreshes_namespaces_panel_after_namespace_create(monkeypatch) -> None:
+    app = ResourceHarnessApp()
+    pushed_screens: list[object] = []
+    pane_widgets: list[object] = []
+    call_from_thread_calls: list[object] = []
+
+    class FakeFactory:
+        resource_type = "namespaces"
+        resource_kind = "Namespace"
+
+        def __init__(self, endpoint: object) -> None:
+            self.endpoint = endpoint
+
+        def load_template(self, namespace: str | None = None) -> dict:
+            return {"apiVersion": "v1", "metadata": {"namespace": namespace, "name": "ns-a"}}
+
+        def create(self, namespace: str = "default", **kwargs):
+            return {"ok": True}
+
+    monkeypatch.setattr(ResourceRegistry, "get_factory", lambda _resource_type: FakeFactory)
+    monkeypatch.setattr(
+        BaseActionHandlerMixin,
+        "get_action_workspace",
+        lambda _app: SimpleNamespace(add_pane=lambda title, widget: pane_widgets.append(widget)),
+    )
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            view = app.view
+            assert view is not None
+
+            view.resource_type = "namespaces"
+            monkeypatch.setattr(view, "_update_resource", lambda: None)
+            monkeypatch.setattr(app, "push_screen", lambda screen: pushed_screens.append(screen))
+            monkeypatch.setattr(
+                app,
+                "call_from_thread",
+                lambda fn, *args, **kwargs: call_from_thread_calls.append(fn),
+            )
+
+            view.action_new_resource()
+            await pilot.pause()
+
+            assert len(pushed_screens) == 1
+            assert len(pane_widgets) == 1
+            edit_screen = pane_widgets[0]
+            edit_screen.updater(name="ns-a", namespace="default", body={"kind": "Namespace"})
+
+    asyncio.run(_run())
+
+    assert call_from_thread_calls == [app.view._refresh_namespaces_panel]
 
 
 def test_create_binding_description_updates_with_selected_resource_kind() -> None:

@@ -2,7 +2,7 @@ from textual import work
 from textual.worker import Worker, WorkerState, get_current_worker
 from textual.screen import Screen, ModalScreen
 from textual.app import ComposeResult
-from textual.widgets import LoadingIndicator, Label, Button
+from textual.widgets import LoadingIndicator, Label, Button, Static
 from textual.containers import Grid
 from textual.binding import Binding
 from textual import on
@@ -121,7 +121,7 @@ class UpdateFailedModal(ModalScreen):
 
 
 
-class AsyncEditScreen(Screen):
+class AsyncEditScreen(Static):
     """
     Base screen for asynchronously loading a Kubernetes resource
     and editing it as YAML.
@@ -193,7 +193,27 @@ class AsyncEditScreen(Screen):
             if self.app.screen is loading_modal:
                 await loading_modal.dismiss()
         if update_success:
-            self.app.pop_screen()
+            # self.app.pop_screen()
+            self.post_message(ResourceEdit.Exited())
+
+    def sanitize_resource_update_body(self, body: dict) -> dict:
+        """Drop server-managed/read-only fields before patching edited YAML."""
+        if not isinstance(body, dict):
+            return body
+
+        metadata = body.get("metadata")
+        if isinstance(metadata, dict):
+            metadata.pop("managedFields", None)
+            metadata.pop("uid", None)
+            metadata.pop("creationTimestamp", None)
+            metadata.pop("generateName", None)
+            metadata.pop("selfLink", None)
+            metadata.pop("deletionTimestamp", None)
+            metadata.pop("deletionGracePeriodSeconds", None)
+            metadata.pop("resourceVersion", None)
+
+        body.pop("status", None)
+        return body
 
 
 class ResourceEditScreen(AsyncEditScreen):
@@ -221,9 +241,15 @@ class ResourceEditScreen(AsyncEditScreen):
         return self.fetcher()
 
     def update_resource(self, playload: PlayLoad) -> None:
-        return self.updater(
-            name=playload.resource['metadata']['name'], 
-            namespace=playload.resource['metadata']['namespace'], 
-            body=playload.resource,
-            field_manager="kop",
-        )
+        body = playload.resource
+        if isinstance(body, dict):
+            body = self.sanitize_resource_update_body(body)
+        update_kwargs = {
+            "name": body["metadata"]["name"],
+            "body": body,
+            "field_manager": "kop",
+        }
+        namespace = body.get("metadata", {}).get("namespace")
+        if namespace:
+            update_kwargs["namespace"] = namespace
+        return self.updater(**update_kwargs)

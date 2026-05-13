@@ -1,5 +1,6 @@
 from textual import work, events
 from textual.app import ComposeResult, App
+from textual.message import Message
 from textual.scroll_view import ScrollView
 from textual.reactive import Reactive
 from textual.worker import get_current_worker
@@ -64,6 +65,10 @@ ANSI_KEYMAP = {
 
 class PodPty(ScrollView):
 
+    class Exited(Message):
+        def __init__(self) -> None:
+            super().__init__()
+
     can_focus = True
 
     # definde the PodTerminal max history line
@@ -80,6 +85,7 @@ class PodPty(ScrollView):
         self.cursor_abs_y = 0
         # self.app.scroll_sensitivity_y = 1
         self.follow_cursor: bool = True
+        self._closing_by_parent: bool = False
 
     def on_key(self, event: events.Key) -> None:
         if not self.resp or not self.resp.is_open():
@@ -89,12 +95,21 @@ class PodPty(ScrollView):
         key = event.key
         if event.key == "ctrl+l":
             self._reset_screen()
+            event.stop().prevent_default()
             return
 
-        if character := event.character:
-            self.resp.write_stdin(character)
+        data = None
+        if event.character:
+            data = event.character
         else:
-            self.resp.write_stdin(ANSI_KEYMAP.get(key, ""))
+            data = ANSI_KEYMAP.get(key)
+
+        # Only consume keys that are actually forwarded to the shell.
+        # Unmapped shortcuts bubble up to parent (e.g. ActionWorkspace bindings).
+        if data is None:
+            return
+
+        self.resp.write_stdin(data)
 
         self._follow_cursor()
 
@@ -107,14 +122,28 @@ class PodPty(ScrollView):
 
     def on_unmount(self) -> None:
         if self.resp:
-            self.resp.close()
+            try:
+                self.exec.close()
+            except Exception:
+                self.resp.close()
             self.resp = None
 
     def _exit_pty(self):
+        if self._closing_by_parent:
+            return
+        self.post_message(self.Exited())
+
+    def graceful_shutdown(self) -> None:
+        """Best-effort shell exit before tab/pane removal."""
+        self._closing_by_parent = True
+        if not self.resp or not self.resp.is_open():
+            return
         try:
-            self.app.pop_screen()
-        except Exception as e:
-            self.app.exit()
+            # Ask shell to exit first, then send EOF.
+            self.resp.write_stdin("exit\r")
+            self.resp.write_stdin("\x04")
+        except Exception:
+            pass
 
     
     def _follow_cursor(self):
@@ -215,12 +244,12 @@ class PodPty(ScrollView):
 
 
     async def on_mouse_scroll_up(self, event: events.MouseScrollUp):
-        print('self.scroll_y:', self.scroll_y)
+        # print('self.scroll_y:', self.scroll_y)
         self.follow_cursor = False
 
 
     async def on_mouse_scroll_down(self, event: events.MouseScrollDown):
-        print('self.scroll_y:', self.scroll_y)
+        # print('self.scroll_y:', self.scroll_y)
         # todo: only scroll when the cursor is in the bottom
         # why self.te_screen.lines - 1? because the line number start from 0 
         if self.te_screen.cursor.y >= self.te_screen.lines - 1:
@@ -276,25 +305,3 @@ class PodPty(ScrollView):
                 self.notify(f"Read stdout failed: {e}", severity="error")
                 break
         self.app.call_from_thread(self._exit_pty)
-
-
-
-class TerminalApp(App):
-
-    def __init__(self, exec: PodExec):
-        super().__init__()
-        self.exec = exec
-
-    def compose(self) -> ComposeResult:
-        yield PodPty(exec=self.exec)
-
-
-
-
-if __name__ == '__main__':
-    from provider.client import KbsAuthLoader
-    # k = KbsAuthLoader(config_file="/Users/gaoxiang/Library/Application Support/OpenLens/kubeconfigs/196f5cce-07d5-4ac1-b1f8-61b14bc9bb72")
-    # exec = PodExec(k.api_client, "nginx-deployment-565cb86996-8g4mk", "default")
-    k = KbsAuthLoader(config_file="~/.kube/config")
-    exec = PodExec(k.api_client, "nacos-0", "public")
-    TerminalApp(exec=exec).run()

@@ -5,7 +5,7 @@ from textual import work
 from textual.events import Key
 from textual.screen import Screen
 from textual.binding import Binding
-from textual.app import ComposeResult, App
+from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
 from textual.widgets import Footer, Header, Input, LoadingIndicator
 from textual.worker import get_current_worker
@@ -15,6 +15,7 @@ from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.provider.client import KbsEndpoint
 from kop.views.EditView import ResourceEditScreen
+from kop.controllers.handler import BaseActionHandlerMixin
 from typing import Optional, Tuple
 
 
@@ -58,6 +59,7 @@ class ResourceView(Screen):
         Binding(key="c", action="new_resource", description="Create", show=True),
         Binding(key="p", action="prev_page", description="Previous Page", show=True),
         Binding(key="n", action="next_page", description="Next Page", show=True),
+        Binding(key="o", action="workspace", description="Open Action Workspace", show=True),
         Binding(key="escape", action="home", description="Go back startup", show=True),
     ]
 
@@ -488,15 +490,21 @@ class ResourceView(Screen):
             res = factory.create(namespace=namespace, **kwargs)
             if hasattr(self, "_update_resource"):
                 self._update_resource()
+            # if the created resource is namespace, refresh the namespace panel
+            if self.resource_type == "namespaces":
+                self.app.call_from_thread(self._refresh_namespaces_panel)
             self.notify(
                 f"Create {self.resource_type} {name} success",
                 severity="information",
             )
             return res
 
-        self.app.push_screen(
-            ResourceEditScreen(fetcher=fetcher, updater=creator)
+        action_workspace = BaseActionHandlerMixin.get_action_workspace(self.app)
+        action_workspace.add_pane(
+            title=f"Creating {factory.resource_kind}",
+            widget=ResourceEditScreen(fetcher=fetcher, updater=creator)
         )
+        self.app.push_screen(action_workspace)
 
     def on_table_renderer_row_selected_event(self, event: TableRenderer.RowSelectedEvent) -> None:
         # open detail screen
@@ -527,7 +535,6 @@ class ResourceView(Screen):
                     repeat=60
                     )
             self.notify(f"Delete {self.resource_type} {row_data.name} success", severity="information")
-            print("delete_resource:", self.app.screen.name)
             if self.app.screen.name == "DetailModalRenderer":
                 self.app.pop_screen()
         except Exception as e:
@@ -542,10 +549,16 @@ class ResourceView(Screen):
         resource_panel.set_class(show_resource_panel, "-resource_panel")
         resource_panel.resource_type = resource_type
 
+    def _refresh_namespaces_panel(self, panel: Optional[ResourcePanel] = None) -> None:
+        target_panel = panel or self.panel
+        if not target_panel or not self.endpoint:
+            return
+        namespaces = self.endpoint.list_namespaces()
+        target_panel.update_namespaces([item.metadata.name for item in namespaces.items])
+
     async def on_resource_panel_require_namespace(self, event: ResourcePanel.RequireNamespace) -> None:
         event.stop()
-        namespaces = self.endpoint.list_namespaces()
-        event._sender.update_namespaces([item.metadata.name for item in namespaces.items])
+        self._refresh_namespaces_panel(event._sender)
 
     async def on_resource_panel_selected_namespace(self, event: ResourcePanel.SelectedNamespace) -> None:
         event.stop()
@@ -581,3 +594,15 @@ class ResourceView(Screen):
         go back to home screen
         """
         self.app.switch_screen(getattr(self.app, "home"))
+
+    def action_workspace(self) -> None:
+        """
+        open action workspace
+        """
+        if not self.resource_type or isinstance(self.app.focused, Input):
+            return
+        action_workspace = getattr(self.app, "action_workspace", None)
+        if not action_workspace:
+            self.notify("Action workspace is not available", severity="error")
+            return
+        self.app.push_screen(action_workspace)

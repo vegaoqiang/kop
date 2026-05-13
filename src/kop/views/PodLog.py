@@ -1,11 +1,12 @@
+from datetime import datetime
 from textual import on
 from textual.binding import Binding
 from textual.screen import Screen
 from textual.app import ComposeResult
 from textual.timer import Timer
-from datetime import datetime
-from textual.widgets import Label, Button, Checkbox, Select, Input
+from textual.widgets import Label, Button, Checkbox, Select, Input, Static
 from textual.containers import Horizontal, Grid
+from textual.message import Message
 from kop.widgets.Log import Logs
 from kop.provider.logs import PodLogs
 from kop.provider.client import KbsAuthLoader
@@ -16,7 +17,7 @@ from kop.widgets.Modals import DownloadDirectoryPicker
 
 
 
-class PodLog(Screen):
+class PodLog(Static):
 
     DEFAULT_CSS = """
         #controls {
@@ -59,6 +60,10 @@ class PodLog(Screen):
         Binding(key="/", action="focus_filter", description="Focus Filter Input", show=False),
         Binding(key="]", action="select_container", description="Select Container", show=False),
     ]
+
+    class Exited(Message):
+        def __init__(self) -> None:
+            super().__init__()
 
     def __init__(self, 
                  client: KbsAuthLoader, 
@@ -106,7 +111,7 @@ class PodLog(Screen):
         pod_logs.border_subtitle = "Esc close • D download • P previous • T timestamps • N/Shift+N next/prev match"
 
     def action_close(self) -> None:
-        self.app.pop_screen()
+        self.post_message(self.Exited())
 
     @on(Button.Pressed, "#close-btn")
     def on_close_pressed(self) -> None:
@@ -225,3 +230,7 @@ class PodLog(Screen):
             return
         current, count = logs_widget.get_match_position()
         self.notify(f"Matches: {current}/{count}", severity="information")
+
+    def before_workspace_close(self) -> None:
+        # Keep tab-close responsive; unmount will handle final teardown.
+        self.query_one("#pod-logs", Logs).log_controller.stop(wait=False)

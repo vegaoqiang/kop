@@ -23,6 +23,7 @@ MENU: List[SimpleNamespace] = [
     SimpleNamespace(id='secrets', name="Secrets"),
     SimpleNamespace(id='services', name="Services"),
     SimpleNamespace(id='endpoints', name="Endpoints"),
+    SimpleNamespace(id='endpointslices', name="EndpointSlices"),
     SimpleNamespace(id='ingresses', name="Ingresses"),
     SimpleNamespace(id='ingressclasses', name="Ingress Classes"),
     SimpleNamespace(id='networkpolicies', name="Network Policies"),

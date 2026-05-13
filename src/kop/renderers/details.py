@@ -188,6 +188,16 @@ def render_subsets(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.subsets_formatter))
 
 
+@RendererRegistry.register_renderer('endpointslice')
+def renderer_endpointslice(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.endpointslice_formatter))
+
+
+@RendererRegistry.register_renderer('portslice')
+def renderer_portslice(title: str, desc: list) -> ComposeResult:
+    yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.portslice_formatter))
+
+
 @RendererRegistry.register_renderer('rules')
 def render_rules(title: str, desc: list) -> ComposeResult:
     yield Row(title=Title(title, expand=True), desc=Desc(desc=desc, formatter=formatter.rules_formatter))

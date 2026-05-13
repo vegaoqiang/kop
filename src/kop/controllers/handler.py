@@ -21,6 +21,7 @@ from kop.widgets.Modals import (
 from kubernetes import client
 from typing import Optional
 from kop.provider.logs import PodLogs
+from kop.views.ActionWorkspace import ActionWorkspace
 
 
 
@@ -36,6 +37,27 @@ class BaseActionHandlerMixin(ABC):
         super().__init_subclass__()
         if cls.resource_type is not None:
             ActionRegistry.register(cls)
+
+    @classmethod
+    def get_action_workspace(cls, app) -> ActionWorkspace:
+        action_workspace = getattr(app, "action_workspace", None)
+        if action_workspace is None:
+            action_workspace = ActionWorkspace()
+            setattr(app, "action_workspace", action_workspace)
+            app.install_screen(action_workspace, name="action_workspace")
+        return action_workspace
+
+    @staticmethod
+    def open_edit_tab(app, resource, fetcher, updater) -> None:
+        name = getattr(resource, "name", "unknown")
+        namespace = getattr(resource, "namespace", None)
+        title = f"Edit {namespace}/{name}" if namespace else f"Edit {name}"
+        action_workspace = BaseActionHandlerMixin.get_action_workspace(app)
+        action_workspace.add_pane(
+            title=title,
+            widget=ResourceEditScreen(fetcher=fetcher, updater=updater),
+        )
+        app.push_screen(action_workspace)
 
 
 class NodeActionHandler(BaseActionHandlerMixin):
@@ -335,7 +357,7 @@ class NodeActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update node {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.NodeViewModel, app):
@@ -380,14 +402,17 @@ class PodActionHandler(BaseActionHandlerMixin):
                     container_name=container_name,
                     previous=previous,
                 ).read_logs(tail_lines=1)
-                app.push_screen(
-                    PodLog(
+                action_workspace = PodActionHandler.get_action_workspace(app)
+                action_workspace.add_pane(
+                    title=f"Logs for {resource.namespace}/{resource.name}/{container_name}",
+                    widget=PodLog(
                         client=app.endpoint,
                         pod=resource,
                         container_name=container_name,
                         previous=previous,
-                    )
+                    ),
                 )
+                app.push_screen(action_workspace)
             except Exception as e:
                 app.notify(f"Failed to get pod logs: {e}", severity="error")
 
@@ -410,7 +435,12 @@ class PodActionHandler(BaseActionHandlerMixin):
             return
         
         def option_callback(container_name: str) -> None:
-            app.push_screen(PodTerminal(client=app.endpoint, data=resource, container_name=container_name))
+            action_workspace = PodActionHandler.get_action_workspace(app)
+            action_workspace.add_pane(
+                title=f"Terminal for {resource.namespace}/{resource.name}/{container_name}",
+                widget=PodTerminal(client=app.endpoint, data=resource, container_name=container_name))
+            app.push_screen(action_workspace)
+            # app.push_screen(PodTerminal(client=app.endpoint, data=resource, container_name=container_name))
 
         if len(resource.containers) == 1:
             container_obj = resource.containers[0].lazy_clean()
@@ -428,7 +458,12 @@ class PodActionHandler(BaseActionHandlerMixin):
             return
 
         def option_callback(container_name: str) -> None:
-            app.push_screen(Attach(client=app.endpoint, data=resource, container_name=container_name))
+            action_workspace = PodActionHandler.get_action_workspace(app)
+            action_workspace.add_pane(
+                title=f"Attach to {resource.namespace}/{resource.name}/{container_name}",
+                widget=Attach(client=app.endpoint, data=resource, container_name=container_name),
+            )
+            app.push_screen(action_workspace)
 
         if len(resource.containers) == 1:
             container_obj = resource.containers[0].lazy_clean()
@@ -460,13 +495,14 @@ class PodActionHandler(BaseActionHandlerMixin):
             # serialize pod object to dict
             pod=app.endpoint.api_client.sanitize_for_serialization(pod)
             return pod
+
         def updater(**playload):
             try:
                 app.view.FACTORY_CACHE.update(**playload)
                 app.notify(f"Update pod {resource.name} success", severity="information")
             except Exception as e:
                 raise e
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
 
 
@@ -570,7 +606,14 @@ class DeploymentActionHandler(BaseActionHandlerMixin):
             # serialize deployment object to dict
             deployment=app.endpoint.api_client.sanitize_for_serialization(deployment)
             return deployment
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=app.view.FACTORY_CACHE.update))
+        def updater(**playload):
+            try:
+                app.view.FACTORY_CACHE.update(**playload)
+                app.notify(f"Update Deployment {resource.name} success", severity="information")
+            except Exception as e:
+                raise e
+
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     
     @staticmethod
@@ -657,7 +700,7 @@ class DaemonSetActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update daemonset {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
 
     @staticmethod
@@ -781,7 +824,7 @@ class StatefueSetActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update statefulset {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.StatefulSetViewModel, app):
@@ -833,7 +876,7 @@ class JobActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update job {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.JobViewModel, app):
@@ -986,7 +1029,7 @@ class CronJobActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update cronjob {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.CronJobViewModel, app):
@@ -1036,7 +1079,7 @@ class ConfigMapActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update configmap {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ConfigMapViewModel, app):
@@ -1086,7 +1129,7 @@ class SecretActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update secret {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.SecretViewModel, app):
@@ -1136,10 +1179,112 @@ class ServiceActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update service {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ServiceViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+class EndpointActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for Endpoint resource"""
+    resource_type = [models.EndpointViewModel, models.EndpointDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.EndpointViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for Endpoint, {e}", severity="error")
+
+     # Endpoint is a sub-resource of Service and is read-only, so only edit action is implemented to view its details.
+    @staticmethod
+    def edit(action, resource: models.EndpointViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                endpoints = endpoint.read_namespaced_endpoints(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            endpoints = app.endpoint.api_client.sanitize_for_serialization(endpoints)
+            return endpoints
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_endpoints(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update endpoint {name} success", severity="information")
+            return res
+
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
+
+    @staticmethod        
+    def delete(action, resource: models.EndpointViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
+
+class EndpointSliceActionHandler(BaseActionHandlerMixin):
+    
+    """Action handler for EndpointSlice resource"""
+    resource_type = [models.EndpointSliceViewModel, models.EndpointSliceDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.EndpointSliceViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for EndpointSlice, {e}", severity="error")
+
+     # EndpointSlice is a sub-resource of Service and is read-only, so only edit action is implemented to view its details.
+    @staticmethod
+    def edit(action, resource: models.EndpointSliceViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.DiscoveryV1Api(api_client=app.endpoint.api_client)
+                endpointslice = endpoint.read_namespaced_endpoint_slice(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            endpointslice = app.endpoint.api_client.sanitize_for_serialization(endpointslice)
+            return endpointslice
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.DiscoveryV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_endpoint_slice(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update endpointslice {name} success", severity="information")
+            return res
+
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
+
+    @staticmethod        
+    def delete(action, resource: models.EndpointSliceViewModel, app):
         def delete_callback(resource) -> None:
             view = app.view
             view.delete_resource(resource)
@@ -1186,7 +1331,7 @@ class IngressActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update ingress {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.IngressViewModel, app):
@@ -1276,7 +1421,7 @@ class IngressClassActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update ingressclass {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.IngressClassViewModel, app):
@@ -1334,7 +1479,7 @@ class NetworkPolicyActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update networkpolicy {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.NetworkPolicyViewModel, app):
@@ -1401,7 +1546,7 @@ class PersistentVolumeActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update persistentvolume {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.PersistentVolumeViewModel, app):
@@ -1459,7 +1604,7 @@ class PersistentVolumeClaimActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update persistentvolumeclaim {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.PersistentVolumeClaimViewModel, app):
@@ -1526,7 +1671,7 @@ class StorageClassActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update storageclass {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.StorageClassViewModel, app):
@@ -1590,7 +1735,7 @@ class NamespaceActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update namespace {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.NamespaceViewModel, app):
@@ -1648,7 +1793,7 @@ class ServiceAccountActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update serviceaccount {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ServiceAccountViewModel, app):
@@ -1709,7 +1854,7 @@ class RoleActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update role {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.RoleViewModel, app):
@@ -1776,7 +1921,7 @@ class ClusterRoleActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update clusterrole {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ClusterRoleViewModel, app):
@@ -1834,7 +1979,7 @@ class RoleBindingActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update rolebinding {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.RoleBindingViewModel, app):
@@ -1901,7 +2046,7 @@ class ClusterRoleBindingActionHandler(BaseActionHandlerMixin):
             app.notify(f"Update clusterrolebinding {name} success", severity="information")
             return res
 
-        app.push_screen(ResourceEditScreen(fetcher=fetcher, updater=updater))
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
 
     @staticmethod
     def delete(action, resource: models.ClusterRoleBindingViewModel, app):

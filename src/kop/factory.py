@@ -97,7 +97,8 @@ class BaseFactory(ABC):
         template = deepcopy(template)
 
         metadata = template.setdefault("metadata", {})
-        metadata["namespace"] = namespace or "default"
+        if metadata.get("namespace", None) is not None and namespace is not None:
+            metadata["namespace"] = namespace
         return template
 
     def filter(self, raw, query: str):
@@ -216,7 +217,7 @@ class NodeFacotry(BaseFactory):
     ):
         return self.endpoint.list_nodes(limit=limit, continue_token=continue_token)
 
-    def delete(self, name, namespace: str = "default"):
+    def delete(self, name, namespace = None):
         return self.endpoint.delete_node(name=name)
     
     def clean(self, raw) -> List[models.NodeViewModel]:
@@ -1014,6 +1015,79 @@ class EndpointFactory(BaseFactory):
         )
     
 
+class EndpointSliceFactory(BaseFactory):
+    """factory for endpointslices"""
+    resource_type = "endpointslices"
+    resource_kind = "EndpointSlice"
+    filter_fields = (
+        "metadata.name", 
+        "metadata.namespace",
+        "endpoints",
+        "ports"
+    )
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit EndpointSlice", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete EndpointSlice", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(
+        self,
+        namespace: Optional[str] = None,
+        limit: Optional[int] = None,
+        continue_token: Optional[str] = None,
+    ):
+        return self.endpoint.list_endpoint_slices(namespace=namespace,
+            limit=limit,
+            continue_token=continue_token,
+        )
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_endpoint_slices(name=name, namespace=namespace)
+
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_endpoint_slice(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_endpoint_slice(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.EndpointSliceViewModel]:
+        return [models.EndpointSliceViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> models.EndpointSliceDetailModel:
+        return models.EndpointSliceDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.EndpointSliceViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.EndpointSliceDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions,
+            kind=self.resource_kind,
+        )
+
+
+
 class IngressFactory(BaseFactory):
     """factory for ingresses"""
     resource_type = "ingresses"
@@ -1126,15 +1200,15 @@ class IngressClassFactory(BaseFactory):
     ):
         return self.endpoint.list_ingressclasses(limit=limit, continue_token=continue_token)
     
-    def delete(self, name, namespace: str = "default"):
-        return self.endpoint.delete_ingressclasses(name=name, namespace=namespace)
+    def delete(self, name, namespace = None):
+        return self.endpoint.delete_ingressclasses(name=name)
 
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_ingressclass(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_ingressclass(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_ingressclass(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_ingressclass(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.IngressClassViewModel]:
         return [models.IngressClassViewModel.clean(dep) for dep in raw.items]
@@ -1267,15 +1341,15 @@ class PersistentVolumeFactory(BaseFactory):
     ):
         return self.endpoint.list_persistentvolumes(limit=limit, continue_token=continue_token)
     
-    def delete(self, name, namespace: str = "default"):
-        return self.endpoint.delete_persistentvolumes(name=name, namespace=namespace)
+    def delete(self, name, namespace = None):
+        return self.endpoint.delete_persistentvolumes(name=name)
 
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_persistentvolume(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_persistentvolume(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_persistentvolume(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_persistentvolume(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.PersistentVolumeViewModel]:
         return [models.PersistentVolumeViewModel.clean(dep) for dep in raw.items]
@@ -1409,15 +1483,15 @@ class StorageClassFactory(BaseFactory):
     ):
         return self.endpoint.list_storageclasses(limit=limit, continue_token=continue_token)
     
-    def delete(self, name, namespace: str = "default"):
-        return self.endpoint.delete_storageclasses(name=name, namespace=namespace)
+    def delete(self, name, namespace = None):
+        return self.endpoint.delete_storageclasses(name=name)
 
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_storageclass(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_storageclass(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_storageclass(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_storageclass(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.StorageClassViewModel]:
         return [models.StorageClassViewModel.clean(dep) for dep in raw.items]
@@ -1472,15 +1546,15 @@ class NamespaceFactory(BaseFactory):
     ):
         return self.endpoint.list_namespaces(limit=limit, continue_token=continue_token)
     
-    def delete(self, name, namespace: str = "default"):
-        return self.endpoint.delete_namespaces(name=name, namespace=namespace)
+    def delete(self, name, namespace = None):
+        return self.endpoint.delete_namespaces(name=name)
 
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_namespace(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_namespace(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_namespace(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_namespace(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.NamespaceViewModel]:
         return [models.NamespaceViewModel.clean(dep) for dep in raw.items]
@@ -1672,12 +1746,12 @@ class ClusterRoleFactory(BaseFactory):
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_cluster_roles(name=name, namespace=namespace)
     
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_cluster_role(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_cluster_role(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_cluster_role(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_cluster_role(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.ClusterRoleViewModel]:
         return [models.ClusterRoleViewModel.clean(dep) for dep in raw.items]
@@ -1802,12 +1876,12 @@ class ClusterRoleBindingFactory(BaseFactory):
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_cluster_role_bindings(name=name, namespace=namespace)
     
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_cluster_role_binding(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_cluster_role_binding(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_cluster_role_binding(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_cluster_role_binding(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.ClusterRoleBindingViewModel]:
         return [models.ClusterRoleBindingViewModel.clean(dep) for dep in raw.items]
