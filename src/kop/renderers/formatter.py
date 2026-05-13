@@ -297,6 +297,41 @@ def subsets_formatter(desc):
     return Group(addresses, ports)
 
 
+def endpointslice_formatter(desc):
+    if not desc:
+        return
+    addresses = Table(expand=True)
+    addresses.add_column("IP", justify="left")
+    addresses.add_column("Node", justify="left")
+    addresses.add_column("Hostname", justify="left")
+    addresses.add_column("Zone", justify="left")
+    addresses.add_column("Pod", justify="left")
+    addresses.add_column("Condition", justify="left")
+
+    for item in desc:
+        addresses.add_row(
+            '\n.'.join(item.addresses) if item.addresses else DEFAULT_CHAR,
+            item.node_name or DEFAULT_CHAR,
+            item.hostname or DEFAULT_CHAR,
+            item.zone or DEFAULT_CHAR,
+            item.target_ref.name if item.target_ref else DEFAULT_CHAR,
+            "Ready" if item.conditions and item.conditions.ready else "NotReady"
+        )
+    return addresses
+
+
+def portslice_formatter(desc):
+    if not desc:
+        return
+    ports = Table(expand=True)
+    ports.add_column("Port", justify="left")
+    ports.add_column("Name", justify="left")
+    ports.add_column("Protocol", justify="left")
+    for item in desc:
+        ports.add_row(str(item.port), item.name, item.protocol)
+    return ports
+
+
 def rules_formatter(desc):
     """
     desc: V1IngressSpec

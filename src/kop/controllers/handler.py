@@ -1240,6 +1240,57 @@ class EndpointActionHandler(BaseActionHandlerMixin):
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
 
+
+class EndpointSliceActionHandler(BaseActionHandlerMixin):
+    
+    """Action handler for EndpointSlice resource"""
+    resource_type = [models.EndpointSliceViewModel, models.EndpointSliceDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.EndpointSliceViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for EndpointSlice, {e}", severity="error")
+
+     # EndpointSlice is a sub-resource of Service and is read-only, so only edit action is implemented to view its details.
+    @staticmethod
+    def edit(action, resource: models.EndpointSliceViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.DiscoveryV1Api(api_client=app.endpoint.api_client)
+                endpointslice = endpoint.read_namespaced_endpoint_slice(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            endpointslice = app.endpoint.api_client.sanitize_for_serialization(endpointslice)
+            return endpointslice
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.DiscoveryV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_endpoint_slice(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update endpointslice {name} success", severity="information")
+            return res
+
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
+
+    @staticmethod        
+    def delete(action, resource: models.EndpointSliceViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
     
 class IngressActionHandler(BaseActionHandlerMixin):
 

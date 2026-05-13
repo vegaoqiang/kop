@@ -22,6 +22,7 @@ from kubernetes.client.models import (
     V1ServicePort,
     V1LoadBalancerStatus,
     V1Endpoints,
+    V1Endpoint,
     V1EndpointSubset,
     V1EndpointSlice,
     DiscoveryV1EndpointPort,
@@ -865,8 +866,8 @@ class EndpointSliceViewModel(ViewModel):
     name: str = field(metadata={"title": "Name", "width": 15})
     namespace: str = field(metadata={"title": "Namespace", "width": 10})
     addresstype: str = field(metadata={"title": "Address Type", "width": 15, "after": "labels"})
-    ports: list[DiscoveryV1EndpointPort] = field(metadata={"title": "Ports", "width": 15, "after": "addresstype", "renderer": f.endpointslice_ports_renderer})
-    endpoints: list[V1Endpoints] = field(metadata={"title": "Endpoints", "width": 15, "after": "ports", "detail": False})
+    portslice: list[DiscoveryV1EndpointPort] = field(metadata={"title": "Ports", "width": 15, "after": "controlledby", "renderer": f.endpointslice_ports_renderer})
+    endpointslice: list[V1Endpoint] = field(metadata={"title": "Endpoints", "width": 15, "after": "portslice"})
     age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
 
     @classmethod
@@ -875,15 +876,29 @@ class EndpointSliceViewModel(ViewModel):
             name=data.metadata.name,
             namespace=data.metadata.namespace,
             addresstype=data.address_type,
-            ports=data.ports,
-            endpoints=data.endpoints,
+            portslice=data.ports,
+            endpointslice=data.endpoints,
             age=cls.get_age_text(data.metadata.creation_timestamp),
         )
     
-    
+
 @dataclass
 class EndpointSliceDetailModel(EndpointSliceViewModel):
-    ...
+    created: str = field(default_factory=str, metadata={"title": "Created", "after": "namespace"})
+    labels: dict = field(default_factory=dict, metadata={"title": "Lables"})
+    annotations: dict = field(default_factory=dict, metadata={"title": "Annotations"})
+    controlledby: str = field(default_factory=str, metadata={"title": "Controlled By"})
+
+    @classmethod
+    def clean(cls, data: V1EndpointSlice) -> "EndpointSliceDetailModel":
+        base = super().clean(data).__dict__
+        base.update({
+            'created': cls.get_created_text(data.metadata.creation_timestamp),
+            'labels': data.metadata.labels,
+            'annotations': data.metadata.annotations,
+            'controlledby': data.metadata.owner_references[0].kind if data.metadata.owner_references else "",
+        })
+        return cls(**base)
 
 
 @dataclass
