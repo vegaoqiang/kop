@@ -490,6 +490,9 @@ class ResourceView(Screen):
             res = factory.create(namespace=namespace, **kwargs)
             if hasattr(self, "_update_resource"):
                 self._update_resource()
+            # if the created resource is namespace, refresh the namespace panel
+            if self.resource_type == "namespaces":
+                self.app.call_from_thread(self._refresh_namespaces_panel)
             self.notify(
                 f"Create {self.resource_type} {name} success",
                 severity="information",
@@ -547,10 +550,16 @@ class ResourceView(Screen):
         resource_panel.set_class(show_resource_panel, "-resource_panel")
         resource_panel.resource_type = resource_type
 
+    def _refresh_namespaces_panel(self, panel: Optional[ResourcePanel] = None) -> None:
+        target_panel = panel or self.panel
+        if not target_panel or not self.endpoint:
+            return
+        namespaces = self.endpoint.list_namespaces()
+        target_panel.update_namespaces([item.metadata.name for item in namespaces.items])
+
     async def on_resource_panel_require_namespace(self, event: ResourcePanel.RequireNamespace) -> None:
         event.stop()
-        namespaces = self.endpoint.list_namespaces()
-        event._sender.update_namespaces([item.metadata.name for item in namespaces.items])
+        self._refresh_namespaces_panel(event._sender)
 
     async def on_resource_panel_selected_namespace(self, event: ResourcePanel.SelectedNamespace) -> None:
         event.stop()
