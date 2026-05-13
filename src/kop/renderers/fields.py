@@ -103,6 +103,14 @@ def service_ports_renderer(value):
     return ",".join(text)
 
 
+def endpointslice_ports_renderer(value):
+    text = []
+    for item in value:
+        if item.port:
+            text.append(f"{item.port}/{item.protocol}")
+    return ",".join(text)
+
+
 def ingress_rules_renderer(value):
     if not value:
         return ""

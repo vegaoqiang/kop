@@ -1014,6 +1014,79 @@ class EndpointFactory(BaseFactory):
         )
     
 
+class EndpointSliceFactory(BaseFactory):
+    """factory for endpointslices"""
+    resource_type = "endpointslices"
+    resource_kind = "EndpointSlice"
+    filter_fields = (
+        "metadata.name", 
+        "metadata.namespace",
+        "endpoints",
+        "ports"
+    )
+
+    actions: List[ActionModel] = [
+        ActionModel(name="edit", 
+                    label="Edit", 
+                    variant="default", 
+                    tooltip="Edit EndpointSlice", 
+                    action="edit", 
+                    key="e"),
+        ActionModel(name="delete", 
+                    label="Delete", 
+                    variant="default", 
+                    tooltip="Delete EndpointSlice", 
+                    action="delete", 
+                    key="d")
+    ]
+
+    def fetch(
+        self,
+        namespace: Optional[str] = None,
+        limit: Optional[int] = None,
+        continue_token: Optional[str] = None,
+    ):
+        return self.endpoint.list_endpoint_slices(namespace=namespace,
+            limit=limit,
+            continue_token=continue_token,
+        )
+    
+    def delete(self, name, namespace: str = "default"):
+        return self.endpoint.delete_endpoint_slices(name=name, namespace=namespace)
+
+    def update(self, name, namespace: str = "default", **kwargs):
+        return self.endpoint.patch_endpoint_slice(name=name, namespace=namespace, **kwargs)
+
+    def create(self, namespace: str = "default", **kwargs):
+        body = kwargs.pop("body", None)
+        return self.endpoint.create_endpoint_slice(namespace=namespace, body=body, **kwargs)
+    
+    def clean(self, raw) -> List[models.EndpointSliceViewModel]:
+        return [models.EndpointSliceViewModel.clean(dep) for dep in raw.items]
+    
+    def clean_detail(self, raw) -> models.EndpointSliceDetailModel:
+        return models.EndpointSliceDetailModel.clean(raw)
+    
+    def create_renderer(self, data) -> TableRenderer:
+        cleaned = self.clean(data)
+        cleaned.sort(key=lambda vm: vm.name)
+        return TableRenderer(
+            columns=models.EndpointSliceViewModel.get_columns(),
+            data=cleaned,
+            raw_data=data.items,
+            actions=self.actions
+        )
+    
+    def create_detail_renderer(self, data):
+        return DetailModalRenderer(
+            columns=models.EndpointSliceDetailModel.get_detail_columns(),
+            data=self.clean_detail(data),
+            actions=self.actions,
+            kind=self.resource_kind,
+        )
+
+
+
 class IngressFactory(BaseFactory):
     """factory for ingresses"""
     resource_type = "ingresses"

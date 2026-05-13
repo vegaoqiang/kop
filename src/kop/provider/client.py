@@ -559,6 +559,27 @@ class KbsEndpoint(KbsAuthLoader):
             _continue=continue_token,
         )
 
+    def list_endpoint_slices(self, namespace: Optional[str] = None, 
+                            watch: bool = False, 
+                            async_req: bool = False,
+                            limit: Optional[int] = None,
+                            continue_token: Optional[str] = None):
+        endpoint = client.DiscoveryV1Api(api_client=self.api_client)
+        if namespace:
+            return endpoint.list_namespaced_endpoint_slice(
+                namespace=namespace,
+                watch=watch,
+                async_req=async_req,
+                limit=limit,
+                _continue=continue_token,
+            )
+        return endpoint.list_endpoint_slice_for_all_namespaces(
+            watch=watch,
+            async_req=async_req,
+            limit=limit,
+            _continue=continue_token,
+        )
+
     def delete_endpoints(self, name: str,
                          namespace: str = 'default',
                          watch: bool = False,

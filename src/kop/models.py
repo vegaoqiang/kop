@@ -23,6 +23,8 @@ from kubernetes.client.models import (
     V1LoadBalancerStatus,
     V1Endpoints,
     V1EndpointSubset,
+    V1EndpointSlice,
+    DiscoveryV1EndpointPort,
     V1Ingress,
     V1IngressSpec,
     V1IngressBackend,
@@ -856,6 +858,32 @@ class EndpointDetailModel(EndpointViewModel):
             'subsets': data.subsets
         })
         return cls(**base)
+
+
+@dataclass
+class EndpointSliceViewModel(ViewModel):
+    name: str = field(metadata={"title": "Name", "width": 15})
+    namespace: str = field(metadata={"title": "Namespace", "width": 10})
+    addresstype: str = field(metadata={"title": "Address Type", "width": 15, "after": "labels"})
+    ports: list[DiscoveryV1EndpointPort] = field(metadata={"title": "Ports", "width": 15, "after": "addresstype", "renderer": f.endpointslice_ports_renderer})
+    endpoints: list[V1Endpoints] = field(metadata={"title": "Endpoints", "width": 15, "after": "ports", "detail": False})
+    age: str = field(metadata={"title": "Age", "width": 5, "detail": False})
+
+    @classmethod
+    def clean(cls, data: V1EndpointSlice) -> "EndpointSliceViewModel":
+        return cls(
+            name=data.metadata.name,
+            namespace=data.metadata.namespace,
+            addresstype=data.address_type,
+            ports=data.ports,
+            endpoints=data.endpoints,
+            age=cls.get_age_text(data.metadata.creation_timestamp),
+        )
+    
+    
+@dataclass
+class EndpointSliceDetailModel(EndpointSliceViewModel):
+    ...
 
 
 @dataclass
