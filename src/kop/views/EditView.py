@@ -244,9 +244,12 @@ class ResourceEditScreen(AsyncEditScreen):
         body = playload.resource
         if isinstance(body, dict):
             body = self.sanitize_resource_update_body(body)
-        return self.updater(
-            name=body['metadata']['name'],
-            namespace=body['metadata'].get('namespace', 'default'),
-            body=body,
-            field_manager="kop",
-        )
+        update_kwargs = {
+            "name": body["metadata"]["name"],
+            "body": body,
+            "field_manager": "kop",
+        }
+        namespace = body.get("metadata", {}).get("namespace")
+        if namespace:
+            update_kwargs["namespace"] = namespace
+        return self.updater(**update_kwargs)

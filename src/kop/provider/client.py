@@ -580,6 +580,37 @@ class KbsEndpoint(KbsAuthLoader):
             _continue=continue_token,
         )
 
+    def delete_endpoint_slices(self, name: str,
+                               namespace: str = 'default',
+                               watch: bool = False,
+                               async_req: bool = False):
+        endpoint = client.DiscoveryV1Api(api_client=self.api_client)
+        return endpoint.delete_namespaced_endpoint_slice(
+            name=name,
+            namespace=namespace,
+            async_req=async_req,
+        )
+
+    def patch_endpoint_slice(self, name: str,
+                             namespace: str = 'default',
+                             body: Optional[dict] = None,
+                             async_req: bool = False):
+        endpoint = client.DiscoveryV1Api(api_client=self.api_client)
+        return endpoint.patch_namespaced_endpoint_slice(
+            name=name,
+            namespace=namespace,
+            body=body or {},
+            async_req=async_req,
+        )
+
+    def create_endpoint_slice(self, namespace: str, body: dict, **kwargs):
+        endpoint = client.DiscoveryV1Api(api_client=self.api_client)
+        return endpoint.create_namespaced_endpoint_slice(
+            namespace=namespace,
+            body=body,
+            **kwargs,
+        )
+
     def delete_endpoints(self, name: str,
                          namespace: str = 'default',
                          watch: bool = False,
@@ -648,7 +679,7 @@ class KbsEndpoint(KbsAuthLoader):
         endpoint = client.NetworkingV1Api(api_client=self.api_client)
         return endpoint.create_namespaced_ingress(namespace=namespace, body=body, **kwargs)
     
-    def list_ingressclasses(self, namespace: Optional[str] = None, 
+    def list_ingressclasses(self,
                             watch: bool = False, 
                             async_req: bool = False,
                             limit: Optional[int] = None,
@@ -662,14 +693,12 @@ class KbsEndpoint(KbsAuthLoader):
         )
 
     def delete_ingressclasses(self, name: str,
-                              namespace: str = 'default',
                               watch: bool = False,
                               async_req: bool = False):
         endpoint = client.NetworkingV1Api(api_client=self.api_client)
         return endpoint.delete_ingress_class(name=name, async_req=async_req)
 
     def patch_ingressclass(self, name: str,
-                           namespace: str = 'default',
                            body: Optional[dict] = None,
                            async_req: bool = False):
         endpoint = client.NetworkingV1Api(api_client=self.api_client)
@@ -679,7 +708,7 @@ class KbsEndpoint(KbsAuthLoader):
             async_req=async_req,
         )
 
-    def create_ingressclass(self, namespace: str, body: dict, **kwargs):
+    def create_ingressclass(self, body: dict, **kwargs):
         endpoint = client.NetworkingV1Api(api_client=self.api_client)
         return endpoint.create_ingress_class(body=body, **kwargs)
        
@@ -727,7 +756,7 @@ class KbsEndpoint(KbsAuthLoader):
         endpoint = client.NetworkingV1Api(api_client=self.api_client)
         return endpoint.create_namespaced_network_policy(namespace=namespace, body=body, **kwargs)
     
-    def list_persistentvolumes(self, namespace: Optional[str] = None, 
+    def list_persistentvolumes(self, 
                                watch: bool = False, 
                                async_req: bool = False,
                                limit: Optional[int] = None,
@@ -741,14 +770,12 @@ class KbsEndpoint(KbsAuthLoader):
         )
 
     def delete_persistentvolumes(self, name: str,
-                                 namespace: str = 'default',
                                  watch: bool = False,
                                  async_req: bool = False):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.delete_persistent_volume(name=name, async_req=async_req)
 
     def patch_persistentvolume(self, name: str,
-                               namespace: str = 'default',
                                body: Optional[dict] = None,
                                async_req: bool = False):
         endpoint = client.CoreV1Api(api_client=self.api_client)
@@ -758,7 +785,7 @@ class KbsEndpoint(KbsAuthLoader):
             async_req=async_req,
         )
 
-    def create_persistentvolume(self, namespace: str, body: dict, **kwargs):
+    def create_persistentvolume(self, body: dict, **kwargs):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.create_persistent_volume(body=body, **kwargs)
     
@@ -820,14 +847,12 @@ class KbsEndpoint(KbsAuthLoader):
         )
 
     def delete_storageclasses(self, name: str,
-                              namespace: str = 'default',
                               watch: bool = False,
                               async_req: bool = False):
         endpoint = client.StorageV1Api(api_client=self.api_client)
         return endpoint.delete_storage_class(name=name, async_req=async_req)
 
     def patch_storageclass(self, name: str,
-                           namespace: str = 'default',
                            body: Optional[dict] = None,
                            async_req: bool = False):
         endpoint = client.StorageV1Api(api_client=self.api_client)
@@ -837,7 +862,7 @@ class KbsEndpoint(KbsAuthLoader):
             async_req=async_req,
         )
 
-    def create_storageclass(self, namespace: str, body: dict, **kwargs):
+    def create_storageclass(self, body: dict, **kwargs):
         endpoint = client.StorageV1Api(api_client=self.api_client)
         return endpoint.create_storage_class(body=body, **kwargs)
     
@@ -886,14 +911,12 @@ class KbsEndpoint(KbsAuthLoader):
         return endpoint.create_namespaced_service_account(namespace=namespace, body=body, **kwargs)
 
     def delete_namespaces(self, name: str,
-                          namespace: str = 'default',
                           watch: bool = False,
                           async_req: bool = False):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.delete_namespace(name=name, async_req=async_req)
 
     def patch_namespace(self, name: str,
-                        namespace: str = 'default',
                         body: Optional[dict] = None,
                         async_req: bool = False):
         endpoint = client.CoreV1Api(api_client=self.api_client)
@@ -903,7 +926,7 @@ class KbsEndpoint(KbsAuthLoader):
             async_req=async_req,
         )
 
-    def create_namespace(self, namespace: str, body: dict, **kwargs):
+    def create_namespace(self, body: dict, **kwargs):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.create_namespace(body=body, **kwargs)
     
@@ -972,7 +995,6 @@ class KbsEndpoint(KbsAuthLoader):
         return endpoint.delete_cluster_role(name=name, async_req=async_req)
 
     def patch_cluster_role(self, name: str,
-                           namespace: str = 'default',
                            body: Optional[dict] = None,
                            async_req: bool = False):
         endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
@@ -982,7 +1004,7 @@ class KbsEndpoint(KbsAuthLoader):
             async_req=async_req,
         )
 
-    def create_cluster_role(self, namespace: str, body: dict, **kwargs):
+    def create_cluster_role(self, body: dict, **kwargs):
         endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
         return endpoint.create_cluster_role(body=body, **kwargs)
     
@@ -1051,7 +1073,6 @@ class KbsEndpoint(KbsAuthLoader):
         return endpoint.delete_cluster_role_binding(name=name, async_req=async_req)
 
     def patch_cluster_role_binding(self, name: str,
-                                   namespace: str = 'default',
                                    body: Optional[dict] = None,
                                    async_req: bool = False):
         endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
@@ -1061,6 +1082,6 @@ class KbsEndpoint(KbsAuthLoader):
             async_req=async_req,
         )
 
-    def create_cluster_role_binding(self, namespace: str, body: dict, **kwargs):
+    def create_cluster_role_binding(self, body: dict, **kwargs):
         endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
         return endpoint.create_cluster_role_binding(body=body, **kwargs)

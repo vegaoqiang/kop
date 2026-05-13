@@ -97,7 +97,7 @@ class BaseFactory(ABC):
         template = deepcopy(template)
 
         metadata = template.setdefault("metadata", {})
-        metadata["namespace"] = namespace or "default"
+        # metadata["namespace"] = namespace or "default"
         return template
 
     def filter(self, raw, query: str):
@@ -216,7 +216,7 @@ class NodeFacotry(BaseFactory):
     ):
         return self.endpoint.list_nodes(limit=limit, continue_token=continue_token)
 
-    def delete(self, name, namespace: str = "default"):
+    def delete(self, name, namespace = None):
         return self.endpoint.delete_node(name=name)
     
     def clean(self, raw) -> List[models.NodeViewModel]:
@@ -1199,15 +1199,15 @@ class IngressClassFactory(BaseFactory):
     ):
         return self.endpoint.list_ingressclasses(limit=limit, continue_token=continue_token)
     
-    def delete(self, name, namespace: str = "default"):
-        return self.endpoint.delete_ingressclasses(name=name, namespace=namespace)
+    def delete(self, name, namespace = None):
+        return self.endpoint.delete_ingressclasses(name=name)
 
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_ingressclass(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_ingressclass(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_ingressclass(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_ingressclass(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.IngressClassViewModel]:
         return [models.IngressClassViewModel.clean(dep) for dep in raw.items]
@@ -1340,15 +1340,15 @@ class PersistentVolumeFactory(BaseFactory):
     ):
         return self.endpoint.list_persistentvolumes(limit=limit, continue_token=continue_token)
     
-    def delete(self, name, namespace: str = "default"):
-        return self.endpoint.delete_persistentvolumes(name=name, namespace=namespace)
+    def delete(self, name, namespace = None):
+        return self.endpoint.delete_persistentvolumes(name=name)
 
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_persistentvolume(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_persistentvolume(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_persistentvolume(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_persistentvolume(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.PersistentVolumeViewModel]:
         return [models.PersistentVolumeViewModel.clean(dep) for dep in raw.items]
@@ -1482,15 +1482,15 @@ class StorageClassFactory(BaseFactory):
     ):
         return self.endpoint.list_storageclasses(limit=limit, continue_token=continue_token)
     
-    def delete(self, name, namespace: str = "default"):
-        return self.endpoint.delete_storageclasses(name=name, namespace=namespace)
+    def delete(self, name, namespace = None):
+        return self.endpoint.delete_storageclasses(name=name)
 
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_storageclass(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_storageclass(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_storageclass(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_storageclass(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.StorageClassViewModel]:
         return [models.StorageClassViewModel.clean(dep) for dep in raw.items]
@@ -1545,15 +1545,15 @@ class NamespaceFactory(BaseFactory):
     ):
         return self.endpoint.list_namespaces(limit=limit, continue_token=continue_token)
     
-    def delete(self, name, namespace: str = "default"):
-        return self.endpoint.delete_namespaces(name=name, namespace=namespace)
+    def delete(self, name, namespace = None):
+        return self.endpoint.delete_namespaces(name=name)
 
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_namespace(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_namespace(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_namespace(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_namespace(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.NamespaceViewModel]:
         return [models.NamespaceViewModel.clean(dep) for dep in raw.items]
@@ -1745,12 +1745,12 @@ class ClusterRoleFactory(BaseFactory):
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_cluster_roles(name=name, namespace=namespace)
     
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_cluster_role(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_cluster_role(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_cluster_role(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_cluster_role(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.ClusterRoleViewModel]:
         return [models.ClusterRoleViewModel.clean(dep) for dep in raw.items]
@@ -1875,12 +1875,12 @@ class ClusterRoleBindingFactory(BaseFactory):
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_cluster_role_bindings(name=name, namespace=namespace)
     
-    def update(self, name, namespace: str = "default", **kwargs):
-        return self.endpoint.patch_cluster_role_binding(name=name, namespace=namespace, **kwargs)
+    def update(self, name, namespace = None, **kwargs):
+        return self.endpoint.patch_cluster_role_binding(name=name, **kwargs)
 
-    def create(self, namespace: str = "default", **kwargs):
+    def create(self, namespace = None, **kwargs):
         body = kwargs.pop("body", None)
-        return self.endpoint.create_cluster_role_binding(namespace=namespace, body=body, **kwargs)
+        return self.endpoint.create_cluster_role_binding(body=body, **kwargs)
     
     def clean(self, raw) -> List[models.ClusterRoleBindingViewModel]:
         return [models.ClusterRoleBindingViewModel.clean(dep) for dep in raw.items]

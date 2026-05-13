@@ -189,3 +189,28 @@ def test_resource_edit_screen_fetch_and_update_delegate_to_callbacks() -> None:
             "field_manager": "kop",
         }
     ]
+
+
+def test_resource_edit_screen_update_omits_namespace_for_cluster_scoped_resource() -> None:
+    updater_called: list[dict] = []
+
+    def _updater(**kwargs):
+        updater_called.append(kwargs)
+        return {"ok": True}
+
+    screen = ResourceEditScreen(fetcher=lambda: {}, updater=_updater)
+    payload = PlayLoad(
+        resource={"metadata": {"name": "cluster-role-a"}, "kind": "ClusterRole"},
+        diff={},
+    )
+
+    result = screen.update_resource(payload)
+
+    assert result == {"ok": True}
+    assert updater_called == [
+        {
+            "name": "cluster-role-a",
+            "body": {"metadata": {"name": "cluster-role-a"}, "kind": "ClusterRole"},
+            "field_manager": "kop",
+        }
+    ]
