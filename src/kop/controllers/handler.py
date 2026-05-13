@@ -495,6 +495,7 @@ class PodActionHandler(BaseActionHandlerMixin):
             # serialize pod object to dict
             pod=app.endpoint.api_client.sanitize_for_serialization(pod)
             return pod
+
         def updater(**playload):
             try:
                 app.view.FACTORY_CACHE.update(**playload)

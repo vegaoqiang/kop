@@ -196,6 +196,25 @@ class AsyncEditScreen(Static):
             # self.app.pop_screen()
             self.post_message(ResourceEdit.Exited())
 
+    def sanitize_resource_update_body(self, body: dict) -> dict:
+        """Drop server-managed/read-only fields before patching edited YAML."""
+        if not isinstance(body, dict):
+            return body
+
+        metadata = body.get("metadata")
+        if isinstance(metadata, dict):
+            metadata.pop("managedFields", None)
+            metadata.pop("uid", None)
+            metadata.pop("creationTimestamp", None)
+            metadata.pop("generateName", None)
+            metadata.pop("selfLink", None)
+            metadata.pop("deletionTimestamp", None)
+            metadata.pop("deletionGracePeriodSeconds", None)
+            metadata.pop("resourceVersion", None)
+
+        body.pop("status", None)
+        return body
+
 
 class ResourceEditScreen(AsyncEditScreen):
     """
@@ -222,9 +241,12 @@ class ResourceEditScreen(AsyncEditScreen):
         return self.fetcher()
 
     def update_resource(self, playload: PlayLoad) -> None:
+        body = playload.resource
+        if isinstance(body, dict):
+            body = self.sanitize_resource_update_body(body)
         return self.updater(
-            name=playload.resource['metadata']['name'], 
-            namespace=playload.resource['metadata'].get('namespace', 'default'), 
-            body=playload.resource,
+            name=body['metadata']['name'],
+            namespace=body['metadata'].get('namespace', 'default'),
+            body=body,
             field_manager="kop",
         )
