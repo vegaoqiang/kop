@@ -1189,6 +1189,57 @@ class ServiceActionHandler(BaseActionHandlerMixin):
 
         app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
 
+
+class EndpointActionHandler(BaseActionHandlerMixin):
+
+    """Action handler for Endpoint resource"""
+    resource_type = [models.EndpointViewModel, models.EndpointDetailModel]
+
+    @classmethod
+    def handle(cls, action, resource: models.EndpointViewModel, app):
+        try:
+            getattr(cls, action.action)(action, resource, app)
+        except AttributeError as e:
+            app.notify(f"Action '{action.action}' not supported for Endpoint, {e}", severity="error")
+
+     # Endpoint is a sub-resource of Service and is read-only, so only edit action is implemented to view its details.
+    @staticmethod
+    def edit(action, resource: models.EndpointViewModel, app):
+        def fetcher():
+            try:
+                endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+                endpoints = endpoint.read_namespaced_endpoints(
+                    name=resource.name,
+                    namespace=resource.namespace,
+                )
+            except Exception:
+                return
+
+            endpoints = app.endpoint.api_client.sanitize_for_serialization(endpoints)
+            return endpoints
+
+        def updater(name: str, namespace: str = "default", **kwargs):
+            endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+            res = endpoint.patch_namespaced_endpoints(
+                name=name,
+                namespace=namespace,
+                **kwargs,
+            )
+            if hasattr(app, "view") and hasattr(app.view, "_update_resource"):
+                app.view._update_resource()
+            app.notify(f"Update endpoint {name} success", severity="information")
+            return res
+
+        BaseActionHandlerMixin.open_edit_tab(app, resource, fetcher, updater)
+
+    @staticmethod        
+    def delete(action, resource: models.EndpointViewModel, app):
+        def delete_callback(resource) -> None:
+            view = app.view
+            view.delete_resource(resource)
+
+        app.push_screen(Confirm(data=resource, action_name=action.name.capitalize()), callback=delete_callback)
+
     
 class IngressActionHandler(BaseActionHandlerMixin):
 
