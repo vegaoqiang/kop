@@ -1,3 +1,8 @@
+---
+hide:
+  - navigation
+---
+
 # Tutorial
 
 ## Add Kubernetes CLuster

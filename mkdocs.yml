@@ -1,6 +1,8 @@
 site_name: Kop
 theme:
   name: material
+  features:
+    - navigation.tabs
 plugins:
   - search
 markdown_extensions:
@@ -18,6 +20,10 @@ nav:
   - Home: index.md
   - Getting Started: getting_started.md
   - Tutorial: tutorial.md
-  - Guide: guide.md
+  - Guide: 
+    - guide/index.md
+    - guide/Nodes.md
+    - guide/Pods.md
+    - guide/Deployments.md
 exclude_docs: |
   readme_ch.md
