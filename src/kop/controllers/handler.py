@@ -1251,6 +1251,146 @@ class ServiceActionHandler(BaseActionHandlerMixin):
             app.notify(f"Action '{action.action}' not supported for Service, {e}", severity="error")
 
     @staticmethod
+    def _resolve_service_backend_port(resource: models.ServiceViewModel, service_port: object, app) -> tuple[str, int]:
+        endpoint = client.CoreV1Api(api_client=app.endpoint.api_client)
+        endpoints = endpoint.read_namespaced_endpoints(
+            name=resource.name,
+            namespace=resource.namespace,
+        )
+
+        service_port_name = getattr(service_port, "name", None)
+        service_port_number = getattr(service_port, "port", None)
+
+        for subset in endpoints.subsets or []:
+            pod_name = None
+            for address in subset.addresses or []:
+                target_ref = getattr(address, "target_ref", None)
+                if target_ref and getattr(target_ref, "kind", None) == "Pod" and getattr(target_ref, "name", None):
+                    pod_name = str(target_ref.name)
+                    break
+            if not pod_name:
+                continue
+
+            endpoint_port = None
+            for port in subset.ports or []:
+                if service_port_name and getattr(port, "name", None) == service_port_name:
+                    endpoint_port = int(port.port)
+                    break
+            if endpoint_port is None and service_port_number is not None:
+                for port in subset.ports or []:
+                    if int(getattr(port, "port", -1)) == int(service_port_number):
+                        endpoint_port = int(port.port)
+                        break
+            if endpoint_port is None and len(subset.ports or []) == 1:
+                endpoint_port = int((subset.ports or [])[0].port)
+
+            if endpoint_port is not None:
+                return pod_name, endpoint_port
+
+        raise RuntimeError("No active backend pod found from service endpoints")
+
+    @staticmethod
+    def forward(action, resource: models.ServiceViewModel, app):
+        raw_ports = getattr(resource, "ports", None) or []
+        service_ports = [p for p in raw_ports if getattr(p, "port", None) is not None]
+        ports = sorted({int(getattr(p, "port")) for p in service_ports})
+        if not ports:
+            app.notify(f"Service {resource.namespace}/{resource.name} has no ports", severity="warning")
+            return
+
+        manager = getattr(app, "port_forward_manager", None)
+        if manager is None:
+            manager = PodPortForwardManager()
+            setattr(app, "port_forward_manager", manager)
+
+        service_port_map = {int(getattr(p, "port")): p for p in service_ports}
+
+        def make_key(remote_port: int) -> str:
+            return f"service/{resource.namespace}/{resource.name}:{remote_port}"
+
+        dest_ports: list[dict[str, int | bool | None]] = []
+        forwards = manager.list()
+        for remote_port in ports:
+            running_local_port = None
+            forward = forwards.get(make_key(remote_port))
+            if forward and forward.running:
+                running_local_port = int(forward.local_port)
+            dest_ports.append(
+                {
+                    "remote_port": remote_port,
+                    "forwarded": running_local_port is not None,
+                    "local_port": running_local_port,
+                }
+            )
+
+        def forward_callback(obj: Optional[dict]) -> None:
+            if not obj:
+                return
+            selected_remote = int(obj.get("dest_port", ports[0]))
+            action_name = str(obj.get("action", "start"))
+            key = make_key(selected_remote)
+            current = manager.list().get(key)
+
+            if action_name == "stop":
+                if not current or not current.running:
+                    app.notify(f"Port {selected_remote} is not currently forwarded", severity="warning")
+                    return
+                try:
+                    manager.stop(key, remove=True)
+                    app.notify(
+                        f"Stopped forwarding service {resource.name}:{selected_remote} from local {current.local_port}",
+                        severity="information",
+                    )
+                except Exception as e:
+                    app.notify(f"Stop port-forward failed: {e}", severity="error")
+                return
+
+            selected_local = int(obj.get("local_port", random.randint(1000, 65535)))
+            open_in_browser = bool(obj.get("open_in_browser", False))
+            if current and current.running:
+                app.notify(
+                    f"Port {selected_remote} already forwarded to local {current.local_port}",
+                    severity="information",
+                )
+                return
+
+            target_service_port = service_port_map.get(selected_remote)
+            if target_service_port is None:
+                app.notify(f"Service port {selected_remote} not found", severity="error")
+                return
+
+            try:
+                pod_name, backend_port = ServiceActionHandler._resolve_service_backend_port(
+                    resource=resource,
+                    service_port=target_service_port,
+                    app=app,
+                )
+                spec = PortForwardSpec(
+                    pod_name=pod_name,
+                    namespace=resource.namespace,
+                    local_port=selected_local,
+                    remote_port=backend_port,
+                )
+                manager.add(api_client=app.endpoint.api_client, spec=spec, start=True, key=key)
+            except Exception as e:
+                app.notify(f"Start port-forward failed: {e}", severity="error")
+                return
+
+            app.notify(
+                f"Forwarding service {resource.name}:{selected_remote} -> 127.0.0.1:{selected_local}",
+                severity="information",
+            )
+            maybe_open_forward_in_browser(
+                open_in_browser=open_in_browser,
+                local_port=selected_local,
+            )
+
+        app.push_screen(
+            ActionPortForward(dest_port=ports[0], dest_ports=dest_ports),
+            callback=forward_callback,
+        )
+
+    @staticmethod
     def edit(action, resource: models.ServiceViewModel, app):
         def fetcher():
             try:

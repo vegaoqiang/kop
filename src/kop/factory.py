@@ -281,7 +281,7 @@ class PodFacotry(BaseFactory):
         ActionModel(name="forward",
                     label="Forward",
                     variant="default",
-                    tooltip="Port forward",
+                    tooltip="Port Forward",
                     action="forward",
                     key="f"),
         ActionModel(name="edit", 
@@ -888,6 +888,12 @@ class ServiceFactory(BaseFactory):
                      "status.load_balancer.ingress")
 
     actions: List[ActionModel] = [
+        ActionModel(name="forward",
+                    label="Forward",
+                    variant="default",
+                    tooltip="Port Forward",
+                    action="forward",
+                    key="f"),
         ActionModel(name="edit", 
                     label="Edit", 
                     variant="default", 
