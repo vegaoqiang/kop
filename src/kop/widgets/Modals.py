@@ -705,10 +705,11 @@ class ActionPortForward(ModalScreen):
 
     @on(Input.Changed, "#local_port")
     def enable_start(self, event: Input.Changed) -> None:
-        if not event.value.strip() or event.validation_result.is_valid:
-            self._update_action_buttons()
-        else:
-            self.query_one("#start", Button).disabled = True
+        self._update_action_buttons()
+        # if not event.value.strip() or event.validation_result.is_valid:
+        #     self._update_action_buttons()
+        # else:
+        #     self.query_one("#start", Button).disabled = True
 
     @on(Input.Submitted, "#local_port")
     def submit_local_port(self) -> None:
