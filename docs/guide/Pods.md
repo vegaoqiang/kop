@@ -1,15 +1,17 @@
 # Pods
 
 ## Binding keys
+All actions supported by the pod can be seen in the bottom footer.
+
 | key | action |
 | --- | --- |
-| a | Attach to Pod |
-| c | Create Pods |
-| d | Delete Pod |
-| e | Edit Pod |
-| f | Port Forward |
-| l | Pod Logs |
-| s | Pod Shell |
+| `a` | Attach to Pod |
+| `c` | Create Pods |
+| `d` | Delete Pod |
+| `e` | Edit Pod |
+| `f` | Port Forward |
+| `l` | Pod Logs |
+| `s` | Pod Shell |
 
 ## Actions
 
@@ -27,4 +29,4 @@
 
 ### Pod Shell
 
-### Detail View
+## Detail View
