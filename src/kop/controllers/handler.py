@@ -1,5 +1,7 @@
 import time
 import threading
+import random
+import webbrowser
 from abc import ABC
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -14,6 +16,7 @@ from kop.widgets.Modals import (
     Option,
     Scale,
     Confirm,
+    ActionPortForward,
     NodeShellConfirm,
     NodeShellLoading,
     NodeShellFailed,
@@ -21,6 +24,7 @@ from kop.widgets.Modals import (
 from kubernetes import client
 from typing import Optional
 from kop.provider.logs import PodLogs
+from kop.provider.forward import PodPortForwardManager, PortForwardSpec
 from kop.views.ActionWorkspace import ActionWorkspace
 
 
@@ -473,6 +477,98 @@ class PodActionHandler(BaseActionHandlerMixin):
                 Option([cs.lazy_clean().name for cs in resource.containers], action=action.name),
                 callback=option_callback
                 )
+
+    @staticmethod
+    def forward(action, resource: PodViewModel, app):
+        ports: list[int] = []
+        for container in resource.containers:
+            cleaned = container.lazy_clean()
+            for port in cleaned.ports or []:
+                container_port = getattr(port, "container_port", None)
+                if isinstance(container_port, int):
+                    ports.append(container_port)
+        ports = sorted(set(ports))
+        if not ports:
+            app.notify(f"Pod {resource.namespace}/{resource.name} has no container ports", severity="warning")
+            return
+
+        manager = getattr(app, "port_forward_manager", None)
+        if manager is None:
+            manager = PodPortForwardManager()
+            setattr(app, "port_forward_manager", manager)
+
+        def make_key(remote_port: int) -> str:
+            return f"pod/{resource.namespace}/{resource.name}:{remote_port}"
+
+        dest_ports: list[dict[str, int | bool | None]] = []
+        forwards = manager.list()
+        for remote_port in ports:
+            running_local_port = None
+            forward = forwards.get(make_key(remote_port))
+            if forward and forward.running:
+                running_local_port = int(forward.local_port)
+            dest_ports.append(
+                {
+                    "remote_port": remote_port,
+                    "disabled": running_local_port is not None,
+                    "local_port": running_local_port,
+                }
+            )
+
+        def forward_callback(obj: Optional[dict]) -> None:
+            if not obj:
+                return
+            selected_remote = int(obj.get("dest_port", ports[0]))
+            action_name = str(obj.get("action", "start"))
+            key = make_key(selected_remote)
+            current = manager.list().get(key)
+
+            if action_name == "stop":
+                if not current or not current.running:
+                    app.notify(f"Port {selected_remote} is not currently forwarded", severity="warning")
+                    return
+                try:
+                    manager.stop(key, remove=True)
+                    app.notify(
+                        f"Stopped forwarding {resource.name}:{selected_remote} from local {current.local_port}",
+                        severity="information",
+                    )
+                except Exception as e:
+                    app.notify(f"Stop port-forward failed: {e}", severity="error")
+                return
+
+            selected_local = int(obj.get("local_port", random.randint(1000, 65535)))
+            open_in_browser = bool(obj.get("open_in_browser", False))
+            if current and current.running:
+                app.notify(
+                    f"Port {selected_remote} already forwarded to local {current.local_port}",
+                    severity="information",
+                )
+                return
+
+            try:
+                spec = PortForwardSpec(
+                    pod_name=resource.name,
+                    namespace=resource.namespace,
+                    local_port=selected_local,
+                    remote_port=selected_remote,
+                )
+                manager.add(api_client=app.endpoint.api_client, spec=spec, start=True, key=key)
+            except Exception as e:
+                app.notify(f"Start port-forward failed: {e}", severity="error")
+                return
+
+            app.notify(
+                f"Forwarding {resource.name}:{selected_remote} -> 127.0.0.1:{selected_local}",
+                severity="information",
+            )
+            if open_in_browser:
+                webbrowser.open(f"http://127.0.0.1:{selected_local}", new=2)
+
+        app.push_screen(
+            ActionPortForward(dest_port=ports[0], dest_ports=dest_ports),
+            callback=forward_callback,
+        )
 
     @staticmethod
     def delete(action, resource: PodViewModel, app):

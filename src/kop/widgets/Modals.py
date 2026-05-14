@@ -14,6 +14,8 @@ from textual.widgets import (
     LoadingIndicator, 
     DirectoryTree)
 from textual.validation import Number
+from textual.widgets.option_list import Option as OptionItem
+from rich.text import Text
 from typing import Callable, Optional
 
 
@@ -518,6 +520,7 @@ class PortForward(ModalScreen):
     def on_start_press(self) -> None:
         local_port_input = self.query_one("#local_port", Input)
         open_in_browser = self.query_one("#open_in_browser", Switch).value
+
         local_port_text = local_port_input.value.strip()
         if not local_port_text:
             local_port = random.randint(1000, 65535)
@@ -535,6 +538,188 @@ class PortForward(ModalScreen):
     def enable_start(self, event: Input.Changed) -> None:
         if not event.value.strip() or event.validation_result.is_valid:
             self.query_one("#start", Button).disabled = False
+        else:
+            self.query_one("#start", Button).disabled = True
+
+    @on(Input.Submitted, "#local_port")
+    def submit_local_port(self) -> None:
+        if not self.query_one("#start", Button).disabled:
+            self.on_start_press()
+
+
+class ActionPortForward(ModalScreen):
+    """Port-forward modal for action flow with selectable remote ports."""
+
+    DEFAULT_CSS = """
+        ActionPortForward {
+            align: center middle;
+        }
+        #dialog {
+            grid-size: 2 4;
+            grid-gutter: 1 2;
+            grid-rows: 1fr 6 1fr 1fr;
+            padding: 0 1;
+            width: 60;
+            height: 20;
+            border: solid $secondary;
+            background: $surface;
+        }
+        #remote_ports {
+            column-span: 1;
+            height: 6;
+        }
+        #remote_ports .option-list--option-disabled {
+            color: $warning;
+        }
+        #cancel, #start {
+            width: 100%;
+        }
+        #action_buttons {
+            grid-size: 3 1;
+            column-span: 2;
+            grid-gutter: 0 1;
+        }
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+    ]
+
+    def __init__(self, dest_port: int, dest_ports: list[dict[str, int | bool | None]]):
+        super().__init__()
+        self.dest_port = int(dest_port)
+        self.dest_ports = dest_ports
+        self._port_values: list[int] = []
+        self._forwarded_ports: dict[int, bool] = {}
+
+    def compose(self) -> ComposeResult:
+        port_options: list[OptionItem] = []
+        for item in self.dest_ports:
+            remote_port = int(item["remote_port"])
+            disabled = bool(item.get("disabled", False))
+            local_port = item.get("local_port")
+            if disabled and local_port:
+                label = Text(f"{remote_port} (forwarded to {local_port})", style="yellow")
+            elif disabled:
+                label = Text(f"{remote_port} (forwarded)", style="yellow")
+            else:
+                label = Text(str(remote_port))
+            port_options.append(OptionItem(label, disabled=False))
+            self._port_values.append(remote_port)
+            self._forwarded_ports[remote_port] = disabled
+
+        yield Grid(
+            Label("Local Port"),
+            Input(placeholder="1000 ~ 65535", validators=[Number(minimum=1000, maximum=65535)], id="local_port"),
+            Label("Remote Port"),
+            OptionList(*port_options, id="remote_ports"),
+            Label("Open in Browser"),
+            Switch(id="open_in_browser", value=True),
+            Grid(Button("Cancel", variant="error", id="cancel"),
+                 Button("Stop", variant="warning", id="stop", disabled=True),
+                 Button("Start", variant="primary", id="start", disabled=False),
+                 id="action_buttons",
+                 ),
+            id="dialog",
+        )
+
+    def on_mount(self) -> None:
+        dialog = self.query_one("#dialog", Grid)
+        dialog.border_subtitle = "ESC to Cancel • Enter to Start"
+        remote_ports = self.query_one("#remote_ports", OptionList)
+        first_enabled = self._first_enabled_port_index()
+        if first_enabled is not None:
+            remote_ports.highlighted = first_enabled
+        self._update_action_buttons()
+
+    def action_close(self):
+        self.app.pop_screen()
+
+    @on(Button.Pressed, "#cancel")
+    def on_cancel_press(self, event: Button.Pressed) -> None:
+        self.app.pop_screen()
+
+    def _first_enabled_port_index(self) -> Optional[int]:
+        remote_ports = self.query_one("#remote_ports", OptionList)
+        for idx, option in enumerate(remote_ports.options):
+            if not option.disabled:
+                return idx
+        return None
+
+    def _update_action_buttons(self) -> None:
+        remote_ports = self.query_one("#remote_ports", OptionList)
+        start_btn = self.query_one("#start", Button)
+        stop_btn = self.query_one("#stop", Button)
+        highlighted = remote_ports.highlighted
+        if highlighted is None:
+            start_btn.disabled = True
+            stop_btn.disabled = True
+            return
+        remote_port = self._port_values[highlighted]
+        is_forwarded = self._forwarded_ports.get(remote_port, False)
+        start_btn.disabled = is_forwarded
+        stop_btn.disabled = not is_forwarded
+
+    @on(Button.Pressed, "#start")
+    def on_start_press(self) -> None:
+        local_port_input = self.query_one("#local_port", Input)
+        open_in_browser = self.query_one("#open_in_browser", Switch).value
+        remote_ports = self.query_one("#remote_ports", OptionList)
+        highlighted = remote_ports.highlighted
+        if highlighted is None:
+            self.notify("No available remote port", severity="error")
+            return
+        remote_port = self._port_values[highlighted]
+        if self._forwarded_ports.get(remote_port, False):
+            self.notify("Selected remote port is already forwarded", severity="error")
+            return
+
+        local_port_text = local_port_input.value.strip()
+        if not local_port_text:
+            local_port = random.randint(1000, 65535)
+            local_port_input.value = str(local_port)
+        else:
+            local_port = int(local_port_text)
+        self.dismiss(
+            {
+                "local_port": local_port,
+                "dest_port": remote_port,
+                "action": "start",
+                "open_in_browser": open_in_browser,
+            }
+        )
+
+    @on(Button.Pressed, "#stop")
+    def on_stop_press(self) -> None:
+        remote_ports = self.query_one("#remote_ports", OptionList)
+        highlighted = remote_ports.highlighted
+        if highlighted is None:
+            self.notify("No selected remote port", severity="error")
+            return
+        remote_port = self._port_values[highlighted]
+        if not self._forwarded_ports.get(remote_port, False):
+            self.notify("Selected remote port is not forwarded", severity="warning")
+            return
+        self.dismiss(
+            {
+                "dest_port": remote_port,
+                "action": "stop",
+            }
+        )
+
+    @on(OptionList.OptionSelected, "#remote_ports")
+    def on_remote_port_selected(self) -> None:
+        if not self.query_one("#start", Button).disabled:
+            self.on_start_press()
+
+    @on(OptionList.OptionHighlighted, "#remote_ports")
+    def on_remote_port_highlighted(self) -> None:
+        self._update_action_buttons()
+
+    @on(Input.Changed, "#local_port")
+    def enable_start(self, event: Input.Changed) -> None:
+        if not event.value.strip() or event.validation_result.is_valid:
+            self._update_action_buttons()
         else:
             self.query_one("#start", Button).disabled = True
 
