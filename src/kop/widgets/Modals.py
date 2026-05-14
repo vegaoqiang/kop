@@ -579,6 +579,8 @@ class ActionPortForward(ModalScreen):
 
     BINDINGS = [
         Binding("escape", "close", "Cancel", show=False),
+        Binding("enter", "start", "Start", show=False),
+        Binding("ctrl+s", "stop", "Stop", show=False),
     ]
 
     def __init__(self, dest_port: int, dest_ports: list[dict[str, int | bool | None]]):
@@ -628,11 +630,17 @@ class ActionPortForward(ModalScreen):
 
     def on_mount(self) -> None:
         dialog = self.query_one("#dialog", Grid)
-        dialog.border_subtitle = "ESC to Cancel • Enter to Start"
+        dialog.border_subtitle = "ESC to Cancel • Ctrl+S to Stop • ENTER to Start"
         self._update_action_buttons()
 
-    def action_close(self):
+    def action_close(self) -> None:
         self.app.pop_screen()
+
+    def action_stop(self) -> None:
+        self.on_stop_press()
+    
+    def action_start(self) -> None:
+        self.on_start_press()
 
     @on(Button.Pressed, "#cancel")
     def on_cancel_press(self, event: Button.Pressed) -> None:
