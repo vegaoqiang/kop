@@ -1,7 +1,6 @@
 import time
 import threading
 import random
-import webbrowser
 from abc import ABC
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -25,6 +24,7 @@ from kubernetes import client
 from typing import Optional
 from kop.provider.logs import PodLogs
 from kop.provider.forward import PodPortForwardManager, PortForwardSpec
+from kop.provider.utils import maybe_open_forward_in_browser
 from kop.views.ActionWorkspace import ActionWorkspace
 
 
@@ -510,7 +510,7 @@ class PodActionHandler(BaseActionHandlerMixin):
             dest_ports.append(
                 {
                     "remote_port": remote_port,
-                    "disabled": running_local_port is not None,
+                    "forwarded": running_local_port is not None,
                     "local_port": running_local_port,
                 }
             )
@@ -562,8 +562,10 @@ class PodActionHandler(BaseActionHandlerMixin):
                 f"Forwarding {resource.name}:{selected_remote} -> 127.0.0.1:{selected_local}",
                 severity="information",
             )
-            if open_in_browser:
-                webbrowser.open(f"http://127.0.0.1:{selected_local}", new=2)
+            maybe_open_forward_in_browser(
+                open_in_browser=open_in_browser,
+                local_port=selected_local,
+            )
 
         app.push_screen(
             ActionPortForward(dest_port=ports[0], dest_ports=dest_ports),

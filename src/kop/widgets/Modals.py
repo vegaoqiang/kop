@@ -568,10 +568,7 @@ class ActionPortForward(ModalScreen):
             column-span: 1;
             height: 6;
         }
-        #remote_ports .option-list--option-disabled {
-            color: $warning;
-        }
-        #cancel, #start {
+        #cancel, #start, #stop {
             width: 100%;
         }
         #action_buttons {
@@ -592,21 +589,27 @@ class ActionPortForward(ModalScreen):
         self._port_values: list[int] = []
         self._forwarded_ports: dict[int, bool] = {}
 
+    def _is_local_port_valid(self) -> bool:
+        local_port_input = self.query_one("#local_port", Input)
+        text = local_port_input.value.strip()
+        if not text:
+            return True
+        result = local_port_input.validate(text)
+        return bool(result and result.is_valid)
+
     def compose(self) -> ComposeResult:
         port_options: list[OptionItem] = []
         for item in self.dest_ports:
             remote_port = int(item["remote_port"])
-            disabled = bool(item.get("disabled", False))
+            forwarded = bool(item.get("forwarded", False))
             local_port = item.get("local_port")
-            if disabled and local_port:
+            if forwarded:
                 label = Text(f"{remote_port} (forwarded to {local_port})", style="yellow")
-            elif disabled:
-                label = Text(f"{remote_port} (forwarded)", style="yellow")
             else:
                 label = Text(str(remote_port))
             port_options.append(OptionItem(label, disabled=False))
             self._port_values.append(remote_port)
-            self._forwarded_ports[remote_port] = disabled
+            self._forwarded_ports[remote_port] = forwarded #bool(item.get("forwarded", forwarded))
 
         yield Grid(
             Label("Local Port"),
@@ -640,11 +643,9 @@ class ActionPortForward(ModalScreen):
         self.app.pop_screen()
 
     def _first_enabled_port_index(self) -> Optional[int]:
-        remote_ports = self.query_one("#remote_ports", OptionList)
-        for idx, option in enumerate(remote_ports.options):
-            if not option.disabled:
-                return idx
-        return None
+        if not self._port_values:
+            return None
+        return 0
 
     def _update_action_buttons(self) -> None:
         remote_ports = self.query_one("#remote_ports", OptionList)
@@ -657,7 +658,7 @@ class ActionPortForward(ModalScreen):
             return
         remote_port = self._port_values[highlighted]
         is_forwarded = self._forwarded_ports.get(remote_port, False)
-        start_btn.disabled = is_forwarded
+        start_btn.disabled = is_forwarded or not self._is_local_port_valid()
         stop_btn.disabled = not is_forwarded
 
     @on(Button.Pressed, "#start")
@@ -706,11 +707,6 @@ class ActionPortForward(ModalScreen):
                 "action": "stop",
             }
         )
-
-    @on(OptionList.OptionSelected, "#remote_ports")
-    def on_remote_port_selected(self) -> None:
-        if not self.query_one("#start", Button).disabled:
-            self.on_start_press()
 
     @on(OptionList.OptionHighlighted, "#remote_ports")
     def on_remote_port_highlighted(self) -> None:
