@@ -10,11 +10,11 @@ from textual.widgets import (
     OptionList, 
     Label, 
     Input, 
+    Select,
     Switch, 
     LoadingIndicator, 
     DirectoryTree)
 from textual.validation import Number
-from textual.widgets.option_list import Option as OptionItem
 from rich.text import Text
 from typing import Callable, Optional
 
@@ -557,16 +557,15 @@ class ActionPortForward(ModalScreen):
         #dialog {
             grid-size: 2 4;
             grid-gutter: 1 2;
-            grid-rows: 1fr 6 1fr 1fr;
+            grid-rows: 1fr 1fr 1fr 1fr;
             padding: 0 1;
             width: 60;
-            height: 20;
+            height: 18;
             border: solid $secondary;
             background: $surface;
         }
-        #remote_ports {
-            column-span: 1;
-            height: 6;
+        #remote_port_select {
+            width: 100%;
         }
         #cancel, #start, #stop {
             width: 100%;
@@ -586,7 +585,6 @@ class ActionPortForward(ModalScreen):
         super().__init__()
         self.dest_port = int(dest_port)
         self.dest_ports = dest_ports
-        self._port_values: list[int] = []
         self._forwarded_ports: dict[int, bool] = {}
 
     def _is_local_port_valid(self) -> bool:
@@ -598,7 +596,7 @@ class ActionPortForward(ModalScreen):
         return bool(result and result.is_valid)
 
     def compose(self) -> ComposeResult:
-        port_options: list[OptionItem] = []
+        port_options: list[tuple[Text | str, int]] = []
         for item in self.dest_ports:
             remote_port = int(item["remote_port"])
             forwarded = bool(item.get("forwarded", False))
@@ -607,15 +605,17 @@ class ActionPortForward(ModalScreen):
                 label = Text(f"{remote_port} (forwarded to {local_port})", style="yellow")
             else:
                 label = Text(str(remote_port))
-            port_options.append(OptionItem(label, disabled=False))
-            self._port_values.append(remote_port)
-            self._forwarded_ports[remote_port] = forwarded #bool(item.get("forwarded", forwarded))
+            port_options.append((label, remote_port))
+            self._forwarded_ports[remote_port] = forwarded
+
+        values = [value for _, value in port_options]
+        initial_value = self.dest_port if self.dest_port in values else (values[0] if values else Select.NULL)
 
         yield Grid(
             Label("Local Port"),
             Input(placeholder="1000 ~ 65535", validators=[Number(minimum=1000, maximum=65535)], id="local_port"),
             Label("Remote Port"),
-            OptionList(*port_options, id="remote_ports"),
+            Select(options=port_options, value=initial_value, allow_blank=False, id="remote_port_select"),
             Label("Open in Browser"),
             Switch(id="open_in_browser", value=True),
             Grid(Button("Cancel", variant="error", id="cancel"),
@@ -629,10 +629,6 @@ class ActionPortForward(ModalScreen):
     def on_mount(self) -> None:
         dialog = self.query_one("#dialog", Grid)
         dialog.border_subtitle = "ESC to Cancel • Enter to Start"
-        remote_ports = self.query_one("#remote_ports", OptionList)
-        first_enabled = self._first_enabled_port_index()
-        if first_enabled is not None:
-            remote_ports.highlighted = first_enabled
         self._update_action_buttons()
 
     def action_close(self):
@@ -642,21 +638,16 @@ class ActionPortForward(ModalScreen):
     def on_cancel_press(self, event: Button.Pressed) -> None:
         self.app.pop_screen()
 
-    def _first_enabled_port_index(self) -> Optional[int]:
-        if not self._port_values:
-            return None
-        return 0
-
     def _update_action_buttons(self) -> None:
-        remote_ports = self.query_one("#remote_ports", OptionList)
+        remote_port_select = self.query_one("#remote_port_select", Select)
         start_btn = self.query_one("#start", Button)
         stop_btn = self.query_one("#stop", Button)
-        highlighted = remote_ports.highlighted
-        if highlighted is None:
+        selected = remote_port_select.value
+        if selected == Select.NULL:
             start_btn.disabled = True
             stop_btn.disabled = True
             return
-        remote_port = self._port_values[highlighted]
+        remote_port = int(selected)
         is_forwarded = self._forwarded_ports.get(remote_port, False)
         start_btn.disabled = is_forwarded or not self._is_local_port_valid()
         stop_btn.disabled = not is_forwarded
@@ -665,12 +656,12 @@ class ActionPortForward(ModalScreen):
     def on_start_press(self) -> None:
         local_port_input = self.query_one("#local_port", Input)
         open_in_browser = self.query_one("#open_in_browser", Switch).value
-        remote_ports = self.query_one("#remote_ports", OptionList)
-        highlighted = remote_ports.highlighted
-        if highlighted is None:
+        remote_port_select = self.query_one("#remote_port_select", Select)
+        selected = remote_port_select.value
+        if selected == Select.NULL:
             self.notify("No available remote port", severity="error")
             return
-        remote_port = self._port_values[highlighted]
+        remote_port = int(selected)
         if self._forwarded_ports.get(remote_port, False):
             self.notify("Selected remote port is already forwarded", severity="error")
             return
@@ -692,12 +683,12 @@ class ActionPortForward(ModalScreen):
 
     @on(Button.Pressed, "#stop")
     def on_stop_press(self) -> None:
-        remote_ports = self.query_one("#remote_ports", OptionList)
-        highlighted = remote_ports.highlighted
-        if highlighted is None:
+        remote_port_select = self.query_one("#remote_port_select", Select)
+        selected = remote_port_select.value
+        if selected == Select.NULL:
             self.notify("No selected remote port", severity="error")
             return
-        remote_port = self._port_values[highlighted]
+        remote_port = int(selected)
         if not self._forwarded_ports.get(remote_port, False):
             self.notify("Selected remote port is not forwarded", severity="warning")
             return
@@ -708,8 +699,8 @@ class ActionPortForward(ModalScreen):
             }
         )
 
-    @on(OptionList.OptionHighlighted, "#remote_ports")
-    def on_remote_port_highlighted(self) -> None:
+    @on(Select.Changed, "#remote_port_select")
+    def on_remote_port_changed(self) -> None:
         self._update_action_buttons()
 
     @on(Input.Changed, "#local_port")
