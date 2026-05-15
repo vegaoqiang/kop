@@ -1,9 +1,52 @@
----
-hide:
-  - navigation
----
 
 # Tutorial
+
+## Terminal UI
+Kop uses the Textual TUI framework to render the UI, so Kop runs in the terminal.
+
+### Startup View
+The image below shows the Kop startup screen, called `Startup View`.
+![startup](images/tutorial/startup.png)
+
+The Startup interface is mainly composed of the following areas:
+
+The top header, titled "kop - Startup," indicates that the current Kop interface is the Startup section.
+
+The middle cluster display area shows all Kubernetes clusters registered with Kop.
+Below the cluster list is a row of buttons: `[Add]` `[Connect]` `[Delete]` `[Edit]` `[Sync]` These buttons can be clicked with the mouse.
+
+The bottom footer, a shortcut area, displays all the features supported by the current Startup page.corresponding to the functions in the button area above.You can also click the shortcuts if you wish.
+
+#### Registered kubernetes cluster
+You may have noticed that there are two Kubernetes clusters in the `Registered Kubernetes clusters` area, indicated by green and red borders respectively. A green border means that kop can connect to the cluster successfully, and the cluster version information is displayed in the upper right corner of the green border. A red border indicates that kop cannot connect to the cluster, and "`NotReady`" is displayed in the upper right corner.
+
+![cluster area](images/tutorial/cluster_area.png)
+
+
+### Resource View
+
+After connecting to a cluster, kop enters the cluster resource screen, called `Resource View`.
+
+
+The Resource interface is mainly composed of the following areas:
+
+The top header, titled kop - Resource, indicates that the current interface is the Resource section.
+
+The left-side navigator is used to select Kubernetes resource kinds (for example: Pods, Deployments, Services, and others).
+
+The center list area displays objects of the selected resource kind.
+You can filter resources by namespace and search by keyword.
+
+The right-side detail/operation area shows details of the selected resource and provides available actions based on the current kind (for example: edit YAML, delete, scale, restart, logs, or
+shell/attach when supported).
+
+The bottom footer, a shortcut area, displays the available keys for the current page. Common shortcuts include:
+
+- ] to quickly focus the namespace selector
+- / to search (resource kinds or resource objects)
+- c to create resources (when supported by the current kind)
+- Esc to return to the Startup page
+
 
 ## Add Kubernetes CLuster
 

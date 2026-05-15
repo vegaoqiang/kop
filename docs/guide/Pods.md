@@ -16,6 +16,7 @@ All actions supported by the pod can be seen in the bottom footer.
 ## Actions
 
 ### Attach to Pod
+Attach to a process that is already running inside an existing container.
 
 ### Create Pods
 
