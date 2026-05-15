@@ -2,6 +2,7 @@
 
 Welcome to the kop Guide! This document provides a detailed guide on how to use Kop to manage and operate Kubernetes resources. It explains in detail how to use Kop to manage and operate resources from a resource perspective.
 
+* [Clusters](Clusters.md)
 * [Nodes](Nodes.md)
 * [Pods](Pods.md)
 * [Deployments](Deployments.md)
