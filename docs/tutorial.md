@@ -26,26 +26,36 @@ You may have noticed that there are two Kubernetes clusters in the `Registered K
 ### Resource View
 
 After connecting to a cluster, kop enters the cluster resource screen, called `Resource View`.
+![resource view](images/tutorial/resource_view.png)
 
+The Resource View interface is mainly composed of the following areas:
 
-The Resource interface is mainly composed of the following areas:
-
-The top header, titled kop - Resource, indicates that the current interface is the Resource section.
+The top header, titled kop - default, The name used to identify the currently connected Kubernetes cluster.
 
 The left-side navigator is used to select Kubernetes resource kinds (for example: Pods, Deployments, Services, and others).
 
 The center list area displays objects of the selected resource kind.
 You can filter resources by namespace and search by keyword.
 
-The right-side detail/operation area shows details of the selected resource and provides available actions based on the current kind (for example: edit YAML, delete, scale, restart, logs, or
-shell/attach when supported).
+The bottom footer, a shortcut area, displays the available keys for the current page.
 
-The bottom footer, a shortcut area, displays the available keys for the current page. Common shortcuts include:
+### Detail View
+Clicking on a resource in the Resource View or pressing the Enter key will display detailed information about that resource in the right sidebar, which is called the `Detail View`.
 
-- ] to quickly focus the namespace selector
-- / to search (resource kinds or resource objects)
-- c to create resources (when supported by the current kind)
-- Esc to return to the Startup page
+![detail view](images/tutorial/detail_view.png)
+
+The detail view can be scrolled vertically; scrolling down will show you more information.
+
+### Action Workspace
+When you modify or edit resource YAML files, create new resources, or view pod logs, and simultaneously interact with the pod terminal, all these operations are concentrated in a single interface called the `Action Workspace`. It's a multi-tasking workspace that allows you to freely switch between different workloads.
+
+![action workspace](images/tutorial/action_workspace.png)
+
+The top header, titled is "kop - Action Workspace," used to identify the current Action workspace.
+
+Below the header is a action tab; you can use `Ctrl+[`  or `ctrl+]` to switch between different action.
+
+The middle section shows the current action workspace. Below are the keyboard shortcuts for actions within the workspace.
 
 
 ## Add Kubernetes CLuster
