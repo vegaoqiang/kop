@@ -72,4 +72,4 @@ Each screen has different functions, and each function has a corresponding keybo
 
 ![keys](images/tutorial/keys.png)
 
-Press `Ctrl+P`, select `Keys`, and you will see all the keyboard shortcuts in the right-hand drawer.
+Press `Ctrl+P`, select `Keys`, and you will see all the keyboard shortcuts in the right-side drawer.
