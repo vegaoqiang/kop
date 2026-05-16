@@ -61,3 +61,15 @@ Below the header is action tabs; you can use `Ctrl+[`  or `ctrl+]` to switch bet
 
 The middle section shows the current action workspace. Below are the keyboard shortcuts for actions within the workspace.
 
+
+## Theme
+Kop uses Textual to build its user interface and includes multiple modern themes. Press `Ctrl+P` in Kop will directly bring up the theme list, allowing you to select any theme.
+
+![themes](images/tutorial/themes.png)
+
+## Keys
+Each screen has different functions, and each function has a corresponding keyboard shortcut, which can be seen in the Footer at the bottom of the screen. However, some shortcuts are not displayed in the Footer or only appear under specific conditions. To see which shortcuts are supported on the current screen, use the `Keys` feature, which will display all the shortcuts for the current screen.
+
+![keys](images/tutorial/keys.png)
+
+Press `Ctrl+P`, select `Keys`, and you will see all the keyboard shortcuts in the right-hand drawer.
