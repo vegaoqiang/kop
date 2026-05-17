@@ -120,7 +120,13 @@ jobs:
                 "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML tree-sitter tree-sitter-bash tree-sitter-yaml
 
                 if ! "${PYTHON_BIN}" -m pip install tree-sitter-json; then
-                  TREE_SITTER_INCLUDE="$("${PYTHON_BIN}" -c 'import pathlib, tree_sitter; root = pathlib.Path(tree_sitter.__file__).resolve().parent; candidates = [root / "core" / "lib" / "include", root / "lib" / "include", root / "include"]; matches = [str(path) for path in candidates if (path / "tree_sitter" / "parser.h").is_file()]; print(matches[0] if matches else ""); raise SystemExit(0 if matches else 1)')"
+                  TREE_SITTER_PACKAGE_DIR="$("${PYTHON_BIN}" -c "import pathlib, tree_sitter; print(pathlib.Path(tree_sitter.__file__).resolve().parent)")"
+                  TREE_SITTER_HEADER="$(find "${TREE_SITTER_PACKAGE_DIR}" -path "*/tree_sitter/parser.h" -print -quit)"
+                  if [ -z "${TREE_SITTER_HEADER}" ]; then
+                    echo "tree_sitter/parser.h not found under ${TREE_SITTER_PACKAGE_DIR}"
+                    exit 1
+                  fi
+                  TREE_SITTER_INCLUDE="$(dirname "$(dirname "${TREE_SITTER_HEADER}")")"
                   CFLAGS="-I${TREE_SITTER_INCLUDE} ${CFLAGS:-}" "${PYTHON_BIN}" -m pip install --no-binary tree-sitter-json tree-sitter-json
                 fi
               else
