@@ -16,24 +16,12 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - arch: "386"
-            docker-platform: "386"
-            build-image: quay.io/pypa/manylinux2014_i686
-            python-bin: /opt/python/cp312-cp312/bin/python
-            build-kind: manylinux
-            archive-name: kop-linux-386.tar.gz
           - arch: amd64
             docker-platform: amd64
             build-image: quay.io/pypa/manylinux2014_x86_64
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
             archive-name: kop-linux-amd64.tar.gz
-          - arch: arm
-            docker-platform: arm/v7
-            build-image: python:3.12-bullseye
-            python-bin: python
-            build-kind: debian
-            archive-name: kop-linux-arm.tar.gz
           - arch: arm64
             docker-platform: arm64/v8
             build-image: quay.io/pypa/manylinux2014_aarch64
@@ -91,6 +79,12 @@ jobs:
               if [ "${BUILD_KIND}" = "debian" ]; then
                 apt-get update
                 apt-get install -y --no-install-recommends build-essential patchelf ccache tar gzip
+              fi
+
+              if [ "${BUILD_KIND}" = "manylinux" ] && [ -f /opt/_internal/static-libs-for-embedding-only.tar.xz ]; then
+                cd /opt/_internal
+                tar xf static-libs-for-embedding-only.tar.xz
+                cd /work
               fi
 
               "${PYTHON_BIN}" -m pip install --upgrade pip
