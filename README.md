@@ -9,23 +9,43 @@
 `kop` is a terminal-based (TUI) Kubernetes operations platform. Its goal is to provide an interactive experience similar to desktop cluster management tools, but fully within the terminal command line, aiming to solve the problem of conveniently operating Kubernetes clusters when no desktop environment is available.
 
 
-## Requirements
-
-- Python `>=3.9`
-- Terminal environment with TUI support (TrueColor/xterm-256color/Mouse Tracking)
-
 ## Installation
+Here's how to install kop.
 
-```bash
+### Install from PyPI
+
+You can install kop via PyPI with the following command:
+
+```shell
 pip install kop-cli
 ```
 
-After installation, you can directly run:
-
-```bash
+After installation, you can run:
+```shell
 kop --version
 ```
 
+### Install from an offline binary package
+
+If the target machine cannot access PyPI, download the offline binary package from the [GitHub Releases](https://github.com/vegaoqiang/kop/releases) page on another machine first.
+
+1. Open the release version you want to install.
+2. Download the binary package that matches your operating system and CPU architecture.
+3. Copy the package to the target machine.
+4. Extract the package and run the `kop` binary.
+
+On Linux or macOS, you may need to grant execute permission before running it:
+
+```shell
+chmod +x kop
+./kop --version
+```
+
+On Windows, run `kop.exe` from PowerShell or Command Prompt:
+
+```powershell
+.\kop.exe --version
+```
 
 ## Usage
 
