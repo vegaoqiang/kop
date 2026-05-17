@@ -1,0 +1,289 @@
+name: Build binary releases
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build linux-${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: "386"
+            docker-platform: "386"
+            build-image: quay.io/pypa/manylinux2014_i686
+            python-bin: /opt/python/cp312-cp312/bin/python
+            build-kind: manylinux
+            archive-name: kop-linux-386.tar.gz
+          - arch: amd64
+            docker-platform: amd64
+            build-image: quay.io/pypa/manylinux2014_x86_64
+            python-bin: /opt/python/cp312-cp312/bin/python
+            build-kind: manylinux
+            archive-name: kop-linux-amd64.tar.gz
+          - arch: arm
+            docker-platform: arm/v7
+            build-image: python:3.12-bullseye
+            python-bin: python
+            build-kind: debian
+            archive-name: kop-linux-arm.tar.gz
+          - arch: arm64
+            docker-platform: arm64/v8
+            build-image: quay.io/pypa/manylinux2014_aarch64
+            python-bin: /opt/python/cp312-cp312/bin/python
+            build-kind: manylinux
+            archive-name: kop-linux-arm64.tar.gz
+          - arch: ppc64le
+            docker-platform: ppc64le
+            build-image: quay.io/pypa/manylinux2014_ppc64le
+            python-bin: /opt/python/cp312-cp312/bin/python
+            build-kind: manylinux
+            archive-name: kop-linux-ppc64le.tar.gz
+          - arch: s390x
+            docker-platform: s390x
+            build-image: quay.io/pypa/manylinux2014_s390x
+            python-bin: /opt/python/cp312-cp312/bin/python
+            build-kind: manylinux
+            archive-name: kop-linux-s390x.tar.gz
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+
+      - name: Build executable with Nuitka
+        shell: bash
+        env:
+          ARCHIVE_NAME: ${{ matrix.archive-name }}
+          BUILD_IMAGE: ${{ matrix.build-image }}
+          BUILD_KIND: ${{ matrix.build-kind }}
+          DOCKER_PLATFORM: linux/${{ matrix.docker-platform }}
+          EVENT_NAME: ${{ github.event_name }}
+          PYTHON_BIN: ${{ matrix.python-bin }}
+          TAG_NAME: ${{ github.ref_name }}
+        run: |
+          docker run --rm \
+            --platform "${DOCKER_PLATFORM}" \
+            -e ARCHIVE_NAME="${ARCHIVE_NAME}" \
+            -e BUILD_KIND="${BUILD_KIND}" \
+            -e EVENT_NAME="${EVENT_NAME}" \
+            -e PYTHON_BIN="${PYTHON_BIN}" \
+            -e TAG_NAME="${TAG_NAME}" \
+            -v "${PWD}:/work" \
+            -w /work \
+            "${BUILD_IMAGE}" \
+            bash -lc '
+              set -euxo pipefail
+
+              export PATH="$(dirname "${PYTHON_BIN}"):${PATH}"
+
+              if [ "${BUILD_KIND}" = "debian" ]; then
+                apt-get update
+                apt-get install -y --no-install-recommends build-essential patchelf ccache tar gzip
+              fi
+
+              "${PYTHON_BIN}" -m pip install --upgrade pip
+
+              if [ "${EVENT_NAME}" = "release" ]; then
+                RAW_VERSION="${TAG_NAME#v}"
+                echo "Build from tag: ${TAG_NAME}, raw version: ${RAW_VERSION}"
+
+                if [ "${RAW_VERSION}" = "${TAG_NAME}" ]; then
+                  echo "Tag must start with v, got: ${TAG_NAME}"
+                  exit 1
+                fi
+
+                "${PYTHON_BIN}" -m pip install hatch
+                hatch version "${RAW_VERSION}"
+                echo "Normalized project version: $(hatch version)"
+              fi
+
+              "${PYTHON_BIN}" -m pip install .
+              "${PYTHON_BIN}" -m pip install nuitka ordered-set zstandard
+
+              rm -rf build/nuitka
+              mkdir -p dist
+              rm -f "dist/${ARCHIVE_NAME}"
+
+              "${PYTHON_BIN}" -m nuitka src/kop/app/main.py \
+                --standalone \
+                --onefile \
+                --assume-yes-for-downloads \
+                --output-dir=build/nuitka \
+                --output-filename=kop \
+                --include-package=kop \
+                --include-package-data=kop \
+                --include-distribution-metadata=kop-cli \
+                --include-data-dir=src/kop/templates=kop/templates
+
+              chmod +x build/nuitka/kop
+              build/nuitka/kop --version
+              tar -C build/nuitka -czf "dist/${ARCHIVE_NAME}" kop
+            '
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.archive-name }}
+          path: dist/${{ matrix.archive-name }}
+          if-no-files-found: error
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ matrix.archive-name }}
+
+  checksums:
+    name: Generate checksums
+    runs-on: ubuntu-latest
+    needs:
+      - build-linux
+      - build-native
+
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v6
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Generate SHA256 checksums
+        shell: bash
+        run: |
+          cd dist
+          sha256sum kop-* > checksums.txt
+          cat checksums.txt
+
+      - name: Upload checksums artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: checksums.txt
+          path: dist/checksums.txt
+          if-no-files-found: error
+
+      - name: Upload checksums release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/checksums.txt
+
+  build-native:
+    name: Build ${{ matrix.asset-platform }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-13
+            asset-platform: macos-amd64
+            binary-name: kop
+            archive-name: kop-macos-amd64.tar.gz
+          - os: macos-14
+            asset-platform: macos-arm64
+            binary-name: kop
+            archive-name: kop-macos-arm64.tar.gz
+          - os: windows-latest
+            asset-platform: windows-amd64
+            binary-name: kop.exe
+            archive-name: kop-windows-amd64.zip
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install macOS build dependencies
+        if: runner.os == 'macOS'
+        run: |
+          brew install ccache
+
+      - name: Set release version
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          TAG_NAME="${GITHUB_REF_NAME}"
+          RAW_VERSION="${TAG_NAME#v}"
+          echo "Build from tag: ${TAG_NAME}, raw version: ${RAW_VERSION}"
+
+          if [ "${RAW_VERSION}" = "${TAG_NAME}" ]; then
+            echo "Tag must start with 'v', got: ${TAG_NAME}"
+            exit 1
+          fi
+
+          python -m pip install hatch
+          hatch version "${RAW_VERSION}"
+          echo "Normalized project version: $(hatch version)"
+
+      - name: Install Python build dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+          python -m pip install nuitka ordered-set zstandard
+
+      - name: Build executable with Nuitka
+        shell: bash
+        run: |
+          python -m nuitka src/kop/app/main.py \
+            --standalone \
+            --onefile \
+            --assume-yes-for-downloads \
+            --output-dir=build/nuitka \
+            --output-filename="${{ matrix.binary-name }}" \
+            --include-package=kop \
+            --include-package-data=kop \
+            --include-distribution-metadata=kop-cli \
+            --include-data-dir=src/kop/templates=kop/templates
+
+      - name: Verify executable
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            ./build/nuitka/${{ matrix.binary-name }} --version
+          else
+            chmod +x ./build/nuitka/${{ matrix.binary-name }}
+            ./build/nuitka/${{ matrix.binary-name }} --version
+          fi
+
+      - name: Package Unix executable
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          mkdir -p dist
+          tar -C build/nuitka -czf "dist/${{ matrix.archive-name }}" "${{ matrix.binary-name }}"
+
+      - name: Package Windows executable
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Compress-Archive -Path "build/nuitka/${{ matrix.binary-name }}" -DestinationPath "dist/${{ matrix.archive-name }}"
+
+      - name: Upload workflow artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.archive-name }}
+          path: dist/${{ matrix.archive-name }}
+          if-no-files-found: error
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ matrix.archive-name }}
