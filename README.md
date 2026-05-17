@@ -56,26 +56,6 @@ See demo video:
 
 Please refer to the [Documentation](https://vegaoqiang.github.io/kop/) for more detailed usage instructions.
 
-### Startup Page (Cluster List)
-
-- `a`: Add cluster
-- `c` / `Enter`: Connect to cluster
-- `d`: Delete cluster
-- `e`: Edit cluster
-- `s`: Sync local kubeconfig
-- Arrow keys `↑↓←→`: Move between cluster cards
-
-### Resource Page
-
-- Select resource type from the left-side menu
-- `]`: Quickly focus the namespace selector
-- `/`: Search (menu or resources)
-- `c`: Create resource (when supported by the current resource type)
-- `Esc`: Return to cluster home page
-
-Tip: Available actions differ by resource in the details/operation panel. The bottom of the interface shows available key hints.
-
-
 ## FAQ
 
 ### Mouse click not working
