@@ -26,6 +26,27 @@ nav:
     - guide/Nodes.md
     - guide/Pods.md
     - guide/Deployments.md
+    - guide/DaemonSets.md
+    - guide/StatefulSets.md
+    - guide/Jobs.md
+    - guide/CronJobs.md
+    - guide/ConfigMaps.md
+    - guide/Secrets.md
+    - guide/Services.md
+    - guide/Endpoints.md
+    - guide/EndpointSlices.md
+    - guide/Ingresses.md
+    - guide/IngressClasses.md
+    - guide/NetworkPolicies.md
+    - guide/PersistentVolumes.md
+    - guide/PersistentVolumeClaims.md
+    - guide/StorageClasses.md
+    - guide/Namespaces.md
+    - guide/ServiceAccounts.md
+    - guide/Roles.md
+    - guide/RoleBindings.md
+    - guide/ClusterRoles.md
+    - guide/ClusterRoleBindings.md
 exclude_docs: |
   readme_ch.md
   guide/zh
