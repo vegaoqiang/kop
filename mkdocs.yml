@@ -47,6 +47,7 @@ nav:
     - guide/RoleBindings.md
     - guide/ClusterRoles.md
     - guide/ClusterRoleBindings.md
+  - FAQ: faq.md
 exclude_docs: |
   readme_ch.md
   guide/zh
