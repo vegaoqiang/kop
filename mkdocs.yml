@@ -27,3 +27,4 @@ nav:
     - guide/Deployments.md
 exclude_docs: |
   readme_ch.md
+  guide/zh

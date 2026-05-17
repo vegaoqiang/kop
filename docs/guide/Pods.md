@@ -1,9 +1,10 @@
 # Pods
+This document explains how to operate Pods through kop.
 
 ## Binding keys
-Pod 相关操作的可用快捷键会显示在页面底部 Footer 区域。不同场景下可用操作可能略有差异，请以 Footer 实时提示为准。
+Available shortcuts for Pod-related operations are shown in the Footer area at the bottom of the page. Available actions may vary slightly by context; always use the real-time prompts in the Footer as the source of truth.
 
-| key | action |
+| Key | Action |
 | --- | --- |
 | `a` | Attach to Pod |
 | `c` | Create Pods |
@@ -11,107 +12,110 @@ Pod 相关操作的可用快捷键会显示在页面底部 Footer 区域。不�
 | `e` | Edit Pod |
 | `f` | Port Forward |
 | `l` | Pod Logs |
+| `n` | Next Page |
+| `p` | Previous Page |
 | `s` | Pod Shell |
 
+> Some `keys` are shown in the Footer only under specific conditions. For example, `n` and `p` are displayed only when the total number of resources exceeds the current screen height.
+
 ## Actions
+The following sections describe what each action does and how to use it.
 
 ### Attach to Pod
-`Attach` 用于连接到容器内正在运行的主进程标准输入/输出流，适合观察交互式程序的实时输出。
+`Attach` connects to the stdin/stdout stream of the container's running main process, which is useful for observing real-time output from interactive programs.
 
-操作步骤：
-1. 在资源导航中进入 `Pods`。
-2. 在列表中选中目标 Pod。
-3. 按 `a` 打开 Attach 会话。
-4. 退出会话后返回 kop 界面。
+**Steps:**
+1. In the left resource navigator, go to `Pods`.
+2. Select the target Pod in the list.
+3. Press `a` to open an Attach session.
+4. Press `ESC` to exit the session.
 
-使用说明：
-- 该操作依赖容器内进程处于运行状态。
-- 与 `Pod Logs` 的区别是：`Attach` 面向实时进程流，`Logs` 面向日志查看。
+**Notes:**
+- This action requires a running process inside the container.
+- Difference from `Pod Logs`: `Attach` is for live process streams, while `Logs` is for log viewing.
+- `Attach` opens in the `Action Workspace`. See [Action Workspace](/docs/tutorial.md#action-workspace) for details.
 
 ### Create Pods
-用于在当前命名空间创建新的 Pod 资源。
+Creates a new Pod resource in the current namespace.
 
-操作步骤：
-1. 进入 `Pods` 资源页。
-2. 按 `c` 打开创建视图。
-3. 填写或粘贴资源 YAML。
-4. 提交后等待创建结果反馈。
+**Steps:**
+1. In the left navigation, move the cursor to `Pods` or enter the `Pods` resource page.
+2. Press `c` to open the create view.
+3. Fill in or paste the resource YAML.
+4. Submit and wait for creation feedback.
 
-建议：
-- 创建前确认当前命名空间是否正确。
-- 建议优先通过 Deployment 等控制器管理长期运行工作负载；直接创建 Pod 更适合临时调试或一次性任务。
+**Recommendations:**
+- Confirm the current namespace before creating.
+- If no namespace is specified, the default namespace is `default`.
+- For long-running workloads, prefer controllers such as Deployment. Creating Pods directly is better for temporary debugging or one-off tasks.
+- `Create Pods` opens in the `Action Workspace`.
 
 ### Delete Pod
-删除当前选中的 Pod 资源。
+Deletes the currently selected Pod resource.
 
-操作步骤：
-1. 在 `Pods` 列表选中目标 Pod。
-2. 按 `d` 触发删除。
-3. 在确认提示中确认执行。
+**Steps:**
+1. Select the target Pod in the `Pods` list.
+2. Press `d` to trigger deletion.
+3. Confirm the action in the prompt.
 
-注意事项：
-- 删除后 Pod 会立即终止。
-- 如果 Pod 由 Deployment、StatefulSet、DaemonSet 等控制器管理，控制器通常会自动重建新 Pod。
+**Notes:**
+- The Pod is terminated immediately after deletion.
+- If the Pod is managed by controllers such as Deployment, StatefulSet, or DaemonSet, a new Pod is usually recreated automatically.
 
 ### Edit Pod
-编辑 Pod 的 YAML 配置并提交变更。
+Edits the Pod YAML configuration and submits changes.
 
-操作步骤：
-1. 选中目标 Pod。
-2. 按 `e` 进入 YAML 编辑视图。
-3. 修改内容并保存提交。
+**Steps:**
+1. Select the target Pod.
+2. Press `e` to open the YAML editor view.
+3. Modify the content and save to submit.
 
-注意事项：
-- 并非所有字段都允许在线更新；不可变字段修改会被 Kubernetes API 拒绝。
-- 修改失败时，请根据错误提示调整后重试。
+**Notes:**
+- Not all fields can be updated online. Changes to immutable fields are rejected by the Kubernetes API.
+- If an update fails, adjust based on the error message and retry.
+- `Edit Pod` opens in the `Action Workspace`.
 
 ### Port Forward
-将本地端口转发到 Pod 端口，便于在本机访问容器服务。
+Forwards a local port to a Pod port so you can access container services from your machine.
 
-操作步骤：
-1. 选中目标 Pod。
-2. 按 `f` 打开端口转发配置。
-3. 设置本地端口与容器端口映射并启动转发。
-4. 在本地通过 `127.0.0.1:<localPort>` 访问服务。
+**Steps:**
+1. Select the target Pod.
+2. Press `f` to open port-forward configuration.
+3. Set local-to-container port mapping and start forwarding.
+4. Access the service locally through `127.0.0.1:<localPort>`.
 
-注意事项：
-- 若本地端口已被占用，请更换端口重试。
-- 端口转发会占用一个会话，关闭会话后转发结束。
+**Notes:**
+- If the local port is already in use, change the port and try again.
+- Port forwarding occupies one session; forwarding ends when the session is closed.
+- If no local port is set, a random local port is selected after forwarding starts.
 
 ### Pod Logs
-查看 Pod 日志输出，用于排查启动失败、运行异常和业务报错。
+Views Pod log output for troubleshooting startup failures, runtime anomalies, and business errors.
 
-操作步骤：
-1. 选中目标 Pod。
-2. 按 `l` 打开日志视图。
-3. 结合关键字搜索或滚动查看日志内容。
+**Steps:**
+1. Select the target Pod.
+2. Press `l` to open the log view.
+3. Use keyword search or scrolling to inspect log content.
 
-排障建议：
-- 若 Pod 包含多个容器，请确认当前查看的是目标容器日志。
-- 对 CrashLoopBackOff 等问题，优先查看最近启动周期的错误日志。
+**Troubleshooting tips:**
+- If the Pod has multiple containers, confirm you are viewing logs for the target container.
+- In the log window, you can select previous-cycle logs and enable log timestamps.
+- For issues such as CrashLoopBackOff, check error logs from the most recent startup cycle first.
+- `Pod Logs` opens in the `Action Workspace`.
 
 ### Pod Shell
-进入容器 Shell 执行命令，适用于现场诊断与临时检查。
+Enters a container shell to run commands, suitable for on-site diagnosis and temporary checks.
 
-操作步骤：
-1. 选中目标 Pod。
-2. 按 `s` 打开 Shell 会话。
-3. 在容器内执行排障命令（如进程、网络、文件系统检查）。
-4. 完成后退出会话返回 kop。
+**Steps:**
+1. Select the target Pod.
+2. Press `s` to open a Shell session.
+3. Run troubleshooting commands in the container (for example process, network, or filesystem checks).
 
-注意事项：
-- 目标容器需要具备可用 Shell（如 `/bin/sh` 或 `/bin/bash`）。
-- 生产环境请谨慎执行修改性命令，避免影响在线业务。
+**Notes:**
+- The target container must have an available shell (such as `/bin/sh` or `/bin/bash`).
+- In production environments, run mutating commands with caution to avoid impacting live services.
 
 ## Detail View
-在资源列表中打开 Pod 详情后，可集中查看该 Pod 的关键信息（如元数据、状态、规格及相关事件）。
+When the cursor is focused on a Pod, clicking with the mouse or pressing `Enter` opens the Pod detail view on the right side of the resource view. This view centralizes key Pod information (such as metadata, status, spec, and related events). Action buttons are shown at the top of the detail view and can be clicked with the mouse.
 
-推荐排查顺序：
-1. 先看 `Status` 与 `Conditions`，确认 Pod 当前生命周期状态。
-2. 再看容器状态与重启次数，判断是否存在频繁重启。
-3. 最后结合 `Events` 与 `Logs` 定位根因。
-
-常见问题定位思路：
-- `Pending`：优先检查调度与资源配额相关事件。
-- `ImagePullBackOff`：检查镜像地址、凭据和镜像仓库连通性。
-- `CrashLoopBackOff`：检查启动命令、配置依赖和应用报错日志。
+See [Detail View](/docs/tutorial.md#detail-view) for details.
