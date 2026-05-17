@@ -44,7 +44,7 @@ You can filter resources by namespace and search by keyword.
 The bottom footer, a shortcut area, displays the available keys for the current page.
 
 ### Detail View
-Clicking on a resource in the Resource View or pressing the Enter key will display detailed information about that resource in the right sidebar, which is called the `Detail View`.
+Clicking on a resource in the Resource View or pressing the Enter key will display detailed information about that resource in the right sidebar, which is called the `Detail View`. This view centralizes key resource information (such as metadata, status, spec, and related events).
 
 ![detail view](images/tutorial/detail_view.png)
 

@@ -36,7 +36,7 @@ The following sections describe what each action does and how to use it.
 - This action requires a running process inside the container.
 - Difference from `Pod Logs`: `Attach` is for live process streams, while `Logs` is for log viewing.
 
-> `Attach` opens in the `Action Workspace`. See [Action Workspace](/docs/tutorial.md#action-workspace) for details.
+> `Attach` opens in the `Action Workspace`. See [Action Workspace](../tutorial.md#action-workspace) for details.
 
 ### Create Pods
 Creates a new Pod resource in the current namespace.
@@ -130,7 +130,3 @@ Enters a container shell to run commands, suitable for on-site diagnosis and tem
 - The target container must have an available shell (such as `/bin/sh` or `/bin/bash`).
 - In production environments, run mutating commands with caution to avoid impacting live services.
 
-## Detail View
-When the cursor is focused on a Pod, clicking with the mouse or pressing `Enter` opens the Pod detail view on the right side of the resource view. This view centralizes key Pod information (such as metadata, status, spec, and related events). Action buttons are shown at the top of the detail view and can be clicked with the mouse.
-
-See [Detail View](/docs/tutorial.md#detail-view) for details.
