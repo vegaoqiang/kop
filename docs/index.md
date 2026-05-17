@@ -22,15 +22,19 @@ hide:
 - Resource discovery: filter by kind, namespace, and keyword
 - Resource operations: inspect details, edit YAML, and scale workloads
 - Runtime troubleshooting: view logs and events, and attach to running workloads
+- Transferring files between local machine and pod container
+- Port forwarding between local machine and pod container
 
 ## Documentation Map
 
 - [Getting Started](getting_started.md): installation and environment prerequisites
-- [Tutorial](tutorial.md): step-by-step onboarding flow
-- [Guide](guide.md): task-oriented instructions for daily operations
+- [Tutorial](tutorial.md): Introducing views and related concepts in kop
+- [Guide](guide.md): Task-oriented description of resource operations
 
 ## Who It's For 
 
 - Developers and platform engineers who operate Kubernetes from the terminal
 - Teams that want a lower-friction Kubernetes operations experience
 - On-call engineers who need fast diagnosis and recovery in remote environments
+- Operating Kubernetes in a private environment without internet access
+- Alternatives to kubectl on systems without a desktop environment
