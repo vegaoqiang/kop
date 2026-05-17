@@ -97,7 +97,9 @@ class BaseFactory(ABC):
         template = deepcopy(template)
 
         metadata = template.setdefault("metadata", {})
-        if metadata.get("namespace", None) is not None and namespace is not None:
+        # only set namespace if it's not already set in template, 
+        # this allows template to define default namespace while still be override by parameter
+        if metadata.get("namespace", None) is None and namespace is not None:
             metadata["namespace"] = namespace
         return template
 
