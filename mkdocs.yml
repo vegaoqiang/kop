@@ -22,6 +22,7 @@ nav:
   - Tutorial: tutorial.md
   - Guide: 
     - guide/index.md
+    - guide/Clusters.md
     - guide/Nodes.md
     - guide/Pods.md
     - guide/Deployments.md
