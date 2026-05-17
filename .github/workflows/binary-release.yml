@@ -21,7 +21,6 @@ jobs:
             build-image: quay.io/pypa/manylinux2014_x86_64
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
-            install-mode: full
             syntax-mode: full
             archive-name: kop-linux-amd64.tar.gz
           - arch: arm64
@@ -29,7 +28,6 @@ jobs:
             build-image: quay.io/pypa/manylinux2014_aarch64
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
-            install-mode: full
             syntax-mode: full
             archive-name: kop-linux-arm64.tar.gz
           - arch: ppc64le
@@ -37,7 +35,6 @@ jobs:
             build-image: quay.io/pypa/manylinux2014_ppc64le
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
-            install-mode: core
             syntax-mode: full
             archive-name: kop-linux-ppc64le.tar.gz
           - arch: s390x
@@ -45,7 +42,6 @@ jobs:
             build-image: quay.io/pypa/manylinux2014_s390x
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
-            install-mode: core
             syntax-mode: full
             archive-name: kop-linux-s390x.tar.gz
 
@@ -77,7 +73,6 @@ jobs:
           BUILD_KIND: ${{ matrix.build-kind }}
           DOCKER_PLATFORM: linux/${{ matrix.docker-platform }}
           EVENT_NAME: ${{ github.event_name }}
-          INSTALL_MODE: ${{ matrix.install-mode }}
           PYTHON_BIN: ${{ matrix.python-bin }}
           SYNTAX_MODE: ${{ matrix.syntax-mode }}
           TAG_NAME: ${{ github.ref_name }}
@@ -90,7 +85,6 @@ jobs:
             -e ARCHIVE_NAME="${ARCHIVE_NAME}" \
             -e BUILD_KIND="${BUILD_KIND}" \
             -e EVENT_NAME="${EVENT_NAME}" \
-            -e INSTALL_MODE="${INSTALL_MODE}" \
             -e PYTHON_BIN="${PYTHON_BIN}" \
             -e SYNTAX_MODE="${SYNTAX_MODE}" \
             -e TAG_NAME="${TAG_NAME}" \
@@ -135,29 +129,24 @@ jobs:
                 echo "Normalized project version: $(hatch version)"
               fi
 
-              if [ "${INSTALL_MODE}" = "core" ]; then
-                "${PYTHON_BIN}" -m pip install --no-deps .
-                "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML tree-sitter-bash tree-sitter-yaml
+              "${PYTHON_BIN}" -m pip install --no-deps .
+              "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML tree-sitter-bash tree-sitter-yaml
 
-                TREE_SITTER_JSON_AVAILABLE=0
-                if ! "${PYTHON_BIN}" -m pip install tree-sitter-json; then
-                  if "${PYTHON_BIN}" -c "import tree_sitter" >/dev/null 2>&1; then
-                    TREE_SITTER_PACKAGE_DIR="$("${PYTHON_BIN}" -c "import pathlib, tree_sitter; print(pathlib.Path(tree_sitter.__file__).resolve().parent)")"
-                    TREE_SITTER_HEADER="$(find "${TREE_SITTER_PACKAGE_DIR}" -path "*/tree_sitter/parser.h" -print -quit)"
-                    if [ -n "${TREE_SITTER_HEADER}" ]; then
-                      TREE_SITTER_INCLUDE="$(dirname "$(dirname "${TREE_SITTER_HEADER}")")"
-                      CFLAGS="-I${TREE_SITTER_INCLUDE} ${CFLAGS:-}" "${PYTHON_BIN}" -m pip install --no-binary tree-sitter-json tree-sitter-json && TREE_SITTER_JSON_AVAILABLE=1
-                    else
-                      echo "tree_sitter/parser.h not found under ${TREE_SITTER_PACKAGE_DIR}; skipping tree-sitter-json"
-                    fi
+              TREE_SITTER_JSON_AVAILABLE=0
+              if ! "${PYTHON_BIN}" -m pip install tree-sitter-json; then
+                if "${PYTHON_BIN}" -c "import tree_sitter" >/dev/null 2>&1; then
+                  TREE_SITTER_PACKAGE_DIR="$("${PYTHON_BIN}" -c "import pathlib, tree_sitter; print(pathlib.Path(tree_sitter.__file__).resolve().parent)")"
+                  TREE_SITTER_HEADER="$(find "${TREE_SITTER_PACKAGE_DIR}" -path "*/tree_sitter/parser.h" -print -quit)"
+                  if [ -n "${TREE_SITTER_HEADER}" ]; then
+                    TREE_SITTER_INCLUDE="$(dirname "$(dirname "${TREE_SITTER_HEADER}")")"
+                    CFLAGS="-I${TREE_SITTER_INCLUDE} ${CFLAGS:-}" "${PYTHON_BIN}" -m pip install --no-binary tree-sitter-json tree-sitter-json && TREE_SITTER_JSON_AVAILABLE=1
                   else
-                    echo "tree_sitter core package is not available on this architecture; skipping tree-sitter-json"
+                    echo "tree_sitter/parser.h not found under ${TREE_SITTER_PACKAGE_DIR}; skipping tree-sitter-json"
                   fi
                 else
-                  TREE_SITTER_JSON_AVAILABLE=1
+                  echo "tree_sitter core package is not available on this architecture; skipping tree-sitter-json"
                 fi
               else
-                "${PYTHON_BIN}" -m pip install .
                 TREE_SITTER_JSON_AVAILABLE=1
               fi
 
@@ -297,7 +286,8 @@ jobs:
       - name: Install Python build dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install .
+          python -m pip install --no-deps .
+          python -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML tree-sitter-bash tree-sitter-json tree-sitter-yaml
           python -m pip install nuitka ordered-set zstandard
 
       - name: Build executable with Nuitka
