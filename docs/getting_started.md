@@ -28,7 +28,9 @@ The new [Windows Terminal](https://apps.microsoft.com/store/detail/windows-termi
 ## Installation
 Here's how to install kop.
 
-You can install kop via PyPI, with the following command:
+### Install from PyPI
+
+You can install kop via PyPI with the following command:
 
 ```shell
 pip install kop-cli
@@ -37,6 +39,28 @@ pip install kop-cli
 After installation, you can run:
 ```shell
 kop --version
+```
+
+### Install from an offline binary package
+
+If the target machine cannot access PyPI, download the offline binary package from the [GitHub Releases](https://github.com/vegaoqiang/kop/releases) page on another machine first.
+
+1. Open the release version you want to install.
+2. Download the binary package that matches your operating system and CPU architecture.
+3. Copy the package to the target machine.
+4. Extract the package and run the `kop` binary.
+
+On Linux or macOS, you may need to grant execute permission before running it:
+
+```shell
+chmod +x kop
+./kop --version
+```
+
+On Windows, run `kop.exe` from PowerShell or Command Prompt:
+
+```powershell
+.\kop.exe --version
 ```
 
 ## Usage
