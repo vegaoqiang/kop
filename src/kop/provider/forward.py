@@ -4,6 +4,7 @@ import queue
 import select
 import socket
 import threading
+import copy
 from dataclasses import dataclass
 from typing import Iterable, Optional
 
@@ -36,7 +37,10 @@ class PodPortForward:
         remote_port: int,
         local_host: str = "127.0.0.1",
     ):
-        self.core_api = CoreV1Api(api_client=api_client)
+        # Use a dedicated ApiClient for stream/port-forward to avoid impacting
+        # the main query client used by ResourceView refresh.
+        isolated_client = self._make_isolated_api_client(api_client)
+        self.core_api = CoreV1Api(api_client=isolated_client)
         self.pod_name = pod_name
         self.namespace = namespace
         self.local_host = local_host
@@ -52,6 +56,16 @@ class PodPortForward:
         self._server_socket: Optional[socket.socket] = None
         self._active_clients: set[socket.socket] = set()
         self._lock = threading.Lock()
+
+    @staticmethod
+    def _make_isolated_api_client(api_client: ApiClient) -> ApiClient:
+        configuration = getattr(api_client, "configuration", None)
+        if configuration is None:
+            return api_client
+        try:
+            return ApiClient(configuration=copy.deepcopy(configuration))
+        except Exception:
+            return ApiClient(configuration=configuration)
 
     @staticmethod
     def _validate_port(port: int, name: str) -> None:

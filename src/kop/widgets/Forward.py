@@ -1,9 +1,9 @@
-import webbrowser
 from textual import on
 from textual.app import ComposeResult
 from textual.widgets import ListView, ListItem, Link, Button, Static
 from kop.widgets.Modals import PortForward
 from kop.provider.forward import PortForwardSpec, PodPortForwardManager
+from kop.provider.utils import maybe_open_forward_in_browser
 from kubernetes.client import CoreV1Api
 from kubernetes.client.models import V1ContainerPort, V1ServicePort
 from typing import Any, Optional, Tuple
@@ -311,5 +311,4 @@ class DescPorts(Static):
                 severity="information"
             )
 
-        if open_in_browser:
-            webbrowser.open(f"http://127.0.0.1:{local_port}", new=2)
+        maybe_open_forward_in_browser(open_in_browser=open_in_browser, local_port=local_port)
