@@ -22,6 +22,7 @@ jobs:
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
             install-mode: full
+            syntax-mode: full
             archive-name: kop-linux-amd64.tar.gz
           - arch: arm64
             docker-platform: arm64/v8
@@ -29,6 +30,7 @@ jobs:
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
             install-mode: full
+            syntax-mode: full
             archive-name: kop-linux-arm64.tar.gz
           - arch: ppc64le
             docker-platform: ppc64le
@@ -36,6 +38,7 @@ jobs:
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
             install-mode: core
+            syntax-mode: full
             archive-name: kop-linux-ppc64le.tar.gz
           - arch: s390x
             docker-platform: s390x
@@ -43,6 +46,7 @@ jobs:
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
             install-mode: core
+            syntax-mode: full
             archive-name: kop-linux-s390x.tar.gz
 
     steps:
@@ -64,6 +68,7 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           INSTALL_MODE: ${{ matrix.install-mode }}
           PYTHON_BIN: ${{ matrix.python-bin }}
+          SYNTAX_MODE: ${{ matrix.syntax-mode }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
           docker run --rm \
@@ -73,6 +78,7 @@ jobs:
             -e EVENT_NAME="${EVENT_NAME}" \
             -e INSTALL_MODE="${INSTALL_MODE}" \
             -e PYTHON_BIN="${PYTHON_BIN}" \
+            -e SYNTAX_MODE="${SYNTAX_MODE}" \
             -e TAG_NAME="${TAG_NAME}" \
             -v "${PWD}:/work" \
             -w /work \
@@ -111,7 +117,12 @@ jobs:
 
               if [ "${INSTALL_MODE}" = "core" ]; then
                 "${PYTHON_BIN}" -m pip install --no-deps .
-                "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML tree-sitter-bash tree-sitter-json tree-sitter-yaml
+                "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML tree-sitter tree-sitter-bash tree-sitter-yaml
+
+                if ! "${PYTHON_BIN}" -m pip install tree-sitter-json; then
+                  TREE_SITTER_INCLUDE="$("${PYTHON_BIN}" -c 'import pathlib, tree_sitter; root = pathlib.Path(tree_sitter.__file__).resolve().parent; candidates = [root / "core" / "lib" / "include", root / "lib" / "include", root / "include"]; matches = [str(path) for path in candidates if (path / "tree_sitter" / "parser.h").is_file()]; print(matches[0] if matches else ""); raise SystemExit(0 if matches else 1)')"
+                  CFLAGS="-I${TREE_SITTER_INCLUDE} ${CFLAGS:-}" "${PYTHON_BIN}" -m pip install --no-binary tree-sitter-json tree-sitter-json
+                fi
               else
                 "${PYTHON_BIN}" -m pip install .
               fi
@@ -122,6 +133,15 @@ jobs:
               mkdir -p dist
               rm -f "dist/${ARCHIVE_NAME}"
 
+              nuitka_syntax_args=(
+                --include-package=tree_sitter_bash
+                --include-package=tree_sitter_yaml
+              )
+
+              if [ "${SYNTAX_MODE}" = "full" ]; then
+                nuitka_syntax_args+=(--include-package=tree_sitter_json)
+              fi
+
               "${PYTHON_BIN}" -m nuitka src/kop/app/main.py \
                 --standalone \
                 --onefile \
@@ -129,12 +149,10 @@ jobs:
                 --output-dir=build/nuitka \
                 --output-filename=kop \
                 --include-package=kop \
-                --include-package=tree_sitter_bash \
-                --include-package=tree_sitter_json \
-                --include-package=tree_sitter_yaml \
                 --include-package-data=kop \
                 --include-distribution-metadata=kop-cli \
-                --include-data-dir=src/kop/templates=kop/templates
+                --include-data-dir=src/kop/templates=kop/templates \
+                "${nuitka_syntax_args[@]}"
 
               chmod +x build/nuitka/kop
               build/nuitka/kop --version
