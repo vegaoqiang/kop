@@ -21,24 +21,28 @@ jobs:
             build-image: quay.io/pypa/manylinux2014_x86_64
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
+            install-mode: full
             archive-name: kop-linux-amd64.tar.gz
           - arch: arm64
             docker-platform: arm64/v8
             build-image: quay.io/pypa/manylinux2014_aarch64
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
+            install-mode: full
             archive-name: kop-linux-arm64.tar.gz
           - arch: ppc64le
             docker-platform: ppc64le
             build-image: quay.io/pypa/manylinux2014_ppc64le
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
+            install-mode: core
             archive-name: kop-linux-ppc64le.tar.gz
           - arch: s390x
             docker-platform: s390x
             build-image: quay.io/pypa/manylinux2014_s390x
             python-bin: /opt/python/cp312-cp312/bin/python
             build-kind: manylinux
+            install-mode: core
             archive-name: kop-linux-s390x.tar.gz
 
     steps:
@@ -58,6 +62,7 @@ jobs:
           BUILD_KIND: ${{ matrix.build-kind }}
           DOCKER_PLATFORM: linux/${{ matrix.docker-platform }}
           EVENT_NAME: ${{ github.event_name }}
+          INSTALL_MODE: ${{ matrix.install-mode }}
           PYTHON_BIN: ${{ matrix.python-bin }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
@@ -66,6 +71,7 @@ jobs:
             -e ARCHIVE_NAME="${ARCHIVE_NAME}" \
             -e BUILD_KIND="${BUILD_KIND}" \
             -e EVENT_NAME="${EVENT_NAME}" \
+            -e INSTALL_MODE="${INSTALL_MODE}" \
             -e PYTHON_BIN="${PYTHON_BIN}" \
             -e TAG_NAME="${TAG_NAME}" \
             -v "${PWD}:/work" \
@@ -103,12 +109,23 @@ jobs:
                 echo "Normalized project version: $(hatch version)"
               fi
 
-              "${PYTHON_BIN}" -m pip install .
+              if [ "${INSTALL_MODE}" = "core" ]; then
+                "${PYTHON_BIN}" -m pip install --no-deps .
+                "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML
+              else
+                "${PYTHON_BIN}" -m pip install .
+              fi
+
               "${PYTHON_BIN}" -m pip install nuitka ordered-set zstandard
 
               rm -rf build/nuitka
               mkdir -p dist
               rm -f "dist/${ARCHIVE_NAME}"
+
+              nuitka_syntax_args=()
+              if [ "${INSTALL_MODE}" = "full" ]; then
+                nuitka_syntax_args+=(--include-package=tree_sitter_yaml)
+              fi
 
               "${PYTHON_BIN}" -m nuitka src/kop/app/main.py \
                 --standalone \
@@ -119,7 +136,8 @@ jobs:
                 --include-package=kop \
                 --include-package-data=kop \
                 --include-distribution-metadata=kop-cli \
-                --include-data-dir=src/kop/templates=kop/templates
+                --include-data-dir=src/kop/templates=kop/templates \
+                "${nuitka_syntax_args[@]}"
 
               chmod +x build/nuitka/kop
               build/nuitka/kop --version
@@ -183,14 +201,17 @@ jobs:
           - os: macos-13
             asset-platform: macos-amd64
             binary-name: kop
+            package-mode: standalone
             archive-name: kop-macos-amd64.tar.gz
           - os: macos-14
             asset-platform: macos-arm64
             binary-name: kop
+            package-mode: standalone
             archive-name: kop-macos-arm64.tar.gz
           - os: windows-latest
             asset-platform: windows-amd64
             binary-name: kop.exe
+            package-mode: onefile
             archive-name: kop-windows-amd64.zip
 
     steps:
@@ -234,22 +255,34 @@ jobs:
       - name: Build executable with Nuitka
         shell: bash
         run: |
-          python -m nuitka src/kop/app/main.py \
-            --standalone \
-            --onefile \
-            --assume-yes-for-downloads \
-            --output-dir=build/nuitka \
-            --output-filename="${{ matrix.binary-name }}" \
-            --include-package=kop \
-            --include-package-data=kop \
-            --include-distribution-metadata=kop-cli \
+          nuitka_args=(
+            src/kop/app/main.py
+            --standalone
+            --assume-yes-for-downloads
+            --output-dir=build/nuitka
+            --output-filename="${{ matrix.binary-name }}"
+            --include-package=kop
+            --include-package=tree_sitter_yaml
+            --include-package-data=kop
+            --include-distribution-metadata=kop-cli
             --include-data-dir=src/kop/templates=kop/templates
+          )
+
+          if [ "${{ matrix.package-mode }}" = "onefile" ]; then
+            nuitka_args+=(--onefile)
+          fi
+
+          python -m nuitka "${nuitka_args[@]}"
 
       - name: Verify executable
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
             ./build/nuitka/${{ matrix.binary-name }} --version
+          elif [ "${{ matrix.package-mode }}" = "standalone" ]; then
+            dist_dir="$(find build/nuitka -maxdepth 1 -type d -name '*.dist' | head -n 1)"
+            chmod +x "${dist_dir}/${{ matrix.binary-name }}"
+            "${dist_dir}/${{ matrix.binary-name }}" --version
           else
             chmod +x ./build/nuitka/${{ matrix.binary-name }}
             ./build/nuitka/${{ matrix.binary-name }} --version
@@ -260,7 +293,15 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          tar -C build/nuitka -czf "dist/${{ matrix.archive-name }}" "${{ matrix.binary-name }}"
+          if [ "${{ matrix.package-mode }}" = "standalone" ]; then
+            dist_dir="$(find build/nuitka -maxdepth 1 -type d -name '*.dist' | head -n 1)"
+            rm -rf build/package
+            mkdir -p build/package
+            cp -R "${dist_dir}" "build/package/kop"
+            tar -C build/package -czf "dist/${{ matrix.archive-name }}" kop
+          else
+            tar -C build/nuitka -czf "dist/${{ matrix.archive-name }}" "${{ matrix.binary-name }}"
+          fi
 
       - name: Package Windows executable
         if: runner.os == 'Windows'
