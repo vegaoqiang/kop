@@ -58,9 +58,20 @@ jobs:
         with:
           platforms: all
 
+      - name: Restore Linux build caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cache/pip/${{ matrix.arch }}
+            .cache/ccache/${{ matrix.arch }}
+          key: binary-linux-${{ matrix.arch }}-${{ hashFiles('pyproject.toml', 'uv.lock', '.github/workflows/binary-release.yml') }}
+          restore-keys: |
+            binary-linux-${{ matrix.arch }}-
+
       - name: Build executable with Nuitka
         shell: bash
         env:
+          ARCH: ${{ matrix.arch }}
           ARCHIVE_NAME: ${{ matrix.archive-name }}
           BUILD_IMAGE: ${{ matrix.build-image }}
           BUILD_KIND: ${{ matrix.build-kind }}
@@ -71,8 +82,11 @@ jobs:
           SYNTAX_MODE: ${{ matrix.syntax-mode }}
           TAG_NAME: ${{ github.ref_name }}
         run: |
+          mkdir -p ".cache/pip/${ARCH}" ".cache/ccache/${ARCH}"
+
           docker run --rm \
             --platform "${DOCKER_PLATFORM}" \
+            -e ARCH="${ARCH}" \
             -e ARCHIVE_NAME="${ARCHIVE_NAME}" \
             -e BUILD_KIND="${BUILD_KIND}" \
             -e EVENT_NAME="${EVENT_NAME}" \
@@ -87,6 +101,12 @@ jobs:
               set -euxo pipefail
 
               export PATH="$(dirname "${PYTHON_BIN}"):${PATH}"
+              export PIP_CACHE_DIR="/work/.cache/pip/${ARCH}"
+              export CCACHE_DIR="/work/.cache/ccache/${ARCH}"
+              export CCACHE_MAXSIZE="2G"
+              export MAKEFLAGS="-j$(nproc)"
+
+              ccache -z || true
 
               if [ "${BUILD_KIND}" = "debian" ]; then
                 apt-get update
@@ -117,20 +137,28 @@ jobs:
 
               if [ "${INSTALL_MODE}" = "core" ]; then
                 "${PYTHON_BIN}" -m pip install --no-deps .
-                "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML tree-sitter tree-sitter-bash tree-sitter-yaml
+                "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML tree-sitter-bash tree-sitter-yaml
 
+                TREE_SITTER_JSON_AVAILABLE=0
                 if ! "${PYTHON_BIN}" -m pip install tree-sitter-json; then
-                  TREE_SITTER_PACKAGE_DIR="$("${PYTHON_BIN}" -c "import pathlib, tree_sitter; print(pathlib.Path(tree_sitter.__file__).resolve().parent)")"
-                  TREE_SITTER_HEADER="$(find "${TREE_SITTER_PACKAGE_DIR}" -path "*/tree_sitter/parser.h" -print -quit)"
-                  if [ -z "${TREE_SITTER_HEADER}" ]; then
-                    echo "tree_sitter/parser.h not found under ${TREE_SITTER_PACKAGE_DIR}"
-                    exit 1
+                  if "${PYTHON_BIN}" -c "import tree_sitter" >/dev/null 2>&1; then
+                    TREE_SITTER_PACKAGE_DIR="$("${PYTHON_BIN}" -c "import pathlib, tree_sitter; print(pathlib.Path(tree_sitter.__file__).resolve().parent)")"
+                    TREE_SITTER_HEADER="$(find "${TREE_SITTER_PACKAGE_DIR}" -path "*/tree_sitter/parser.h" -print -quit)"
+                    if [ -n "${TREE_SITTER_HEADER}" ]; then
+                      TREE_SITTER_INCLUDE="$(dirname "$(dirname "${TREE_SITTER_HEADER}")")"
+                      CFLAGS="-I${TREE_SITTER_INCLUDE} ${CFLAGS:-}" "${PYTHON_BIN}" -m pip install --no-binary tree-sitter-json tree-sitter-json && TREE_SITTER_JSON_AVAILABLE=1
+                    else
+                      echo "tree_sitter/parser.h not found under ${TREE_SITTER_PACKAGE_DIR}; skipping tree-sitter-json"
+                    fi
+                  else
+                    echo "tree_sitter core package is not available on this architecture; skipping tree-sitter-json"
                   fi
-                  TREE_SITTER_INCLUDE="$(dirname "$(dirname "${TREE_SITTER_HEADER}")")"
-                  CFLAGS="-I${TREE_SITTER_INCLUDE} ${CFLAGS:-}" "${PYTHON_BIN}" -m pip install --no-binary tree-sitter-json tree-sitter-json
+                else
+                  TREE_SITTER_JSON_AVAILABLE=1
                 fi
               else
                 "${PYTHON_BIN}" -m pip install .
+                TREE_SITTER_JSON_AVAILABLE=1
               fi
 
               "${PYTHON_BIN}" -m pip install nuitka ordered-set zstandard
@@ -144,7 +172,7 @@ jobs:
                 --include-package=tree_sitter_yaml
               )
 
-              if [ "${SYNTAX_MODE}" = "full" ]; then
+              if [ "${SYNTAX_MODE}" = "full" ] && [ "${TREE_SITTER_JSON_AVAILABLE}" = "1" ]; then
                 nuitka_syntax_args+=(--include-package=tree_sitter_json)
               fi
 
@@ -152,6 +180,7 @@ jobs:
                 --standalone \
                 --onefile \
                 --assume-yes-for-downloads \
+                --jobs="$(nproc)" \
                 --output-dir=build/nuitka \
                 --output-filename=kop \
                 --include-package=kop \
@@ -163,6 +192,7 @@ jobs:
               chmod +x build/nuitka/kop
               build/nuitka/kop --version
               tar -C build/nuitka -czf "dist/${ARCHIVE_NAME}" kop
+              ccache -s || true
             '
 
       - name: Upload workflow artifact
