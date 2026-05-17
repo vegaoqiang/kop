@@ -1,4 +1,5 @@
 site_name: Kop
+site_url: https://vegaoqiang.github.io/kop/
 theme:
   name: material
   features:
