@@ -111,7 +111,7 @@ jobs:
 
               if [ "${INSTALL_MODE}" = "core" ]; then
                 "${PYTHON_BIN}" -m pip install --no-deps .
-                "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML
+                "${PYTHON_BIN}" -m pip install "kubernetes>=33.1.0" "textual>=8.1.1" pyte PyYAML tree-sitter-bash tree-sitter-json tree-sitter-yaml
               else
                 "${PYTHON_BIN}" -m pip install .
               fi
@@ -122,11 +122,6 @@ jobs:
               mkdir -p dist
               rm -f "dist/${ARCHIVE_NAME}"
 
-              nuitka_syntax_args=()
-              if [ "${INSTALL_MODE}" = "full" ]; then
-                nuitka_syntax_args+=(--include-package=tree_sitter_yaml)
-              fi
-
               "${PYTHON_BIN}" -m nuitka src/kop/app/main.py \
                 --standalone \
                 --onefile \
@@ -134,10 +129,12 @@ jobs:
                 --output-dir=build/nuitka \
                 --output-filename=kop \
                 --include-package=kop \
+                --include-package=tree_sitter_bash \
+                --include-package=tree_sitter_json \
+                --include-package=tree_sitter_yaml \
                 --include-package-data=kop \
                 --include-distribution-metadata=kop-cli \
-                --include-data-dir=src/kop/templates=kop/templates \
-                "${nuitka_syntax_args[@]}"
+                --include-data-dir=src/kop/templates=kop/templates
 
               chmod +x build/nuitka/kop
               build/nuitka/kop --version
@@ -201,17 +198,14 @@ jobs:
           - os: macos-13
             asset-platform: macos-amd64
             binary-name: kop
-            package-mode: standalone
             archive-name: kop-macos-amd64.tar.gz
           - os: macos-14
             asset-platform: macos-arm64
             binary-name: kop
-            package-mode: standalone
             archive-name: kop-macos-arm64.tar.gz
           - os: windows-latest
             asset-platform: windows-amd64
             binary-name: kop.exe
-            package-mode: onefile
             archive-name: kop-windows-amd64.zip
 
     steps:
@@ -258,19 +252,18 @@ jobs:
           nuitka_args=(
             src/kop/app/main.py
             --standalone
+            --onefile
             --assume-yes-for-downloads
             --output-dir=build/nuitka
             --output-filename="${{ matrix.binary-name }}"
             --include-package=kop
+            --include-package=tree_sitter_bash
+            --include-package=tree_sitter_json
             --include-package=tree_sitter_yaml
             --include-package-data=kop
             --include-distribution-metadata=kop-cli
             --include-data-dir=src/kop/templates=kop/templates
           )
-
-          if [ "${{ matrix.package-mode }}" = "onefile" ]; then
-            nuitka_args+=(--onefile)
-          fi
 
           python -m nuitka "${nuitka_args[@]}"
 
@@ -279,10 +272,6 @@ jobs:
         run: |
           if [ "${{ runner.os }}" = "Windows" ]; then
             ./build/nuitka/${{ matrix.binary-name }} --version
-          elif [ "${{ matrix.package-mode }}" = "standalone" ]; then
-            dist_dir="$(find build/nuitka -maxdepth 1 -type d -name '*.dist' | head -n 1)"
-            chmod +x "${dist_dir}/${{ matrix.binary-name }}"
-            "${dist_dir}/${{ matrix.binary-name }}" --version
           else
             chmod +x ./build/nuitka/${{ matrix.binary-name }}
             ./build/nuitka/${{ matrix.binary-name }} --version
@@ -293,15 +282,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          if [ "${{ matrix.package-mode }}" = "standalone" ]; then
-            dist_dir="$(find build/nuitka -maxdepth 1 -type d -name '*.dist' | head -n 1)"
-            rm -rf build/package
-            mkdir -p build/package
-            cp -R "${dist_dir}" "build/package/kop"
-            tar -C build/package -czf "dist/${{ matrix.archive-name }}" kop
-          else
-            tar -C build/nuitka -czf "dist/${{ matrix.archive-name }}" "${{ matrix.binary-name }}"
-          fi
+          tar -C build/nuitka -czf "dist/${{ matrix.archive-name }}" "${{ matrix.binary-name }}"
 
       - name: Package Windows executable
         if: runner.os == 'Windows'
