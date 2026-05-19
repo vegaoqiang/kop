@@ -32,16 +32,16 @@ jobs:
             archive-name: kop-linux-arm64.tar.gz
           - arch: ppc64le
             docker-platform: ppc64le
-            build-image: python:3.12-bookworm
-            python-bin: /usr/local/bin/python
-            build-kind: debian
+            build-image: quay.io/pypa/manylinux2014_ppc64le
+            python-bin: /opt/python/cp312-cp312/bin/python
+            build-kind: manylinux
             syntax-mode: full
             archive-name: kop-linux-ppc64le.tar.gz
           - arch: s390x
             docker-platform: s390x
-            build-image: python:3.12-bookworm
-            python-bin: /usr/local/bin/python
-            build-kind: debian
+            build-image: quay.io/pypa/manylinux2014_s390x
+            python-bin: /opt/python/cp312-cp312/bin/python
+            build-kind: manylinux
             syntax-mode: full
             archive-name: kop-linux-s390x.tar.gz
 
@@ -102,9 +102,8 @@ jobs:
 
               ccache -z || true
 
-              if [ "${BUILD_KIND}" = "debian" ]; then
-                apt-get update
-                apt-get install -y --no-install-recommends build-essential python3-dev git patchelf ccache tar gzip
+              if [ "${BUILD_KIND}" = "manylinux" ] && { [ "${ARCH}" = "ppc64le" ] || [ "${ARCH}" = "s390x" ]; }; then
+                yum install -y gcc gcc-c++ make git
               fi
 
               if [ "${BUILD_KIND}" = "manylinux" ] && [ -f /opt/_internal/static-libs-for-embedding-only.tar.xz ]; then
