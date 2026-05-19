@@ -136,7 +136,8 @@ class DataEdit(Static):
         self._hydrating = True  # hydrating changed by on_mount
 
     def compose(self) -> ComposeResult:
-        yield TextArea.code_editor(language=self.language, id="resource")
+        language = self.language if self.language in {"yaml", "bash"} else None
+        yield TextArea.code_editor(language=language, id="resource")
         yield Button(label="Save", variant="default", id="save", disabled=True)
     
     def on_mount(self) -> None:
