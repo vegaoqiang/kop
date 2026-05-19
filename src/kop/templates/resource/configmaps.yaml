@@ -4,3 +4,6 @@ metadata:
   name: new-configmap
 data:
   example.key: example-value
+
+  example.properties: |
+    foo=bar

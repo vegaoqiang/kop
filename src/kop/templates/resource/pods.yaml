@@ -1,9 +1,10 @@
 apiVersion: v1
 kind: Pod
 metadata:
-  name: new-pod
-  labels: {}
+  name: nginx
 spec:
   containers:
-    - name: main
-      image: nginx:latest
+  - name: nginx
+    image: nginx:1.14.2
+    ports:
+    - containerPort: 80
