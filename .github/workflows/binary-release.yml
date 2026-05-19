@@ -235,7 +235,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14-large
+          - os: macos-14
             asset-platform: macos-amd64
             binary-name: kop
             archive-name: kop-macos-amd64.tar.gz
