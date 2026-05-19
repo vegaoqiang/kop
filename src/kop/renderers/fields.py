@@ -38,7 +38,7 @@ def container_status_renderer(value):
     if ephemeral_container_statuses is None:
         ephemeral_container_statuses = []
 
-    all_container_status = value.container_statuses + init_container_statuses + ephemeral_container_statuses
+    all_container_status = value.container_statuses or [] + init_container_statuses + ephemeral_container_statuses
     status_texts = []
     for cs in all_container_status:
         if cs.ready and cs.started:
