@@ -6,8 +6,11 @@ from unittest.mock import MagicMock
 
 from textual.app import App
 from textual.screen import Screen
+from textual.widgets import ListView
 
+from kop.models import ColumnModel
 from kop.registry import ResourceRegistry
+from kop.renderers.table import TableRenderer
 from kop.views.ResourceView import ResourceView
 from kop.widgets.Panel import ResourcePanel
 from kop.controllers.handler import BaseActionHandlerMixin
@@ -34,6 +37,46 @@ class _FakeActiveTimer:
 
     def reset(self) -> None:
         self.reset_called = True
+
+
+class _Row(dict):
+    def __getattr__(self, item):
+        try:
+            return self[item]
+        except KeyError as exc:
+            raise AttributeError(item) from exc
+
+
+def test_resource_panel_tab_focuses_table_list_view() -> None:
+    app = ResourceHarnessApp()
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)) as pilot:
+            await pilot.pause()
+            view = app.view
+            assert view is not None
+
+            table = TableRenderer(
+                columns=[ColumnModel(title="Name", width=1, field="name")],
+                data=[_Row(name="pod-a")],
+                raw_data=[SimpleNamespace(metadata=SimpleNamespace(name="pod-a"), name="pod-a")],
+            )
+            await view.query_one("#resource_container").mount(table, after=view.panel)
+            await pilot.pause()
+
+            for selector in ("#namespace_select", "#search_input"):
+                widget = view.query_one(selector)
+                widget.focus()
+                await pilot.pause()
+
+                await pilot.press("tab")
+                await pilot.pause()
+
+                focused = app.focused
+                assert isinstance(focused, ListView)
+                assert focused.id == "list_view"
+
+    asyncio.run(_run())
 
 
 def test_fetch_resource_returns_none_when_factory_missing(monkeypatch) -> None:

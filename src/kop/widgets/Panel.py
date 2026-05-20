@@ -2,7 +2,8 @@ from textual.message import Message
 from textual.events import Mount
 from textual.reactive import Reactive
 from textual.app import ComposeResult
-from textual.widgets import Static, Input, Label, Select
+from textual.css.query import NoMatches
+from textual.widgets import Static, Input, Label, Select, ListView
 from textual.containers import Grid, Horizontal
 from textual.timer import Timer
 from textual.binding import Binding
@@ -66,6 +67,7 @@ class ResourcePanel(Static):
     debounce_time: float = 0.3
 
     BINDINGS = [
+        Binding(key="tab", action="focus_table", show=False),
         Binding(key="escape", action="clear", show=False),
     ]
 
@@ -127,6 +129,30 @@ class ResourcePanel(Static):
         
     def _on_mount(self, event: Mount) -> None:
         self.post_message(self.RequireNamespace().set_sender(self))
+
+    def check_action(self, action: str, parameters: tuple[object, ...]) -> Optional[bool]:
+        if action != "focus_table":
+            return True
+        focused = self.app.focused
+        if not isinstance(focused, (Input, Select)):
+            return False
+
+        parent = focused.parent
+        while parent is not None:
+            if parent is self:
+                break
+            parent = parent.parent
+        else:
+            return False
+
+        try:
+            self.screen.query_one("#list_view", ListView)
+        except NoMatches:
+            return False
+        return True
+
+    def action_focus_table(self) -> None:
+        self.screen.query_one("#list_view", ListView).focus()
 
     def action_clear(self) -> None:
         """
