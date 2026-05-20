@@ -123,9 +123,8 @@ jobs:
                   exit 1
                 fi
 
-                "${PYTHON_BIN}" -m pip install hatch
-                hatch version "${RAW_VERSION}"
-                echo "Normalized project version: $(hatch version)"
+                NORMALIZED_VERSION="$("${PYTHON_BIN}" scripts/set_release_version.py "${RAW_VERSION}")"
+                echo "Normalized project version: ${NORMALIZED_VERSION}"
               fi
 
               TREE_SITTER_JSON_AVAILABLE=0
@@ -276,9 +275,8 @@ jobs:
             exit 1
           fi
 
-          python -m pip install hatch
-          hatch version "${RAW_VERSION}"
-          echo "Normalized project version: $(hatch version)"
+          NORMALIZED_VERSION="$(python scripts/set_release_version.py "${RAW_VERSION}")"
+          echo "Normalized project version: ${NORMALIZED_VERSION}"
 
       - name: Install Python build dependencies
         run: |
