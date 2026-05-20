@@ -94,7 +94,7 @@ class ResourceView(Screen):
         self.resource_type: Optional[str] = None
         self.resource_kind_name: Optional[str] = None
         self.page_index: int = 0
-        self.resource_pages: dict[str, list[tuple[object, list, Optional[str]]]] = {}
+        self.resource_pages: dict[str, list[tuple[object, list, Optional[str], int]]] = {}
 
     def compose(self) -> ComposeResult: 
             yield Header()
@@ -179,10 +179,10 @@ class ResourceView(Screen):
         namespace: Optional[str],
         keyword: Optional[str],
         continue_token: Optional[str] = None,
-    ) -> Tuple[Optional[BaseFactory], Optional[object], list]:
+    ) -> Tuple[Optional[BaseFactory], Optional[object], list, int]:
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
-            return None, None, []
+            return None, None, [], 0
         factory = factory_cls(self.endpoint)
         try:
             data = factory.fetch(
@@ -192,11 +192,10 @@ class ResourceView(Screen):
             )
         except TypeError:
             data = factory.fetch(namespace=namespace)
-        if keyword:
-            data = factory.filter(data, keyword)
-        cleaned = factory.clean(data)
+        filtered = factory.filter(data, keyword) if keyword else data
+        cleaned = factory.clean(filtered)
         cleaned.sort(key=lambda vm: vm.name)
-        return factory, data, cleaned
+        return factory, data, cleaned, len(filtered.items)
 
     def _fetch_resource_with_timeout(
         self,
@@ -205,7 +204,7 @@ class ResourceView(Screen):
         keyword: Optional[str],
         timeout: float,
         continue_token: Optional[str] = None,
-    ) -> Tuple[Optional[BaseFactory], Optional[object], list]:
+    ) -> Tuple[Optional[BaseFactory], Optional[object], list, int]:
         """Run kubernetes fetch in a daemon thread so app shutdown isn't blocked by stuck API calls."""
         result: Queue[Tuple[str, object]] = Queue(maxsize=1)
 
@@ -264,7 +263,9 @@ class ResourceView(Screen):
         page_index: int,
         factory: Optional[BaseFactory],
         data: Optional[object],
+        keyword: Optional[str],
         cleaned: list,
+        resource_count: int,
     ) -> None:
         if request_id != self._resource_request_id:
             return
@@ -274,10 +275,15 @@ class ResourceView(Screen):
 
         self.FACTORY_CACHE = factory
         self.data = data
+        if keyword != self.keyword:
+            filtered = factory.filter(data, self.keyword) if self.keyword else data
+            cleaned = factory.clean(filtered)
+            cleaned.sort(key=lambda vm: vm.name)
+            resource_count = len(filtered.items)
         next_token = getattr(getattr(data, "metadata", None), "_continue", None)
         cache_key = self._resource_cache_key(resource_type, namespace)
         pages = self.resource_pages.setdefault(cache_key, [])
-        page_entry = (data, cleaned, next_token)
+        page_entry = (data, cleaned, next_token, resource_count)
         if page_index < len(pages):
             pages[page_index] = page_entry
             del pages[page_index + 1 :]
@@ -296,7 +302,7 @@ class ResourceView(Screen):
             self.table.raw_data = data.items
             self.table.data = cleaned
 
-        self.panel.resource_count = len(data.items)
+        self.panel.resource_count = resource_count
 
     def _handle_resource_error(self, request_id: int, exc: Exception) -> None:
         if request_id != self._resource_request_id:
@@ -316,7 +322,7 @@ class ResourceView(Screen):
     ) -> None:
         worker = get_current_worker()
         try:
-            factory, data, cleaned = self._fetch_resource_with_timeout(
+            factory, data, cleaned, resource_count = self._fetch_resource_with_timeout(
                 resource_type,
                 namespace,
                 keyword,
@@ -337,7 +343,9 @@ class ResourceView(Screen):
             page_index,
             factory,
             data,
+            keyword,
             cleaned,
+            resource_count,
         )
 
     def _load_resource(
@@ -367,14 +375,19 @@ class ResourceView(Screen):
         pages = self.resource_pages.get(cache_key, [])
         if page_index < 0 or page_index >= len(pages):
             return False
-        data, cleaned, _ = pages[page_index]
+        if not self.FACTORY_CACHE:
+            return False
+        data, _cleaned, _continue_token, _resource_count = pages[page_index]
         self.data = data
         self.page_index = page_index
+        filtered = self.FACTORY_CACHE.filter(data, self.keyword) if self.keyword else data
+        cleaned = self.FACTORY_CACHE.clean(filtered)
+        cleaned.sort(key=lambda vm: vm.name)
         if self.table:
             self.table.raw_data = data.items
             self.table.data = cleaned
         if self.panel:
-            self.panel.resource_count = len(data.items)
+            self.panel.resource_count = len(filtered.items)
         self.refresh_bindings()
         return True
         

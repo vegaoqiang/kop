@@ -88,10 +88,11 @@ def test_fetch_resource_returns_none_when_factory_missing(monkeypatch) -> None:
             view = app.view
             assert view is not None
 
-            factory, data, cleaned = view._fetch_resource("pods", None, None)
+            factory, data, cleaned, resource_count = view._fetch_resource("pods", None, None)
             assert factory is None
             assert data is None
             assert cleaned == []
+            assert resource_count == 0
 
     asyncio.run(_run())
 
@@ -129,10 +130,62 @@ def test_fetch_resource_filters_and_sorts(monkeypatch) -> None:
             view = app.view
             assert view is not None
 
-            factory, data, cleaned = view._fetch_resource("pods", None, "a")
+            factory, data, cleaned, resource_count = view._fetch_resource("pods", None, "a")
             assert isinstance(factory, FakeFactory)
-            assert [item.name for item in data.items] == ["a"]
+            assert [item.name for item in data.items] == ["b", "a"]
             assert [item.name for item in cleaned] == ["a"]
+            assert resource_count == 1
+
+    asyncio.run(_run())
+
+
+def test_apply_resource_recomputes_display_when_keyword_changes() -> None:
+    app = ResourceHarnessApp()
+
+    class FakeFactory:
+        resource_type = "pods"
+
+        def filter(self, raw, keyword):
+            return SimpleNamespace(
+                items=[item for item in raw.items if keyword in item.name],
+                metadata=raw.metadata,
+            )
+
+        def clean(self, raw):
+            return [SimpleNamespace(name=item.name) for item in raw.items]
+
+    async def _run() -> None:
+        async with app.run_test(size=(120, 40)):
+            view = app.view
+            assert view is not None
+            view._resource_request_id = 1
+            view.keyword = ""
+            view._table_resource_type = "pods"
+            view.table = SimpleNamespace(raw_data=[], data=[])
+            view.panel = SimpleNamespace(resource_count=0)
+
+            data = SimpleNamespace(
+                items=[SimpleNamespace(name="a"), SimpleNamespace(name="b")],
+                metadata=SimpleNamespace(_continue=None),
+            )
+
+            view._set_loading = lambda _is_loading: None
+            view.refresh_bindings = lambda: None
+            view._apply_resource(
+                1,
+                "pods",
+                None,
+                0,
+                FakeFactory(),
+                data,
+                "a",
+                [SimpleNamespace(name="a")],
+                1,
+            )
+
+            assert view.data is data
+            assert [item.name for item in view.table.data] == ["a", "b"]
+            assert view.panel.resource_count == 2
 
     asyncio.run(_run())
 
@@ -171,7 +224,7 @@ def test_fetch_resource_uses_dynamic_page_size_from_screen_height(monkeypatch) -
         async with app.run_test(size=(120, 40)):
             view = app.view
             assert view is not None
-            _factory, _data, _cleaned = view._fetch_resource("pods", None, None)
+            _factory, _data, _cleaned, _resource_count = view._fetch_resource("pods", None, None)
 
     asyncio.run(_run())
 
@@ -485,19 +538,22 @@ def test_mock_pods_over_200_items_with_pagination_tokens(monkeypatch) -> None:
             assert view is not None
             monkeypatch.setattr(view, "_get_page_size", lambda: 100)
 
-            _, page1, cleaned1 = view._fetch_resource("pods", None, None)
+            _, page1, cleaned1, count1 = view._fetch_resource("pods", None, None)
             assert len(page1.items) == 100
             assert len(cleaned1) == 100
+            assert count1 == 100
             assert page1.metadata._continue == "100"
 
-            _, page2, cleaned2 = view._fetch_resource("pods", None, None, continue_token=page1.metadata._continue)
+            _, page2, cleaned2, count2 = view._fetch_resource("pods", None, None, continue_token=page1.metadata._continue)
             assert len(page2.items) == 100
             assert len(cleaned2) == 100
+            assert count2 == 100
             assert page2.metadata._continue == "200"
 
-            _, page3, cleaned3 = view._fetch_resource("pods", None, None, continue_token=page2.metadata._continue)
+            _, page3, cleaned3, count3 = view._fetch_resource("pods", None, None, continue_token=page2.metadata._continue)
             assert len(page3.items) == 50
             assert len(cleaned3) == 50
+            assert count3 == 50
             assert page3.metadata._continue is None
 
     asyncio.run(_run())
@@ -512,6 +568,7 @@ def test_mock_pod_pagination_next_and_prev_from_cached_pages() -> None:
             SimpleNamespace(items=rows, metadata=SimpleNamespace(_continue=next_token)),
             rows,
             next_token,
+            len(rows),
         )
 
     async def _run() -> None:
@@ -531,6 +588,10 @@ def test_mock_pod_pagination_next_and_prev_from_cached_pages() -> None:
             view.data = view.resource_pages[key][0][0]
             view.table = SimpleNamespace(raw_data=[], data=[])
             view.panel = SimpleNamespace(resource_count=0)
+            view.FACTORY_CACHE = SimpleNamespace(
+                filter=lambda data, _keyword: data,
+                clean=lambda data: data.items,
+            )
 
             view.action_next_page()
             assert view.page_index == 1
@@ -559,6 +620,7 @@ def test_pagination_bindings_visibility_changes_by_page() -> None:
             SimpleNamespace(items=rows, metadata=SimpleNamespace(_continue=next_token)),
             rows,
             next_token,
+            len(rows),
         )
 
     async def _run() -> None:
