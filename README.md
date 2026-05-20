@@ -72,7 +72,7 @@ In this mode, the file path and kubeconfig validity are verified, and after vali
 
 ## Operations and Shortcuts
 See demo video:
-[![Watch the demo](https://img.youtube.com/vi/sEXl9UQQxVc/maxresdefault.jpg)](https://www.youtube.com/watch?v=sEXl9UQQxVc)
+[![Watch the demo](https://img.youtube.com/vi/6L1jOtYvKYg/maxresdefault.jpg)](https://www.youtube.com/watch?v=6L1jOtYvKYg)
 
 Please refer to the [Documentation](https://vegaoqiang.github.io/kop/) for more detailed usage instructions.
 
