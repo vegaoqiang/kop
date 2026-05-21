@@ -172,8 +172,8 @@ class FileTransferModal(ModalScreen[None]):
                     yield Label("[b]Destination[/b]:", classes="label_color")
                     yield Static("-", id="dest_label")
                 with Horizontal(id="dest_name_container"):
-                    yield Label("[b]Destination name (Optional)[/b]:", id="dest_name_label", classes="label_color")
-                    yield Input(placeholder="You can customize the destination name (Optional)", id="dest_name", compact=True)
+                    yield Label("[b]Customize name (Optional)[/b]:", id="dest_name_label", classes="label_color")
+                    yield Input(placeholder="You can customize the destination file name (Optional)", id="dest_name", compact=True)
             with Horizontal(id="buttons"):
                 yield Button("Start Transfer", variant="default", id="transfer", disabled=True, tooltip="Transfer the selected file/directory from source to destination")
                 yield Button("Set Source", id="set_source", tooltip="Set the selected file/directory as source for transfer")
