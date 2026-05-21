@@ -69,7 +69,7 @@ class FileTransferModal(ModalScreen[None]):
             border: solid $secondary;
             background: $surface;
             grid-size: 1 4;
-            grid-rows: 1 1fr 5 3;
+            grid-rows: 1 1fr 8 3;
             padding: 0 1;
         }
         #title {
@@ -97,7 +97,7 @@ class FileTransferModal(ModalScreen[None]):
             height: 1fr;
         }
         #summary {
-            height: 5;
+            height: 8;
             padding: 0 1;
             border: solid $panel;
         }
@@ -110,6 +110,13 @@ class FileTransferModal(ModalScreen[None]):
         #set_source, #set_dest, #refresh, #transfer, #cancel {
             width: 1fr;
             margin-left: 1;
+        }
+        #dest_name_container {
+            height: 3;
+        }
+        #dest_name_label {
+            height: 3;
+            content-align: center middle;
         }
     """
 
@@ -155,7 +162,9 @@ class FileTransferModal(ModalScreen[None]):
                 yield Static("Selected: -", id="selected_label")
                 yield Static("Source: -", id="source_label")
                 yield Static("Destination: -", id="dest_label")
-                yield Input(placeholder="Destination name", id="dest_name")
+                with Horizontal(id="dest_name_container"):
+                    yield Label("Destination name (Optional):", id="dest_name_label")
+                    yield Input(placeholder="You can customize the destination name (Optional)", id="dest_name")
             with Horizontal(id="buttons"):
                 yield Button("Set Source", id="set_source")
                 yield Button("Set Destination", id="set_dest")
@@ -237,8 +246,8 @@ class FileTransferModal(ModalScreen[None]):
             return
         self.source = self.selected
         dest_name = self.query_one("#dest_name", Input)
-        if not dest_name.value:
-            dest_name.value = self.source.name
+        # if not dest_name.value:
+        dest_name.value = self.source.name
         self._refresh_summary()
 
     def action_set_dest(self) -> None:
