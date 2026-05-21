@@ -3,8 +3,29 @@ import threading
 import json
 import re
 from typing import Optional
-from kubernetes import watch
 from kubernetes.client import CoreV1Api
+
+
+class PodLogStream:
+    def __init__(self, response) -> None:
+        self.response = response
+
+    def stop(self) -> None:
+        close = getattr(self.response, "close", None)
+        if callable(close):
+            close()
+        release_conn = getattr(self.response, "release_conn", None)
+        if callable(release_conn):
+            release_conn()
+
+    def __iter__(self):
+        stream = getattr(self.response, "stream", None)
+        if callable(stream):
+            yield from stream(decode_content=True)
+            return
+        data = getattr(self.response, "data", None)
+        if data:
+            yield data
 
 
 
@@ -53,17 +74,17 @@ class PodLogs:
             )
 
     def watch_logs(self, timestamps: Optional[bool] = None, tail_lines: Optional[int] = 100):
-        self.w = w = watch.Watch()
+        response = self.core_api.read_namespaced_pod_log(
+            **self._log_params(timestamps=timestamps, follow=True, tail_lines=tail_lines),
+            _preload_content=False,
+        )
+        self.w = log_stream = PodLogStream(response)
         try:
-            for line in w.stream(
-                self.core_api.read_namespaced_pod_log,
-                **self._log_params(timestamps=timestamps, follow=True, tail_lines=tail_lines),
-            ):
+            for line in log_stream:
                 yield line
         finally:
-            if w:
-                w.stop()
-                self.w = None
+            log_stream.stop()
+            self.w = None
             
 
 class LogController:
