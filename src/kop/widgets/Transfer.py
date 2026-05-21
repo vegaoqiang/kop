@@ -115,8 +115,11 @@ class FileTransferModal(ModalScreen[None]):
             width: 1fr;
             margin-left: 1;
         }
-        #dest_name {
+        #dest_name, #selected_label, #source_label, #dest_label {
             margin-left: 1;
+        }
+        .label_color {
+            color: green;
         }
     """
 
@@ -159,11 +162,17 @@ class FileTransferModal(ModalScreen[None]):
                     yield Static("Pod", classes="pane-title")
                     yield PodDirectoryTree(self.pod_fs, id="pod_tree")
             with Vertical(id="summary"):
-                yield Static("Selected: -", id="selected_label")
-                yield Static("Source: -", id="source_label")
-                yield Static("Destination: -", id="dest_label")
+                with Horizontal():
+                    yield Label("[b]Selected[/b]:" ,classes="label_color")
+                    yield Static("-", id="selected_label")
+                with Horizontal():
+                    yield Label("[b]Source[/b]:", classes="label_color")
+                    yield Static("-", id="source_label")
+                with Horizontal():
+                    yield Label("[b]Destination[/b]:", classes="label_color")
+                    yield Static("-", id="dest_label")
                 with Horizontal(id="dest_name_container"):
-                    yield Label("Destination name (Optional):", id="dest_name_label")
+                    yield Label("[b]Destination name (Optional)[/b]:", id="dest_name_label", classes="label_color")
                     yield Input(placeholder="You can customize the destination name (Optional)", id="dest_name", compact=True)
             with Horizontal(id="buttons"):
                 yield Button("Set Source", id="set_source")
@@ -300,16 +309,16 @@ class FileTransferModal(ModalScreen[None]):
 
     def _refresh_summary(self) -> None:
         self.query_one("#selected_label", Static).update(
-            f"Selected: {self.selected.display if self.selected else '-'}"
+            f"{self.selected.display if self.selected else '-'}"
         )
         self.query_one("#source_label", Static).update(
-            f"Source: {self.source.display if self.source else '-'}"
+            f"{self.source.display if self.source else '-'}"
         )
         dest_text = self.dest.display if self.dest else "-"
         dest_name = self.query_one("#dest_name", Input).value.strip()
         if self.dest and dest_name:
             dest_text = f"{dest_text}/{dest_name}"
-        self.query_one("#dest_label", Static).update(f"Destination: {dest_text}")
+        self.query_one("#dest_label", Static).update(f"{dest_text}")
         self.query_one("#transfer", Button).disabled = not (
             self.source
             and self.dest
