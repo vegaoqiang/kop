@@ -20,6 +20,7 @@ from kop.widgets.Modals import (
     NodeShellLoading,
     NodeShellFailed,
 )
+from kop.widgets.Transfer import FileTransferModal
 from kubernetes import client
 from typing import Optional
 from kop.provider.logs import PodLogs
@@ -571,6 +572,31 @@ class PodActionHandler(BaseActionHandlerMixin):
             ActionPortForward(dest_port=ports[0], dest_ports=dest_ports),
             callback=forward_callback,
         )
+
+    @staticmethod
+    def transfer(action, resource: PodViewModel, app):
+        if resource.status != "Running":
+            app.notify("Pod is not running", severity="error")
+            return
+
+        def open_transfer(container_name: str) -> None:
+            app.push_screen(
+                FileTransferModal(
+                    api_client=app.endpoint.api_client,
+                    pod_name=resource.name,
+                    namespace=resource.namespace,
+                    container_name=container_name,
+                )
+            )
+
+        if len(resource.containers) == 1:
+            container_obj = resource.containers[0].lazy_clean()
+            open_transfer(container_name=container_obj.name)
+        else:
+            app.push_screen(
+                Option([cs.lazy_clean().name for cs in resource.containers], action=action.name),
+                callback=open_transfer,
+            )
 
     @staticmethod
     def delete(action, resource: PodViewModel, app):
