@@ -21,6 +21,10 @@ from kop.provider.transfer import (
 
 
 class PodDirectoryTree(Tree[PodFileEntry]):
+
+    ICON_NODE_EXPANDED = "📂 "
+    ICON_NODE = "📁 "
+    
     def __init__(self, filesystem: PodFileSystem, path: str = "/", **kwargs) -> None:
         root_entry = PodFileEntry(path=PurePosixPath(path), is_dir=True)
         super().__init__(root_entry.label, data=root_entry, **kwargs)
