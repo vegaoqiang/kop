@@ -107,6 +107,7 @@ class PodFileTransfer:
         self.pod_name = pod_name
         self.namespace = namespace
         self.container_name = container_name
+        self._command_cache: dict[str, bool] = {}
 
     def upload(self, source: Path, dest_dir: PurePosixPath, dest_name: str) -> None:
         if not source.exists():
@@ -114,6 +115,48 @@ class PodFileTransfer:
         if not dest_name:
             raise ValueError("Destination name is required")
 
+        if not self.has_command("tar"):
+            self._upload_file_with_cat(source, dest_dir, dest_name)
+            return
+        self._upload_with_tar(source, dest_dir, dest_name)
+
+    def download(
+        self,
+        source: PurePosixPath,
+        dest_dir: Path,
+        dest_name: str,
+        source_is_dir: bool = False,
+    ) -> None:
+        if not dest_name:
+            raise ValueError("Destination name is required")
+        if not self.has_command("tar"):
+            if source_is_dir:
+                raise RuntimeError("Directory download requires tar in the container")
+            self._download_file_with_cat(source, dest_dir, dest_name)
+            return
+        self._download_with_tar(source, dest_dir, dest_name)
+
+    def has_command(self, command: str) -> bool:
+        if command in self._command_cache:
+            return self._command_cache[command]
+        quoted = shlex.quote(command)
+        output = stream(
+            self.core_api.connect_get_namespaced_pod_exec,
+            self.pod_name,
+            self.namespace,
+            command=["sh", "-c", f"command -v {quoted} >/dev/null 2>&1 && echo yes || echo no"],
+            container=self.container_name,
+            stderr=False,
+            stdin=False,
+            stdout=True,
+            tty=False,
+            _preload_content=True,
+        )
+        available = str(output).strip() == "yes"
+        self._command_cache[command] = available
+        return available
+
+    def _upload_with_tar(self, source: Path, dest_dir: PurePosixPath, dest_name: str) -> None:
         quoted_dir = shlex.quote(str(dest_dir))
         command = ["sh", "-c", f"mkdir -p {quoted_dir} && tar xf - -C {quoted_dir}"]
         resp = self._open_exec(command, stdin=True)
@@ -132,9 +175,27 @@ class PodFileTransfer:
         finally:
             resp.close()
 
-    def download(self, source: PurePosixPath, dest_dir: Path, dest_name: str) -> None:
-        if not dest_name:
-            raise ValueError("Destination name is required")
+    def _upload_file_with_cat(self, source: Path, dest_dir: PurePosixPath, dest_name: str) -> None:
+        if source.is_dir():
+            raise RuntimeError("Directory upload requires tar in the container")
+
+        dest_path = dest_dir / dest_name
+        quoted_dir = shlex.quote(str(dest_dir))
+        quoted_dest = shlex.quote(str(dest_path))
+        command = ["sh", "-c", f"mkdir -p {quoted_dir} && cat > {quoted_dest}"]
+        resp = self._open_exec(command, stdin=True)
+        try:
+            with source.open("rb") as source_file:
+                while True:
+                    chunk = source_file.read(1024 * 256)
+                    if not chunk:
+                        break
+                    resp.write_stdin(chunk)
+            self._drain_response(resp)
+        finally:
+            resp.close()
+
+    def _download_with_tar(self, source: PurePosixPath, dest_dir: Path, dest_name: str) -> None:
         dest_dir.mkdir(parents=True, exist_ok=True)
         parent = str(source.parent) if str(source.parent) else "/"
         source_name = source.name or "."
@@ -157,7 +218,7 @@ class PodFileTransfer:
                     empty_reads = 0
                 stderr = resp.read_channel(2, timeout=0)
                 if stderr:
-                    raise RuntimeError(str(stderr).strip())
+                    raise RuntimeError(self._channel_text(stderr).strip())
                 if not stdout:
                     empty_reads += 1
                 if empty_reads >= 3:
@@ -174,6 +235,17 @@ class PodFileTransfer:
         finally:
             resp.close()
 
+    def _download_file_with_cat(self, source: PurePosixPath, dest_dir: Path, dest_name: str) -> None:
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        target = dest_dir / dest_name
+        command = ["sh", "-c", f"cat {shlex.quote(str(source))}"]
+        resp = self._open_exec(command, stdin=False)
+        try:
+            data = self._read_stdout_response(resp)
+            target.write_bytes(data)
+        finally:
+            resp.close()
+
     def _open_exec(self, command: list[str], stdin: bool):
         return stream(
             self.core_api.connect_get_namespaced_pod_exec,
@@ -185,23 +257,63 @@ class PodFileTransfer:
             stdin=stdin,
             stdout=True,
             tty=False,
+            binary=True,
             _preload_content=False,
         )
 
     def _drain_response(self, resp) -> None:
         errors: list[str] = []
+        empty_reads = 0
         while resp.is_open():
             resp.update(timeout=1)
             stderr = resp.read_channel(2, timeout=0)
             if stderr:
-                errors.append(str(stderr))
+                errors.append(self._channel_text(stderr))
             stdout = resp.read_channel(1, timeout=0)
-            if not stderr and not stdout:
+            if stderr or stdout:
+                empty_reads = 0
+            else:
+                empty_reads += 1
+            if empty_reads >= 3:
                 break
         if errors:
             raise RuntimeError("".join(errors).strip())
 
+    def _read_stdout_response(self, resp) -> bytes:
+        output = io.BytesIO()
+        errors: list[str] = []
+        empty_reads = 0
+        while resp.is_open():
+            resp.update(timeout=1)
+            stdout = resp.read_channel(1, timeout=0)
+            if stdout:
+                if isinstance(stdout, str):
+                    stdout = stdout.encode()
+                output.write(stdout)
+                empty_reads = 0
+            stderr = resp.read_channel(2, timeout=0)
+            if stderr:
+                errors.append(self._channel_text(stderr))
+                empty_reads = 0
+            if not stdout and not stderr:
+                empty_reads += 1
+            if empty_reads >= 3:
+                break
+        if errors:
+            raise RuntimeError("".join(errors).strip())
+        return output.getvalue()
+
+    def _channel_text(self, value: bytes | str) -> str:
+        if isinstance(value, bytes):
+            return value.decode("utf-8", "replace")
+        return value
+
     def _safe_extract(self, tar: tarfile.TarFile, dest_dir: Path) -> None:
+        """
+        Extracts a tar file to the specified destination directory while 
+          preventing path traversal attacks and local file or directory were
+          overwritten by downloaded files
+        """
         base = dest_dir.resolve()
         for member in tar.getmembers():
             target = (dest_dir / member.name).resolve()

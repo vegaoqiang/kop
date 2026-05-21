@@ -109,6 +109,7 @@ class FileTransferModal(ModalScreen[None]):
         }
         #set_source, #set_dest, #refresh, #transfer, #cancel {
             width: 1fr;
+            margin-left: 1;
         }
     """
 
@@ -159,7 +160,7 @@ class FileTransferModal(ModalScreen[None]):
                 yield Button("Set Source", id="set_source")
                 yield Button("Set Destination", id="set_dest")
                 yield Button("Refresh", id="refresh")
-                yield Button("Transfer", variant="primary", id="transfer", disabled=True)
+                yield Button("Transfer", variant="default", id="transfer", disabled=True)
                 yield Button("Cancel", id="cancel")
 
     def on_mount(self) -> None:
@@ -343,6 +344,7 @@ class FileTransferModal(ModalScreen[None]):
                     PurePosixPath(str(source.path)),
                     Path(dest.path),
                     dest_name,
+                    source_is_dir=source.is_dir,
                 )
             else:
                 raise ValueError("Only local <-> pod transfers are supported")
