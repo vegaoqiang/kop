@@ -175,11 +175,11 @@ class FileTransferModal(ModalScreen[None]):
                     yield Label("[b]Destination name (Optional)[/b]:", id="dest_name_label", classes="label_color")
                     yield Input(placeholder="You can customize the destination name (Optional)", id="dest_name", compact=True)
             with Horizontal(id="buttons"):
-                yield Button("Set Source", id="set_source")
-                yield Button("Set Destination", id="set_dest")
-                yield Button("Refresh", id="refresh")
-                yield Button("Transfer", variant="default", id="transfer", disabled=True)
-                yield Button("Cancel", id="cancel")
+                yield Button("Start Transfer", variant="default", id="transfer", disabled=True, tooltip="Transfer the selected file/directory from source to destination")
+                yield Button("Set Source", id="set_source", tooltip="Set the selected file/directory as source for transfer")
+                yield Button("Set Destination", id="set_dest", tooltip="Set the selected file/directory as destination for transfer")
+                yield Button("Refresh", id="refresh", tooltip="Refresh the pod file tree")
+                yield Button("Cancel", id="cancel", tooltip="Cancel the transfer operation")
 
     def on_mount(self) -> None:
         dialog = self.query_one("#dialog", Grid)
