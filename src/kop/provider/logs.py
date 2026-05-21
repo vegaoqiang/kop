@@ -9,12 +9,20 @@ from kubernetes.client import CoreV1Api
 class PodLogStream:
     def __init__(self, response) -> None:
         self.response = response
+        self._stopped = False
+        self._lock = threading.Lock()
 
     def stop(self) -> None:
-        close = getattr(self.response, "close", None)
+        with self._lock:
+            if self._stopped:
+                return
+            self._stopped = True
+            response = self.response
+
+        close = getattr(response, "close", None)
         if callable(close):
             close()
-        release_conn = getattr(self.response, "release_conn", None)
+        release_conn = getattr(response, "release_conn", None)
         if callable(release_conn):
             release_conn()
 
@@ -114,7 +122,15 @@ class LogController:
     def stop(self, wait: bool = True, timeout: float = 0.5) -> None:
         self._stop_event.set()
         if self.pod_logs.w:
-            self.pod_logs.w.stop()
+            stream = self.pod_logs.w
+            if wait:
+                stream.stop()
+            else:
+                threading.Thread(
+                    target=stream.stop,
+                    daemon=True,
+                    name="pod-log-stream-stop",
+                ).start()
         if wait and self._thread and self._thread.is_alive():
             self._thread.join(timeout=timeout)
 

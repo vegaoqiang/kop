@@ -1,4 +1,5 @@
 import time
+import threading
 from unittest.mock import MagicMock
 
 from kop.provider.logs import LogController
@@ -84,6 +85,29 @@ def test_log_controller_stop_calls_watch_stop_when_present():
 
     assert controller._stop_event.is_set()
     pod_logs.w.stop.assert_called_once()
+
+
+def test_log_controller_stop_wait_false_stops_stream_in_background():
+    started = threading.Event()
+    release = threading.Event()
+
+    class BlockingStream:
+        def stop(self):
+            started.set()
+            release.wait(timeout=1)
+
+    pod_logs = FakePodLogs(lines=[])
+    pod_logs.w = BlockingStream()
+    controller = LogController(pod_logs)
+
+    start = time.monotonic()
+    controller.stop(wait=False)
+    elapsed = time.monotonic() - start
+
+    release.set()
+    assert controller._stop_event.is_set()
+    assert started.wait(timeout=0.2)
+    assert elapsed < 0.2
 
 
 def test_run_skips_empty_lines_and_collects_non_empty():
