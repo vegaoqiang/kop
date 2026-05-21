@@ -38,7 +38,8 @@ class PodFileEntry:
 
     @property
     def label(self) -> str:
-        suffix = "/" if self.is_dir else ""
+        # self.path == self.path.parent is possible when path is root "/"
+        suffix = "/" if self.is_dir and self.path != self.path.parent else ""
         return f"{self.path.name or '/'}{suffix}"
 
 
