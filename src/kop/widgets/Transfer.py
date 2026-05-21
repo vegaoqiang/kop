@@ -111,7 +111,7 @@ class FileTransferModal(ModalScreen[None]):
         #buttons {
             height: 3;
         }
-        #set_source, #set_dest, #refresh, #transfer, #cancel {
+        #set_source, #set_dest, #refresh, #transfer, #cancel-transfer {
             width: 1fr;
             margin-left: 1;
         }
@@ -179,7 +179,7 @@ class FileTransferModal(ModalScreen[None]):
                 yield Button("Set Source", id="set_source", tooltip="Set the selected file/directory as source for transfer")
                 yield Button("Set Destination", id="set_dest", tooltip="Set the selected file/directory as destination for transfer")
                 yield Button("Refresh", id="refresh", tooltip="Refresh the pod file tree")
-                yield Button("Cancel", id="cancel", tooltip="Cancel the transfer operation")
+                yield Button("Cancel", id="cancel-transfer", tooltip="Cancel the transfer operation")
 
     def on_mount(self) -> None:
         dialog = self.query_one("#dialog", Grid)
@@ -240,7 +240,7 @@ class FileTransferModal(ModalScreen[None]):
     def transfer_pressed(self) -> None:
         self.action_transfer()
 
-    @on(Button.Pressed, "#cancel")
+    @on(Button.Pressed, "#cancel-transfer")
     def cancel_pressed(self) -> None:
         self.action_close()
 
