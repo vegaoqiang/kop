@@ -73,7 +73,7 @@ class FileTransferModal(ModalScreen[None]):
             border: solid $secondary;
             background: $surface;
             grid-size: 1 4;
-            grid-rows: 1 1fr 8 3;
+            grid-rows: 1 1fr 6 3;
             padding: 0 1;
         }
         #title {
@@ -101,7 +101,7 @@ class FileTransferModal(ModalScreen[None]):
             height: 1fr;
         }
         #summary {
-            height: 8;
+            height: 6;
             padding: 0 1;
             border: solid $panel;
         }
@@ -115,12 +115,8 @@ class FileTransferModal(ModalScreen[None]):
             width: 1fr;
             margin-left: 1;
         }
-        #dest_name_container {
-            height: 3;
-        }
-        #dest_name_label {
-            height: 3;
-            content-align: center middle;
+        #dest_name {
+            margin-left: 1;
         }
     """
 
@@ -168,7 +164,7 @@ class FileTransferModal(ModalScreen[None]):
                 yield Static("Destination: -", id="dest_label")
                 with Horizontal(id="dest_name_container"):
                     yield Label("Destination name (Optional):", id="dest_name_label")
-                    yield Input(placeholder="You can customize the destination name (Optional)", id="dest_name")
+                    yield Input(placeholder="You can customize the destination name (Optional)", id="dest_name", compact=True)
             with Horizontal(id="buttons"):
                 yield Button("Set Source", id="set_source")
                 yield Button("Set Destination", id="set_dest")
