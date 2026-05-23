@@ -61,6 +61,12 @@ Below the header is action tabs; you can use `Ctrl+[`  or `ctrl+]` to switch bet
 
 The middle section shows the current action workspace. Below are the keyboard shortcuts for actions within the workspace.
 
+## Transfer Files
+Transfer files allows users to transfer files between their local machine and their pod.
+
+![transfer files](images/guide/transfer.png)
+
+Please see the usage instructions: [Transfer Files](guide/Pods.md#transfer-files)
 
 ## Theme
 Kop uses Textual to build its user interface and includes multiple modern themes. Press `Ctrl+P` in Kop will directly bring up the theme list, allowing you to select any theme.

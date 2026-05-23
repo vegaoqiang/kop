@@ -3,6 +3,25 @@ from unittest.mock import MagicMock, patch
 from kop.provider.logs import PodLogs
 
 
+class FakeLogResponse:
+    def __init__(self, lines=None, raise_exc=None):
+        self.lines = lines or []
+        self.raise_exc = raise_exc
+        self.closed = False
+        self.released = False
+
+    def stream(self, decode_content=True):
+        if self.raise_exc:
+            raise self.raise_exc
+        yield from self.lines
+
+    def close(self):
+        self.closed = True
+
+    def release_conn(self):
+        self.released = True
+
+
 def test_log_params_builds_expected_payload():
     with patch("kop.provider.logs.CoreV1Api", return_value=MagicMock()):
         pod_logs = PodLogs(
@@ -53,14 +72,10 @@ def test_read_logs_calls_k8s_api():
 
 def test_watch_logs_yields_lines_and_stops():
     fake_api = MagicMock()
+    fake_response = FakeLogResponse(["l1", "l2", "l3"])
+    fake_api.read_namespaced_pod_log.return_value = fake_response
 
-    fake_watch = MagicMock()
-    fake_watch.stream.return_value = iter(["l1", "l2", "l3"])
-
-    with (
-        patch("kop.provider.logs.CoreV1Api", return_value=fake_api),
-        patch("kop.provider.logs.watch.Watch", return_value=fake_watch),
-    ):
+    with patch("kop.provider.logs.CoreV1Api", return_value=fake_api):
         pod_logs = PodLogs(
             api_client=MagicMock(),
             pod_name="pod",
@@ -70,19 +85,16 @@ def test_watch_logs_yields_lines_and_stops():
         lines = list(pod_logs.watch_logs())
 
     assert lines == ["l1", "l2", "l3"]
-    fake_watch.stop.assert_called_once()
+    assert fake_response.closed is True
+    assert fake_response.released is True
     assert pod_logs.w is None
 
 
 def test_watch_logs_passes_expected_stream_params():
     fake_api = MagicMock()
-    fake_watch = MagicMock()
-    fake_watch.stream.return_value = iter([])
+    fake_api.read_namespaced_pod_log.return_value = FakeLogResponse([])
 
-    with (
-        patch("kop.provider.logs.CoreV1Api", return_value=fake_api),
-        patch("kop.provider.logs.watch.Watch", return_value=fake_watch),
-    ):
+    with patch("kop.provider.logs.CoreV1Api", return_value=fake_api):
         pod_logs = PodLogs(
             api_client=MagicMock(),
             pod_name="pod-a",
@@ -91,8 +103,7 @@ def test_watch_logs_passes_expected_stream_params():
         )
         list(pod_logs.watch_logs(timestamps=True, tail_lines=7))
 
-    fake_watch.stream.assert_called_once_with(
-        fake_api.read_namespaced_pod_log,
+    fake_api.read_namespaced_pod_log.assert_called_once_with(
         name="pod-a",
         namespace="ns-a",
         container="c-a",
@@ -100,6 +111,7 @@ def test_watch_logs_passes_expected_stream_params():
         follow=True,
         tail_lines=7,
         previous=False,
+        _preload_content=False,
     )
 
 
@@ -119,13 +131,10 @@ def test_log_params_support_previous():
 
 def test_watch_logs_stops_and_resets_when_stream_raises():
     fake_api = MagicMock()
-    fake_watch = MagicMock()
-    fake_watch.stream.side_effect = RuntimeError("stream failed")
+    fake_response = FakeLogResponse(raise_exc=RuntimeError("stream failed"))
+    fake_api.read_namespaced_pod_log.return_value = fake_response
 
-    with (
-        patch("kop.provider.logs.CoreV1Api", return_value=fake_api),
-        patch("kop.provider.logs.watch.Watch", return_value=fake_watch),
-    ):
+    with patch("kop.provider.logs.CoreV1Api", return_value=fake_api):
         pod_logs = PodLogs(
             api_client=MagicMock(),
             pod_name="pod",
@@ -135,5 +144,6 @@ def test_watch_logs_stops_and_resets_when_stream_raises():
         with pytest.raises(RuntimeError, match="stream failed"):
             list(pod_logs.watch_logs())
 
-    fake_watch.stop.assert_called_once()
+    assert fake_response.closed is True
+    assert fake_response.released is True
     assert pod_logs.w is None

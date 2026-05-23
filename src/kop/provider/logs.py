@@ -3,8 +3,37 @@ import threading
 import json
 import re
 from typing import Optional
-from kubernetes import watch
 from kubernetes.client import CoreV1Api
+
+
+class PodLogStream:
+    def __init__(self, response) -> None:
+        self.response = response
+        self._stopped = False
+        self._lock = threading.Lock()
+
+    def stop(self) -> None:
+        with self._lock:
+            if self._stopped:
+                return
+            self._stopped = True
+            response = self.response
+
+        close = getattr(response, "close", None)
+        if callable(close):
+            close()
+        release_conn = getattr(response, "release_conn", None)
+        if callable(release_conn):
+            release_conn()
+
+    def __iter__(self):
+        stream = getattr(self.response, "stream", None)
+        if callable(stream):
+            yield from stream(decode_content=True)
+            return
+        data = getattr(self.response, "data", None)
+        if data:
+            yield data
 
 
 
@@ -53,17 +82,17 @@ class PodLogs:
             )
 
     def watch_logs(self, timestamps: Optional[bool] = None, tail_lines: Optional[int] = 100):
-        self.w = w = watch.Watch()
+        response = self.core_api.read_namespaced_pod_log(
+            **self._log_params(timestamps=timestamps, follow=True, tail_lines=tail_lines),
+            _preload_content=False,
+        )
+        self.w = log_stream = PodLogStream(response)
         try:
-            for line in w.stream(
-                self.core_api.read_namespaced_pod_log,
-                **self._log_params(timestamps=timestamps, follow=True, tail_lines=tail_lines),
-            ):
+            for line in log_stream:
                 yield line
         finally:
-            if w:
-                w.stop()
-                self.w = None
+            log_stream.stop()
+            self.w = None
             
 
 class LogController:
@@ -93,7 +122,15 @@ class LogController:
     def stop(self, wait: bool = True, timeout: float = 0.5) -> None:
         self._stop_event.set()
         if self.pod_logs.w:
-            self.pod_logs.w.stop()
+            stream = self.pod_logs.w
+            if wait:
+                stream.stop()
+            else:
+                threading.Thread(
+                    target=stream.stop,
+                    daemon=True,
+                    name="pod-log-stream-stop",
+                ).start()
         if wait and self._thread and self._thread.is_alive():
             self._thread.join(timeout=timeout)
 

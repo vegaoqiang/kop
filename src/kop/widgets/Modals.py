@@ -567,7 +567,7 @@ class ActionPortForward(ModalScreen):
         #remote_port_select {
             width: 100%;
         }
-        #cancel, #start, #stop {
+        #cancel-forward, #start-forward, #stop-forward {
             width: 100%;
         }
         #action_buttons {
@@ -620,9 +620,9 @@ class ActionPortForward(ModalScreen):
             Select(options=port_options, value=initial_value, allow_blank=False, id="remote_port_select"),
             Label("Open in Browser"),
             Switch(id="open_in_browser", value=True),
-            Grid(Button("Cancel", variant="error", id="cancel"),
-                 Button("Stop", variant="warning", id="stop", disabled=True),
-                 Button("Start", variant="primary", id="start", disabled=False),
+            Grid(Button("Cancel", variant="error", id="cancel-forward"),
+                 Button("Stop", variant="warning", id="stop-forward", disabled=True),
+                 Button("Start", variant="primary", id="start-forward", disabled=False),
                  id="action_buttons",
                  ),
             id="dialog",
@@ -642,14 +642,14 @@ class ActionPortForward(ModalScreen):
     def action_start(self) -> None:
         self.on_start_press()
 
-    @on(Button.Pressed, "#cancel")
+    @on(Button.Pressed, "#cancel-forward")
     def on_cancel_press(self, event: Button.Pressed) -> None:
         self.app.pop_screen()
 
     def _update_action_buttons(self) -> None:
         remote_port_select = self.query_one("#remote_port_select", Select)
-        start_btn = self.query_one("#start", Button)
-        stop_btn = self.query_one("#stop", Button)
+        start_btn = self.query_one("#start-forward", Button)
+        stop_btn = self.query_one("#stop-forward", Button)
         selected = remote_port_select.value
         if selected == Select.NULL:
             start_btn.disabled = True
@@ -660,7 +660,7 @@ class ActionPortForward(ModalScreen):
         start_btn.disabled = is_forwarded or not self._is_local_port_valid()
         stop_btn.disabled = not is_forwarded
 
-    @on(Button.Pressed, "#start")
+    @on(Button.Pressed, "#start-forward")
     def on_start_press(self) -> None:
         local_port_input = self.query_one("#local_port", Input)
         open_in_browser = self.query_one("#open_in_browser", Switch).value
@@ -689,7 +689,7 @@ class ActionPortForward(ModalScreen):
             }
         )
 
-    @on(Button.Pressed, "#stop")
+    @on(Button.Pressed, "#stop-forward")
     def on_stop_press(self) -> None:
         remote_port_select = self.query_one("#remote_port_select", Select)
         selected = remote_port_select.value
@@ -721,7 +721,7 @@ class ActionPortForward(ModalScreen):
 
     @on(Input.Submitted, "#local_port")
     def submit_local_port(self) -> None:
-        if not self.query_one("#start", Button).disabled:
+        if not self.query_one("#start-forward", Button).disabled:
             self.on_start_press()
 
 

@@ -10,6 +10,7 @@ Available shortcuts for Pod-related operations are shown in the Footer area at t
 | `c` | Create Pods |
 | `d` | Delete Pod |
 | `e` | Edit Pod |
+| `t` | Transfer files |
 | `f` | Port Forward |
 | `l` | Pod Logs |
 | `n` | Next Page |
@@ -83,6 +84,23 @@ Edits the Pod YAML configuration and submits changes.
 - Not all fields can be updated online. Changes to immutable fields are rejected by the Kubernetes API.
 - If an update fails, adjust based on the error message and retry.
 - `Edit Pod` opens in the `Action Workspace`.
+
+### Transfer Files
+Transfer files allows users to transfer files between their local machine and their pod.
+
+> The `Transfer files` function requires the container to contain the `tar` utility; otherwise, it will not be able to transfer directories and only supports transferring single files.
+
+**Steps:**
+
+1. In the left navigation, move the cursor to `Pods` or enter the `Pods` resource page.
+2. Move the cursor to the target pod
+3. Press the `t` key to open the Transfer dialog box.(If your pod contains multiple containers, please select one container.)
+4. In the `Transfer` dialog box, select the source file and destination path for this transfer.
+5. Click the `Transfer` button to start the transfer.
+
+![transfer files](../images/guide/transfer.png)
+
+> `Transfer` supports custom target filenames
 
 ### Port Forward
 Forwards a local port to a Pod port so you can access container services from your machine.
