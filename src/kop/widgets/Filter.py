@@ -490,6 +490,9 @@ class FilterModal(ModalScreen):
 
     def action_apply(self) -> None:
         filter_widget = self.query_one("#filter", Filter)
+        if not filter_widget.criteria:
+            self.dismiss(None)
+            return
         self.dismiss(
             {
                 "criteria": filter_widget.criteria,
