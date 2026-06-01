@@ -11,7 +11,7 @@ from textual.widgets import Footer, Header, Input, LoadingIndicator
 from textual.worker import get_current_worker
 from kop.widgets.SideMenu import SideMenu
 from kop.widgets.Panel import ResourcePanel
-from kop.widgets.Filter import FilterModal
+from kop.widgets.Filter import FilterCriteria, FilterModal
 from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.provider.client import KbsEndpoint
@@ -98,6 +98,7 @@ class ResourceView(Screen):
         self.resource_kind_name: Optional[str] = None
         self.page_index: int = 0
         self.resource_pages: dict[str, list[tuple[object, list, Optional[str], int]]] = {}
+        self.filter_criteria: list[FilterCriteria] = []
 
     def compose(self) -> ComposeResult: 
             yield Header()
@@ -470,11 +471,15 @@ class ResourceView(Screen):
             namespace_select = self.query_one("#namespace_select").focus()
             namespace_select.expanded = True
         if event.key == 'slash':
-            if self.app.focused.id == 'side_menu':
+            focused = self.app.focused
+            if focused and focused.id == 'side_menu':
                 self.query_one("#search_menu").focus()
             else:
                 self.app.push_screen(
-                    FilterModal(self.resource_type),
+                    FilterModal(
+                        self.resource_type,
+                        criteria=self.filter_criteria,
+                    ),
                     callback=self._apply_filter_result,
                 )
 
@@ -483,6 +488,7 @@ class ResourceView(Screen):
             return
         self.label_selector = result.get("label_selector")
         self.field_selector = result.get("field_selector")
+        self.filter_criteria = list(result.get("criteria") or [])
         filter_text = self._format_filter_text(
             self.label_selector,
             self.field_selector,
@@ -658,6 +664,7 @@ class ResourceView(Screen):
         if not self.keyword and (self.label_selector or self.field_selector):
             self.label_selector = None
             self.field_selector = None
+            self.filter_criteria = []
             if self.resource_type:
                 self._reset_resource_pagination(self.resource_type, self.namespace)
                 self._load_resource(self.resource_type, show_loading=True)

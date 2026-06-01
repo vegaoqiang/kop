@@ -226,6 +226,23 @@ class FilterRow(Static):
         value = self.query_one(selector, Select).value
         return "" if value == Select.NULL else str(value)
 
+    def load_criteria(self, criteria: FilterCriteria) -> None:
+        selector_type = self.query_one(".selector-type", Select)
+        selector_type.value = criteria.selector_type
+
+        operator = self.query_one(".selector-operator", Select)
+        if criteria.selector_type == "field":
+            operator.set_options(self.FIELD_OPERATOR_OPTIONS)
+            self.query_one(".selector-field-key", Select).value = criteria.key
+        else:
+            operator.set_options(self.LABEL_OPERATOR_OPTIONS)
+            self.query_one(".selector-key", Input).value = criteria.key
+
+        operator.value = criteria.operator
+        self.query_one(".selector-value", Input).value = ",".join(criteria.values)
+        self._update_key_widget()
+        self._update_value_state()
+
     def watch_resource_type(self, resource_type: str) -> None:
         try:
             field_key = self.query_one(".selector-field-key", Select)
@@ -272,15 +289,30 @@ class Filter(Static):
 
     resource_type = reactive("")
 
-    def __init__(self, resource_type: Optional[str] = None, **kwargs) -> None:
+    def __init__(
+        self,
+        resource_type: Optional[str] = None,
+        criteria: Optional[list[FilterCriteria]] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(**kwargs)
         self.resource_type = resource_type or ""
+        self.initial_criteria = criteria or []
 
     def compose(self) -> ComposeResult:
         with Vertical(id="filter_rows"):
-            yield FilterRow(resource_type=self.resource_type)
+            criteria = self.initial_criteria or [None]
+            for _item in criteria:
+                yield FilterRow(resource_type=self.resource_type)
         with Horizontal(id="filter_actions"):
             yield Button("+Add", variant="primary", id="filter_add", tooltip="Add a new filter condition")
+
+    def on_mount(self) -> None:
+        if self.initial_criteria:
+            rows = list(self.query(FilterRow))
+            for row, criteria in zip(rows, self.initial_criteria):
+                row.load_criteria(criteria)
+        self._update_remove_buttons()
 
     @on(Button.Pressed, "#filter_add")
     async def on_add_pressed(self, event: Button.Pressed) -> None:
@@ -301,9 +333,6 @@ class Filter(Static):
         event.stop()
         event.row.remove()
         self.call_after_refresh(self._after_row_removed)
-
-    def on_mount(self) -> None:
-        self._update_remove_buttons()
 
     def _after_row_removed(self) -> None:
         self._update_remove_buttons()
@@ -424,15 +453,25 @@ class FilterModal(ModalScreen):
         Binding("enter", "apply", "Apply", show=False),
     ]
 
-    def __init__(self, resource_type: Optional[str] = None, **kwargs) -> None:
+    def __init__(
+        self,
+        resource_type: Optional[str] = None,
+        criteria: Optional[list[FilterCriteria]] = None,
+        **kwargs,
+    ) -> None:
         super().__init__(**kwargs)
         self.resource_type = resource_type or ""
+        self.initial_criteria = criteria or []
 
     def compose(self) -> ComposeResult:
         yield Grid(
             Static("Filter Conditions", id="filter_title"),
             VerticalScroll(
-                Filter(resource_type=self.resource_type, id="filter"),
+                Filter(
+                    resource_type=self.resource_type,
+                    criteria=self.initial_criteria,
+                    id="filter",
+                ),
                 id="filter_controls"),
             Horizontal(
                 Button("Cancel", variant="default", id="filter_cancel"),
