@@ -4,6 +4,7 @@ from typing import Optional
 from textual import on
 from textual.app import ComposeResult
 from textual.binding import Binding
+from textual.css.query import NoMatches
 from textual.containers import Grid, Horizontal, Vertical, VerticalScroll
 from textual.message import Message
 from textual.reactive import reactive
@@ -49,6 +50,9 @@ class FilterRow(Static):
         }
         FilterRow .filter-value {
             width: 2fr;
+        }
+        FilterRow .remove-row {
+            width: 5;
         }
         FilterRow .-hidden {
             display: none;
@@ -146,6 +150,7 @@ class FilterRow(Static):
                 placeholder="value1,value2",
                 classes="selector-value filter-value",
             )
+            yield Button("-", variant="error", classes="remove-row")
 
     @on(Select.Changed, ".selector-type")
     def on_selector_type_changed(self, event: Select.Changed) -> None:
@@ -176,6 +181,11 @@ class FilterRow(Static):
     def on_input_changed(self, event: Input.Changed) -> None:
         event.stop()
         self.post_message(self.Changed().set_sender(self))
+
+    @on(Button.Pressed, ".remove-row")
+    def on_remove_pressed(self, event: Button.Pressed) -> None:
+        event.stop()
+        self.post_message(self.Remove(self).set_sender(self))
 
     def _update_value_state(self) -> None:
         value_input = self.query_one(".selector-value", Input)
@@ -234,6 +244,11 @@ class FilterRow(Static):
         def __init__(self) -> None:
             super().__init__()
 
+    class Remove(Message):
+        def __init__(self, row: "FilterRow") -> None:
+            super().__init__()
+            self.row = row
+
 
 class Filter(Static):
     """Builds Kubernetes label and field selectors from structured rows."""
@@ -264,7 +279,7 @@ class Filter(Static):
         with Vertical(id="filter_rows"):
             yield FilterRow(resource_type=self.resource_type)
         with Horizontal(id="filter_actions"):
-            yield Button("添加", variant="default", id="filter_add")
+            yield Button("+Add", variant="default", id="filter_add")
 
     @on(Button.Pressed, "#filter_add")
     async def on_add_pressed(self, event: Button.Pressed) -> None:
@@ -272,12 +287,35 @@ class Filter(Static):
         await self.query_one("#filter_rows", Vertical).mount(
             FilterRow(resource_type=self.resource_type)
         )
+        self._update_remove_buttons()
         self.post_changed()
 
     @on(FilterRow.Changed)
     def on_filter_row_changed(self, event: FilterRow.Changed) -> None:
         event.stop()
         self.post_changed()
+
+    @on(FilterRow.Remove)
+    def on_filter_row_remove(self, event: FilterRow.Remove) -> None:
+        event.stop()
+        event.row.remove()
+        self.call_after_refresh(self._after_row_removed)
+
+    def on_mount(self) -> None:
+        self._update_remove_buttons()
+
+    def _after_row_removed(self) -> None:
+        self._update_remove_buttons()
+        self.post_changed()
+
+    def _update_remove_buttons(self) -> None:
+        rows = list(self.query(FilterRow))
+        disable_remove = len(rows) <= 1
+        for row in rows:
+            try:
+                row.query_one(".remove-row", Button).disabled = disable_remove
+            except NoMatches:
+                continue
 
     def post_changed(self) -> None:
         self.post_message(
@@ -292,7 +330,10 @@ class Filter(Static):
     def criteria(self) -> list[FilterCriteria]:
         filters: list[FilterCriteria] = []
         for row in self.query(FilterRow):
-            criteria = row.to_criteria()
+            try:
+                criteria = row.to_criteria()
+            except NoMatches:
+                continue
             if criteria:
                 filters.append(criteria)
         return filters
@@ -361,7 +402,6 @@ class FilterModal(ModalScreen):
         #filter_controls {
             column-span: 2;
             row-span: 2;
-            height: auto;
             width: 1fr;
         }
         #filter_cancel, #filter_apply {
