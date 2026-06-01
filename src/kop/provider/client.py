@@ -156,9 +156,16 @@ class KbsEndpoint(KbsAuthLoader):
         self,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         endpoint = client.CoreV1Api(api_client=self.api_client)
-        return endpoint.list_namespace(limit=limit, _continue=continue_token)
+        return endpoint.list_namespace(
+            limit=limit,
+            _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
 
     def get_pod(self, name: str, namespace: str):
         endpoint = client.CoreV1Api(api_client=self.api_client)
@@ -176,9 +183,16 @@ class KbsEndpoint(KbsAuthLoader):
         self,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         endpoint = client.CoreV1Api(api_client=self.api_client)
-        return endpoint.list_node(limit=limit, _continue=continue_token)
+        return endpoint.list_node(
+            limit=limit,
+            _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
     
     def delete_node(self, name: str, **kwargs):
         endpoint = client.CoreV1Api(api_client=self.api_client)
@@ -240,7 +254,9 @@ class KbsEndpoint(KbsAuthLoader):
                          watch: bool = False, 
                          async_req: bool = False,
                          limit: Optional[int] = None,
-                         continue_token: Optional[str] = None):
+                         continue_token: Optional[str] = None,
+                         label_selector: Optional[str] = None,
+                         field_selector: Optional[str] = None):
         endpoint = client.AppsV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_deployment(
@@ -249,12 +265,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_deployment_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def get_deployment(self, name: str, namespace: str):
@@ -273,7 +293,9 @@ class KbsEndpoint(KbsAuthLoader):
                          watch: bool = False, 
                          async_req: bool = False,
                          limit: Optional[int] = None,
-                         continue_token: Optional[str] = None):
+                         continue_token: Optional[str] = None,
+                         label_selector: Optional[str] = None,
+                         field_selector: Optional[str] = None):
         endpoint = client.AppsV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_daemon_set(
@@ -282,12 +304,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_daemon_set_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def get_daemon_set(self, name: str, namespace: str):
@@ -307,7 +333,9 @@ class KbsEndpoint(KbsAuthLoader):
                            watch: bool = False, 
                            async_req: bool = False,
                            limit: Optional[int] = None,
-                           continue_token: Optional[str] = None):
+                           continue_token: Optional[str] = None,
+                           label_selector: Optional[str] = None,
+                           field_selector: Optional[str] = None):
         endpoint = client.AppsV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_stateful_set(
@@ -316,12 +344,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_stateful_set_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete_stateful_sets(self, name: str,
@@ -339,7 +371,9 @@ class KbsEndpoint(KbsAuthLoader):
                   watch: bool = False, 
                   async_req: bool = False,
                   limit: Optional[int] = None,
-                  continue_token: Optional[str] = None):
+                  continue_token: Optional[str] = None,
+                  label_selector: Optional[str] = None,
+                  field_selector: Optional[str] = None):
         endpoint = client.BatchV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_job(
@@ -348,12 +382,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_job_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete_jobs(self, name: str,
@@ -371,7 +409,9 @@ class KbsEndpoint(KbsAuthLoader):
                        watch: bool = False, 
                        async_req: bool = False,
                        limit: Optional[int] = None,
-                       continue_token: Optional[str] = None):
+                       continue_token: Optional[str] = None,
+                       label_selector: Optional[str] = None,
+                       field_selector: Optional[str] = None):
         endpoint = client.BatchV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_cron_job(
@@ -380,12 +420,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_cron_job_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_cron_jobs(self, name: str,
@@ -404,7 +448,9 @@ class KbsEndpoint(KbsAuthLoader):
                          watch: bool = False, 
                          async_req: bool = False,
                          limit: Optional[int] = None,
-                         continue_token: Optional[str] = None):
+                         continue_token: Optional[str] = None,
+                         label_selector: Optional[str] = None,
+                         field_selector: Optional[str] = None):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_config_map(
@@ -413,12 +459,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_config_map_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete_config_maps(self, name: str,
@@ -449,6 +499,8 @@ class KbsEndpoint(KbsAuthLoader):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         if namespace:
@@ -456,10 +508,14 @@ class KbsEndpoint(KbsAuthLoader):
                 namespace,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_secret_for_all_namespaces(
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete_secrets(self, name: str,
@@ -489,7 +545,9 @@ class KbsEndpoint(KbsAuthLoader):
                       watch: bool = False, 
                       async_req: bool = False,
                       limit: Optional[int] = None,
-                      continue_token: Optional[str] = None):
+                      continue_token: Optional[str] = None,
+                      label_selector: Optional[str] = None,
+                      field_selector: Optional[str] = None):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_service(
@@ -498,12 +556,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_service_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete_services(self, name: str,
@@ -563,7 +625,9 @@ class KbsEndpoint(KbsAuthLoader):
                             watch: bool = False, 
                             async_req: bool = False,
                             limit: Optional[int] = None,
-                            continue_token: Optional[str] = None):
+                            continue_token: Optional[str] = None,
+                            label_selector: Optional[str] = None,
+                            field_selector: Optional[str] = None):
         endpoint = client.DiscoveryV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_endpoint_slice(
@@ -572,12 +636,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_endpoint_slice_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_endpoint_slices(self, name: str,
@@ -639,7 +707,9 @@ class KbsEndpoint(KbsAuthLoader):
                        watch: bool = False, 
                        async_req: bool = False,
                        limit: Optional[int] = None,
-                       continue_token: Optional[str] = None):
+                       continue_token: Optional[str] = None,
+                       label_selector: Optional[str] = None,
+                       field_selector: Optional[str] = None):
         endpoint = client.NetworkingV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_ingress(
@@ -648,12 +718,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_ingress_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete_ingresses(self, name: str,
@@ -683,13 +757,17 @@ class KbsEndpoint(KbsAuthLoader):
                             watch: bool = False, 
                             async_req: bool = False,
                             limit: Optional[int] = None,
-                            continue_token: Optional[str] = None):
+                            continue_token: Optional[str] = None,
+                            label_selector: Optional[str] = None,
+                            field_selector: Optional[str] = None):
         endpoint = client.NetworkingV1Api(api_client=self.api_client)
         return endpoint.list_ingress_class(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_ingressclasses(self, name: str,
@@ -716,7 +794,9 @@ class KbsEndpoint(KbsAuthLoader):
                              watch: bool = False, 
                              async_req: bool = False,
                              limit: Optional[int] = None,
-                             continue_token: Optional[str] = None):
+                             continue_token: Optional[str] = None,
+                             label_selector: Optional[str] = None,
+                             field_selector: Optional[str] = None):
         endpoint = client.NetworkingV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_network_policy(
@@ -725,12 +805,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_network_policy_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_networkpolicies(self, name: str,
@@ -760,13 +844,17 @@ class KbsEndpoint(KbsAuthLoader):
                                watch: bool = False, 
                                async_req: bool = False,
                                limit: Optional[int] = None,
-                               continue_token: Optional[str] = None):
+                               continue_token: Optional[str] = None,
+                               label_selector: Optional[str] = None,
+                               field_selector: Optional[str] = None):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         return endpoint.list_persistent_volume(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_persistentvolumes(self, name: str,
@@ -793,7 +881,9 @@ class KbsEndpoint(KbsAuthLoader):
                                     watch: bool = False, 
                                     async_req: bool = False,
                                     limit: Optional[int] = None,
-                                    continue_token: Optional[str] = None):
+                                    continue_token: Optional[str] = None,
+                                    label_selector: Optional[str] = None,
+                                    field_selector: Optional[str] = None):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_persistent_volume_claim(
@@ -802,12 +892,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_persistent_volume_claim_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_persistentvolumeclaims(self, name: str,
@@ -837,13 +931,17 @@ class KbsEndpoint(KbsAuthLoader):
                             watch: bool = False, 
                             async_req: bool = False,
                             limit: Optional[int] = None,
-                            continue_token: Optional[str] = None):
+                            continue_token: Optional[str] = None,
+                            label_selector: Optional[str] = None,
+                            field_selector: Optional[str] = None):
         endpoint = client.StorageV1Api(api_client=self.api_client)
         return endpoint.list_storage_class(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_storageclasses(self, name: str,
@@ -870,7 +968,9 @@ class KbsEndpoint(KbsAuthLoader):
                              watch: bool = False, 
                              async_req: bool = False,
                              limit: Optional[int] = None,
-                             continue_token: Optional[str] = None):
+                             continue_token: Optional[str] = None,
+                             label_selector: Optional[str] = None,
+                             field_selector: Optional[str] = None):
         endpoint = client.CoreV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_service_account(
@@ -879,12 +979,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_service_account_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_serviceaccounts(self, name: str,
@@ -934,7 +1038,9 @@ class KbsEndpoint(KbsAuthLoader):
                    watch: bool = False, 
                    async_req: bool = False,
                    limit: Optional[int] = None,
-                   continue_token: Optional[str] = None):
+                   continue_token: Optional[str] = None,
+                   label_selector: Optional[str] = None,
+                   field_selector: Optional[str] = None):
         endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_role(
@@ -943,12 +1049,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_role_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_roles(self, name: str,
@@ -978,13 +1088,17 @@ class KbsEndpoint(KbsAuthLoader):
                            watch: bool = False, 
                            async_req: bool = False,
                            limit: Optional[int] = None,
-                           continue_token: Optional[str] = None):
+                           continue_token: Optional[str] = None,
+                           label_selector: Optional[str] = None,
+                           field_selector: Optional[str] = None):
         endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
         return endpoint.list_cluster_role(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_cluster_roles(self, name: str,
@@ -1012,7 +1126,9 @@ class KbsEndpoint(KbsAuthLoader):
                            watch: bool = False, 
                            async_req: bool = False,
                            limit: Optional[int] = None,
-                           continue_token: Optional[str] = None):
+                           continue_token: Optional[str] = None,
+                           label_selector: Optional[str] = None,
+                           field_selector: Optional[str] = None):
         endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
         if namespace:
             return endpoint.list_namespaced_role_binding(
@@ -1021,12 +1137,16 @@ class KbsEndpoint(KbsAuthLoader):
                 async_req=async_req,
                 limit=limit,
                 _continue=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         return endpoint.list_role_binding_for_all_namespaces(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_role_bindings(self, name: str,
@@ -1056,13 +1176,17 @@ class KbsEndpoint(KbsAuthLoader):
                                    watch: bool = False, 
                                    async_req: bool = False,
                                    limit: Optional[int] = None,
-                                   continue_token: Optional[str] = None):
+                                   continue_token: Optional[str] = None,
+                                   label_selector: Optional[str] = None,
+                                   field_selector: Optional[str] = None):
         endpoint = client.RbacAuthorizationV1Api(api_client=self.api_client)
         return endpoint.list_cluster_role_binding(
             watch=watch,
             async_req=async_req,
             limit=limit,
             _continue=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete_cluster_role_bindings(self, name: str,
