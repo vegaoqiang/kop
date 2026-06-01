@@ -3,9 +3,11 @@ from typing import Optional
 
 from textual import on
 from textual.app import ComposeResult
-from textual.containers import Horizontal, Vertical
+from textual.binding import Binding
+from textual.containers import Grid, Horizontal, Vertical, VerticalScroll
 from textual.message import Message
 from textual.reactive import reactive
+from textual.screen import ModalScreen
 from textual.widgets import Button, Input, Select, Static
 
 
@@ -328,3 +330,98 @@ class Filter(Static):
             self.criteria = criteria
             self.label_selector = label_selector
             self.field_selector = field_selector
+
+
+class FilterModal(ModalScreen):
+    """Modal wrapper for editing Kubernetes selectors."""
+
+    DEFAULT_CSS = """
+        FilterModal {
+            align: center middle;
+        }
+        #filter_dialog {
+            grid-size: 2 4;
+            grid-gutter: 0 1;
+            grid-rows: 1fr 3fr 1fr;
+            padding: 0 1;
+            width: 50%;
+            height: 23;
+            max-height: 50%;
+            border: solid $secondary;
+            background: $surface;
+        }
+        #filter_title {
+            column-span: 2;
+            row-span: 1;
+            height: 3;
+            width: 1fr;
+            content-align: center middle;
+            text-style: bold;
+        }
+        #filter_controls {
+            column-span: 2;
+            row-span: 2;
+            height: auto;
+            width: 1fr;
+        }
+        #filter_cancel, #filter_apply {
+            width: 1fr;
+            height: 3;
+            margin-left: 1;
+        }
+        #button_group {
+            width: 1fr;
+            height: 3;
+            row-span: 1;
+        }
+    """
+
+    BINDINGS = [
+        Binding("escape", "close", "Cancel", show=False),
+        Binding("enter", "apply", "Apply", show=False),
+    ]
+
+    def __init__(self, resource_type: Optional[str] = None, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.resource_type = resource_type or ""
+
+    def compose(self) -> ComposeResult:
+        yield Grid(
+            Static("Filter", id="filter_title"),
+            VerticalScroll(
+                Filter(resource_type=self.resource_type, id="filter"),
+                id="filter_controls"),
+            Horizontal(
+                Button("Cancel", variant="default", id="filter_cancel"),
+                Button("Apply", variant="default", id="filter_apply"),
+                id="button_group",
+            ),
+            id="filter_dialog",
+        )
+
+    def on_mount(self) -> None:
+        dialog = self.query_one("#filter_dialog", Grid)
+        dialog.border_subtitle = "ESC to Cancel • Enter to Apply"
+
+    def action_close(self) -> None:
+        self.app.pop_screen()
+
+    def action_apply(self) -> None:
+        filter_widget = self.query_one("#filter", Filter)
+        self.dismiss(
+            {
+                "criteria": filter_widget.criteria,
+                "label_selector": filter_widget.label_selector,
+                "field_selector": filter_widget.field_selector,
+            }
+        )
+
+    @on(Button.Pressed, "#filter_cancel")
+    def on_cancel_pressed(self, event: Button.Pressed) -> None:
+        event.stop()
+        self.action_close()
+
+    @on(Button.Pressed, "#filter_apply")
+    def on_apply_pressed(self, event: Button.Pressed) -> None:
+        event.stop()
+        self.action_apply()
