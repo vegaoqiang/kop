@@ -119,8 +119,17 @@ class ResourcePanel(Static):
         event.stop()
         if self._setting_search_value:
             return
+        if self.search_timer:
+            self.search_timer.stop()
+            self.search_timer = None
+
         def _post_event() -> None:
             self.post_message(self.SearchResource(query=event.value).set_sender(self))
+
+        self.search_timer = self.set_timer(
+            self.debounce_time,
+            _post_event,
+        )
 
     @on(Click, "#search_input")
     def on_search_input_click(self, event: Click) -> None:

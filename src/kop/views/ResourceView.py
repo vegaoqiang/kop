@@ -1,3 +1,4 @@
+import re
 from queue import Queue, Empty
 from threading import Thread
 from dataclasses import replace
@@ -514,6 +515,30 @@ class ResourceView(Screen):
             parts.append(f"field:{field_selector}")
         return " ".join(parts)
 
+    def _parse_filter_text(self, text: str) -> tuple[Optional[str], Optional[str]]:
+        text = text.strip()
+        if not text:
+            return None, None
+
+        matches = list(re.finditer(r"(?:^|\s)(label|field):", text))
+        if not matches:
+            raise ValueError("Filter must start with label: or field:.")
+
+        selectors: dict[str, str] = {}
+        for index, match in enumerate(matches):
+            selector_type = match.group(1)
+            value_start = match.end()
+            value_end = matches[index + 1].start() if index + 1 < len(matches) else len(text)
+            selector = text[value_start:value_end].strip()
+            if selector:
+                selectors[selector_type] = selector
+
+        label_selector = selectors.get("label")
+        field_selector = selectors.get("field")
+        if not label_selector and not field_selector:
+            raise ValueError("Filter selector is empty.")
+        return label_selector, field_selector
+
     def action_next_page(self) -> None:
         if not self.resource_type or isinstance(self.app.focused, Input):
             return
@@ -663,14 +688,32 @@ class ResourceView(Screen):
 
     async def on_resource_panel_search_resource(self, event: ResourcePanel.SearchResource) -> None:
         event.stop()
-        self.keyword = event.query
-        if not self.keyword and (self.label_selector or self.field_selector):
+        query = event.query.strip()
+        if not query:
             self.label_selector = None
             self.field_selector = None
             self.filter_criteria = []
             if self.resource_type:
                 self._reset_resource_pagination(self.resource_type, self.namespace)
                 self._load_resource(self.resource_type, show_loading=True)
+            return
+
+        try:
+            label_selector, field_selector = self._parse_filter_text(query)
+        except ValueError as exc:
+            self.notify(str(exc), severity="warning")
+            return
+
+        if label_selector == self.label_selector and field_selector == self.field_selector:
+            return
+
+        self.keyword = None
+        self.label_selector = label_selector
+        self.field_selector = field_selector
+        self.filter_criteria = []
+        if self.resource_type:
+            self._reset_resource_pagination(self.resource_type, self.namespace)
+            self._load_resource(self.resource_type, show_loading=True)
 
     async def on_resource_panel_open_filter(self, event: ResourcePanel.OpenFilter) -> None:
         event.stop()
