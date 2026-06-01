@@ -52,7 +52,7 @@ class FilterRow(Static):
             width: 2fr;
         }
         FilterRow .remove-row {
-            width: 5;
+            width: auto;
         }
         FilterRow .-hidden {
             display: none;
@@ -150,7 +150,7 @@ class FilterRow(Static):
                 placeholder="value1,value2",
                 classes="selector-value filter-value",
             )
-            yield Button("-", variant="error", classes="remove-row")
+            yield Button("-", variant="error", classes="remove-row", tooltip="Remove this filter condition")
 
     @on(Select.Changed, ".selector-type")
     def on_selector_type_changed(self, event: Select.Changed) -> None:
@@ -266,6 +266,7 @@ class Filter(Static):
         }
         #filter_add {
             width: auto;
+            margin-left: 1;
         }
     """
 
@@ -279,7 +280,7 @@ class Filter(Static):
         with Vertical(id="filter_rows"):
             yield FilterRow(resource_type=self.resource_type)
         with Horizontal(id="filter_actions"):
-            yield Button("+Add", variant="default", id="filter_add")
+            yield Button("+Add", variant="primary", id="filter_add", tooltip="Add a new filter condition")
 
     @on(Button.Pressed, "#filter_add")
     async def on_add_pressed(self, event: Button.Pressed) -> None:
@@ -384,7 +385,7 @@ class FilterModal(ModalScreen):
             grid-size: 2 4;
             grid-gutter: 0 1;
             grid-rows: 1fr 3fr 1fr;
-            padding: 0 1;
+            # padding: 0 1;
             width: 50%;
             height: 23;
             max-height: 50%;
@@ -398,6 +399,7 @@ class FilterModal(ModalScreen):
             width: 1fr;
             content-align: center middle;
             text-style: bold;
+            color: $block-cursor-background;
         }
         #filter_controls {
             column-span: 2;
@@ -427,7 +429,7 @@ class FilterModal(ModalScreen):
 
     def compose(self) -> ComposeResult:
         yield Grid(
-            Static("Filter", id="filter_title"),
+            Static("Filter Conditions", id="filter_title"),
             VerticalScroll(
                 Filter(resource_type=self.resource_type, id="filter"),
                 id="filter_controls"),
