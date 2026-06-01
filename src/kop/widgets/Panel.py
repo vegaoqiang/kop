@@ -89,13 +89,13 @@ class ResourcePanel(Static):
                             allow_blank=True, 
                             id="namespace_select")
             with Horizontal():
-                yield Label("Search", id="search_label")
-                yield Input(placeholder=f"Press / to search {self.resource_type} 🔍", id="search_input")
+                yield Label("Filters", id="search_label")
+                yield Input(placeholder=f"Press / to filter {self.resource_type} 🔍", id="search_input")
 
 
     def watch_resource_type(self, resource_type: str) -> None:
        self.query_one("#resource_type", Label).update(resource_type)
-       self.query_one("#search_input", Input).placeholder = f"Press / to search {resource_type} 🔍"
+       self.query_one("#search_input", Input).placeholder = f"Press / to filter {resource_type} 🔍"
 
     def watch_resource_count(self, resource_count: int) -> None:
        self.query_one("#resource_count", Label).update(f" ({resource_count} items)")
