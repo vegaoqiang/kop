@@ -11,6 +11,7 @@ from textual.widgets import Footer, Header, Input, LoadingIndicator
 from textual.worker import get_current_worker
 from kop.widgets.SideMenu import SideMenu
 from kop.widgets.Panel import ResourcePanel
+from kop.widgets.Filter import FilterModal
 from kop.registry import ResourceRegistry
 from kop.factory import *
 from kop.provider.client import KbsEndpoint
@@ -71,6 +72,8 @@ class ResourceView(Screen):
 
     # keyword to filter resource
     keyword: Optional[str] = None
+    label_selector: Optional[str] = None
+    field_selector: Optional[str] = None
 
     # fetched resource
     data: Optional[object] = None
@@ -117,8 +120,23 @@ class ResourceView(Screen):
         if hasattr(self, "timer"):
             self.timer.resume()
 
-    def _resource_cache_key(self, resource_type: str, namespace: Optional[str]) -> str:
-        return f"{resource_type}:{namespace or '__all_namespaces__'}"
+    def _resource_cache_key(
+        self,
+        resource_type: str,
+        namespace: Optional[str],
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
+    ) -> str:
+        label_selector = self.label_selector if label_selector is None else label_selector
+        field_selector = self.field_selector if field_selector is None else field_selector
+        return ":".join(
+            (
+                resource_type,
+                namespace or "__all_namespaces__",
+                label_selector or "__no_label_selector__",
+                field_selector or "__no_field_selector__",
+            )
+        )
 
     def _reset_resource_pagination(self, resource_type: str, namespace: Optional[str]) -> None:
         self.page_index = 0
@@ -179,6 +197,8 @@ class ResourceView(Screen):
         namespace: Optional[str],
         keyword: Optional[str],
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ) -> Tuple[Optional[BaseFactory], Optional[object], list, int]:
         factory_cls = ResourceRegistry.get_factory(resource_type)
         if not factory_cls:
@@ -189,13 +209,14 @@ class ResourceView(Screen):
                 namespace=namespace,
                 limit=self._get_page_size(),
                 continue_token=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         except TypeError:
             data = factory.fetch(namespace=namespace)
-        filtered = factory.filter(data, keyword) if keyword else data
-        cleaned = factory.clean(filtered)
+        cleaned = factory.clean(data)
         cleaned.sort(key=lambda vm: vm.name)
-        return factory, data, cleaned, len(filtered.items)
+        return factory, data, cleaned, len(data.items)
 
     def _fetch_resource_with_timeout(
         self,
@@ -204,6 +225,8 @@ class ResourceView(Screen):
         keyword: Optional[str],
         timeout: float,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ) -> Tuple[Optional[BaseFactory], Optional[object], list, int]:
         """Run kubernetes fetch in a daemon thread so app shutdown isn't blocked by stuck API calls."""
         result: Queue[Tuple[str, object]] = Queue(maxsize=1)
@@ -218,6 +241,8 @@ class ResourceView(Screen):
                             namespace,
                             keyword,
                             continue_token=continue_token,
+                            label_selector=label_selector,
+                            field_selector=field_selector,
                         ),
                     )
                 )
@@ -264,10 +289,14 @@ class ResourceView(Screen):
         factory: Optional[BaseFactory],
         data: Optional[object],
         keyword: Optional[str],
+        label_selector: Optional[str],
+        field_selector: Optional[str],
         cleaned: list,
         resource_count: int,
     ) -> None:
         if request_id != self._resource_request_id:
+            return
+        if label_selector != self.label_selector or field_selector != self.field_selector:
             return
         self._set_loading(False)
         if not factory or data is None:
@@ -275,13 +304,13 @@ class ResourceView(Screen):
 
         self.FACTORY_CACHE = factory
         self.data = data
-        if keyword != self.keyword:
-            filtered = factory.filter(data, self.keyword) if self.keyword else data
-            cleaned = factory.clean(filtered)
-            cleaned.sort(key=lambda vm: vm.name)
-            resource_count = len(filtered.items)
         next_token = getattr(getattr(data, "metadata", None), "_continue", None)
-        cache_key = self._resource_cache_key(resource_type, namespace)
+        cache_key = self._resource_cache_key(
+            resource_type,
+            namespace,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
         pages = self.resource_pages.setdefault(cache_key, [])
         page_entry = (data, cleaned, next_token, resource_count)
         if page_index < len(pages):
@@ -317,6 +346,8 @@ class ResourceView(Screen):
         resource_type: str,
         namespace: Optional[str],
         keyword: Optional[str],
+        label_selector: Optional[str],
+        field_selector: Optional[str],
         continue_token: Optional[str],
         page_index: int,
     ) -> None:
@@ -328,6 +359,8 @@ class ResourceView(Screen):
                 keyword,
                 timeout=self.RESOURCE_FETCH_TIMEOUT,
                 continue_token=continue_token,
+                label_selector=label_selector,
+                field_selector=field_selector,
             )
         except Exception as e:
             if not worker.is_cancelled:
@@ -344,6 +377,8 @@ class ResourceView(Screen):
             factory,
             data,
             keyword,
+            label_selector,
+            field_selector,
             cleaned,
             resource_count,
         )
@@ -357,6 +392,8 @@ class ResourceView(Screen):
     ) -> None:
         self._resource_request_id += 1
         request_id = self._resource_request_id
+        label_selector = self.label_selector
+        field_selector = self.field_selector
         if show_loading:
             self._set_loading(True)
         self._load_resource_worker(
@@ -364,6 +401,8 @@ class ResourceView(Screen):
             resource_type,
             self.namespace,
             self.keyword,
+            label_selector,
+            field_selector,
             continue_token,
             page_index,
         )
@@ -377,17 +416,14 @@ class ResourceView(Screen):
             return False
         if not self.FACTORY_CACHE:
             return False
-        data, _cleaned, _continue_token, _resource_count = pages[page_index]
+        data, cleaned, _continue_token, resource_count = pages[page_index]
         self.data = data
         self.page_index = page_index
-        filtered = self.FACTORY_CACHE.filter(data, self.keyword) if self.keyword else data
-        cleaned = self.FACTORY_CACHE.clean(filtered)
-        cleaned.sort(key=lambda vm: vm.name)
         if self.table:
             self.table.raw_data = data.items
             self.table.data = cleaned
         if self.panel:
-            self.panel.resource_count = len(filtered.items)
+            self.panel.resource_count = resource_count
         self.refresh_bindings()
         return True
         
@@ -437,7 +473,37 @@ class ResourceView(Screen):
             if self.app.focused.id == 'side_menu':
                 self.query_one("#search_menu").focus()
             else:
-                self.query_one("#search_input").focus()
+                self.app.push_screen(
+                    FilterModal(self.resource_type),
+                    callback=self._apply_filter_result,
+                )
+
+    def _apply_filter_result(self, result: Optional[dict]) -> None:
+        if not result or not self.resource_type:
+            return
+        self.label_selector = result.get("label_selector")
+        self.field_selector = result.get("field_selector")
+        filter_text = self._format_filter_text(
+            self.label_selector,
+            self.field_selector,
+        )
+        if self.panel:
+            self.panel.set_search_text(filter_text)
+        self.keyword = None
+        self._reset_resource_pagination(self.resource_type, self.namespace)
+        self._load_resource(self.resource_type, show_loading=True)
+
+    def _format_filter_text(
+        self,
+        label_selector: Optional[str],
+        field_selector: Optional[str],
+    ) -> str:
+        parts: list[str] = []
+        if label_selector:
+            parts.append(f"label:{label_selector}")
+        if field_selector:
+            parts.append(f"field:{field_selector}")
+        return " ".join(parts)
 
     def action_next_page(self) -> None:
         if not self.resource_type or isinstance(self.app.focused, Input):
@@ -589,18 +655,12 @@ class ResourceView(Screen):
     async def on_resource_panel_search_resource(self, event: ResourcePanel.SearchResource) -> None:
         event.stop()
         self.keyword = event.query
-        if not self.data or not self.table:
-            return
-        if not self.keyword:
-            # keyword will be deleted on input
-            filtered = self.data
-        else:
-            filtered = self.FACTORY_CACHE.filter(self.data, self.keyword)
-        
-        cleaned = self.FACTORY_CACHE.clean(filtered)
-        cleaned.sort(key=lambda vm: vm.name)
-        self.table.data = cleaned
-        self.panel.resource_count = len(filtered.items)
+        if not self.keyword and (self.label_selector or self.field_selector):
+            self.label_selector = None
+            self.field_selector = None
+            if self.resource_type:
+                self._reset_resource_pagination(self.resource_type, self.namespace)
+                self._load_resource(self.resource_type, show_loading=True)
 
     def action_home(self) -> None:
         """

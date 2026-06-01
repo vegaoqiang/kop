@@ -50,6 +50,8 @@ class BaseFactory(ABC):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         """fetch raw data from kube api"""
         raise NotImplementedError
@@ -216,8 +218,15 @@ class NodeFacotry(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
-        return self.endpoint.list_nodes(limit=limit, continue_token=continue_token)
+        return self.endpoint.list_nodes(
+            limit=limit,
+            continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
 
     def delete(self, name, namespace = None):
         return self.endpoint.delete_node(name=name)
@@ -310,12 +319,16 @@ class PodFacotry(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         # client = self._client.core_v1()
         return self.endpoint.list_pods(
             namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -418,11 +431,15 @@ class DeploymentFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         # client = self._client.apps_v1()
         return self.endpoint.list_deployments(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -502,10 +519,14 @@ class DaemonSetFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_daemon_sets(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
 
     def delete(self, name, namespace: str = "default"):
@@ -578,10 +599,14 @@ class StatefulSetFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_stateful_sets(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -639,10 +664,14 @@ class JobFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_jobs(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -714,10 +743,14 @@ class CronJobFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_cron_jobs(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -777,10 +810,14 @@ class ConfigMapFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_config_maps(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -843,10 +880,14 @@ class SecretFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_secrets(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -921,10 +962,14 @@ class ServiceFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_services(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -994,10 +1039,14 @@ class EndpointFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_endpoints(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -1066,10 +1115,14 @@ class EndpointSliceFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_endpoint_slices(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -1139,10 +1192,14 @@ class IngressFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_ingresses(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -1217,8 +1274,15 @@ class IngressClassFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
-        return self.endpoint.list_ingressclasses(limit=limit, continue_token=continue_token)
+        return self.endpoint.list_ingressclasses(
+            limit=limit,
+            continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
     
     def delete(self, name, namespace = None):
         return self.endpoint.delete_ingressclasses(name=name)
@@ -1285,10 +1349,14 @@ class NetworkPolicyFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_networkpolicies(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -1358,8 +1426,15 @@ class PersistentVolumeFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
-        return self.endpoint.list_persistentvolumes(limit=limit, continue_token=continue_token)
+        return self.endpoint.list_persistentvolumes(
+            limit=limit,
+            continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
     
     def delete(self, name, namespace = None):
         return self.endpoint.delete_persistentvolumes(name=name)
@@ -1429,10 +1504,14 @@ class PersistentVolumeClaimFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_persistentvolumeclaims(namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -1500,8 +1579,15 @@ class StorageClassFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
-        return self.endpoint.list_storageclasses(limit=limit, continue_token=continue_token)
+        return self.endpoint.list_storageclasses(
+            limit=limit,
+            continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
     
     def delete(self, name, namespace = None):
         return self.endpoint.delete_storageclasses(name=name)
@@ -1563,8 +1649,15 @@ class NamespaceFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
-        return self.endpoint.list_namespaces(limit=limit, continue_token=continue_token)
+        return self.endpoint.list_namespaces(
+            limit=limit,
+            continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
     
     def delete(self, name, namespace = None):
         return self.endpoint.delete_namespaces(name=name)
@@ -1626,11 +1719,15 @@ class ServiceAccountFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_serviceaccounts(
             namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -1693,11 +1790,15 @@ class RoleFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_roles(
             namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -1760,8 +1861,15 @@ class ClusterRoleFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
-        return self.endpoint.list_cluster_roles(limit=limit, continue_token=continue_token)
+        return self.endpoint.list_cluster_roles(
+            limit=limit,
+            continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_cluster_roles(name=name, namespace=namespace)
@@ -1823,11 +1931,15 @@ class RoleBindingFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
         return self.endpoint.list_role_bindings(
             namespace=namespace,
             limit=limit,
             continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
         )
     
     def delete(self, name, namespace: str = "default"):
@@ -1890,8 +2002,15 @@ class ClusterRoleBindingFactory(BaseFactory):
         namespace: Optional[str] = None,
         limit: Optional[int] = None,
         continue_token: Optional[str] = None,
+        label_selector: Optional[str] = None,
+        field_selector: Optional[str] = None,
     ):
-        return self.endpoint.list_cluster_role_bindings(limit=limit, continue_token=continue_token)
+        return self.endpoint.list_cluster_role_bindings(
+            limit=limit,
+            continue_token=continue_token,
+            label_selector=label_selector,
+            field_selector=field_selector,
+        )
     
     def delete(self, name, namespace: str = "default"):
         return self.endpoint.delete_cluster_role_bindings(name=name, namespace=namespace)
