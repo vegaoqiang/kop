@@ -1,5 +1,6 @@
+from textual import on
 from textual.message import Message
-from textual.events import Mount
+from textual.events import Click, Mount
 from textual.reactive import Reactive
 from textual.app import ComposeResult
 from textual.css.query import NoMatches
@@ -129,6 +130,11 @@ class ResourcePanel(Static):
             self.debounce_time, 
             _post_event
             )
+
+    @on(Click, "#search_input")
+    def on_search_input_click(self, event: Click) -> None:
+        event.stop()
+        self.post_message(self.OpenFilter().set_sender(self))
         
     def _on_mount(self, event: Mount) -> None:
         self.post_message(self.RequireNamespace().set_sender(self))
@@ -187,4 +193,8 @@ class ResourcePanel(Static):
         def __init__(self, query: str) -> None:
             super().__init__()
             self.query = query
+
+    class OpenFilter(Message):
+        def __init__(self) -> None:
+            super().__init__()
         

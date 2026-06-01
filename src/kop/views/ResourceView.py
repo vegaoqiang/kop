@@ -475,13 +475,16 @@ class ResourceView(Screen):
             if focused and focused.id == 'side_menu':
                 self.query_one("#search_menu").focus()
             else:
-                self.app.push_screen(
-                    FilterModal(
-                        self.resource_type,
-                        criteria=self.filter_criteria,
-                    ),
-                    callback=self._apply_filter_result,
-                )
+                self._open_filter_modal()
+
+    def _open_filter_modal(self) -> None:
+        self.app.push_screen(
+            FilterModal(
+                self.resource_type,
+                criteria=self.filter_criteria,
+            ),
+            callback=self._apply_filter_result,
+        )
 
     def _apply_filter_result(self, result: Optional[dict]) -> None:
         if not result or not self.resource_type:
@@ -668,6 +671,10 @@ class ResourceView(Screen):
             if self.resource_type:
                 self._reset_resource_pagination(self.resource_type, self.namespace)
                 self._load_resource(self.resource_type, show_loading=True)
+
+    async def on_resource_panel_open_filter(self, event: ResourcePanel.OpenFilter) -> None:
+        event.stop()
+        self._open_filter_modal()
 
     def action_home(self) -> None:
         """
