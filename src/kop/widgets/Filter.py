@@ -382,15 +382,15 @@ class FilterModal(ModalScreen):
             align: center middle;
         }
         #filter_dialog {
-            grid-size: 2 4;
+            grid-size: 2 3;
             grid-gutter: 0 1;
-            grid-rows: 1fr 3fr 1fr;
-            # padding: 0 1;
+            grid-rows: 3 auto 3;
             width: 50%;
-            height: 23;
+            height: auto;
             max-height: 50%;
             border: solid $secondary;
             background: $surface;
+            padding-bottom: 0;
         }
         #filter_title {
             column-span: 2;
@@ -403,8 +403,9 @@ class FilterModal(ModalScreen):
         }
         #filter_controls {
             column-span: 2;
-            row-span: 2;
             width: 1fr;
+            height: auto;
+            max-height: 14;
         }
         #filter_cancel, #filter_apply {
             width: 1fr;
@@ -414,7 +415,7 @@ class FilterModal(ModalScreen):
         #button_group {
             width: 1fr;
             height: 3;
-            row-span: 1;
+            column-span: 2;
         }
     """
 
