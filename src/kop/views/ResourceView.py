@@ -760,6 +760,8 @@ class ResourceView(Screen):
         event.stop()
         query = event.query.strip()
         if not query:
+            if not self.label_selector and not self.field_selector and not self.filter_criteria:
+                return
             self.label_selector = None
             self.field_selector = None
             self.filter_criteria = []

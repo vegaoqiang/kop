@@ -66,7 +66,7 @@ class ResourcePanel(Static):
     # debounce search
     search_timer: Optional[Timer] = None
     debounce_time: float = 0.3
-    _setting_search_value: bool = False
+    _silent_search_value: Optional[str] = None
 
     BINDINGS = [
         Binding(key="tab", action="focus_table", show=False),
@@ -117,7 +117,8 @@ class ResourcePanel(Static):
 
     def on_input_changed(self, event: Input.Changed) -> None:
         event.stop()
-        if self._setting_search_value:
+        if self._silent_search_value == event.value:
+            self._silent_search_value = None
             return
         if self.search_timer:
             self.search_timer.stop()
@@ -174,11 +175,8 @@ class ResourcePanel(Static):
         if self.search_timer:
             self.search_timer.stop()
             self.search_timer = None
-        self._setting_search_value = True
-        try:
-            search_input.value = value
-        finally:
-            self._setting_search_value = False
+        self._silent_search_value = value
+        search_input.value = value
 
     class RequireNamespace(Message):
         def __init__(self) -> None:
