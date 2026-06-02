@@ -339,11 +339,20 @@ class Filter(Static):
         self.post_changed()
 
     def _update_remove_buttons(self) -> None:
+        """
+        when user open FilterModal first or agian after apply filter, there is only one FilterRow and it's empty,
+          should disable the remove button to prevent user remove the last empty row.
+          but when there are more than one FilterRow, or the only FilterRow is not empty, should enable the 
+          remove button. allow user clean the filter conditions.
+        """
         rows = list(self.query(FilterRow))
-        disable_remove = len(rows) <= 1
+        try:
+            single_empty_row = len(rows) == 1 and rows[0].to_criteria() is None
+        except NoMatches:
+            single_empty_row = False
         for row in rows:
             try:
-                row.query_one(".remove-row", Button).disabled = disable_remove
+                row.query_one(".remove-row", Button).disabled = single_empty_row
             except NoMatches:
                 continue
 
@@ -462,6 +471,7 @@ class FilterModal(ModalScreen):
         super().__init__(**kwargs)
         self.resource_type = resource_type or ""
         self.initial_criteria = criteria or []
+        self.had_initial_criteria = bool(criteria)
 
     def compose(self) -> ComposeResult:
         yield Grid(
@@ -490,12 +500,13 @@ class FilterModal(ModalScreen):
 
     def action_apply(self) -> None:
         filter_widget = self.query_one("#filter", Filter)
-        if not filter_widget.criteria:
+        criteria = filter_widget.criteria
+        if not criteria and not self.had_initial_criteria:
             self.dismiss(None)
             return
         self.dismiss(
             {
-                "criteria": filter_widget.criteria,
+                "criteria": criteria,
                 "label_selector": filter_widget.label_selector,
                 "field_selector": filter_widget.field_selector,
             }
