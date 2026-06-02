@@ -8,7 +8,7 @@ from textual.screen import Screen
 from textual.binding import Binding
 from textual.app import ComposeResult
 from textual.containers import Vertical, Horizontal
-from textual.widgets import Footer, Header, Input, LoadingIndicator
+from textual.widgets import Footer, Header, Input, LoadingIndicator, Static
 from textual.worker import get_current_worker
 from kop.widgets.SideMenu import SideMenu
 from kop.widgets.Panel import ResourcePanel
@@ -54,6 +54,13 @@ class ResourceView(Screen):
         }
         Footer {
             dock: bottom;
+        }
+        #resource_empty {
+            width: 1fr;
+            height: 1fr;
+            content-align: center middle;
+            text-align: center;
+            color: $text-muted;
         }
     """
 
@@ -270,6 +277,7 @@ class ResourceView(Screen):
         if is_loading:
             if self.table:
                 self.table.display = False
+            self._remove_empty_state()
             if not loading:
                 resource_container.mount(
                     LoadingIndicator(id="resource_loading"),
@@ -281,6 +289,41 @@ class ResourceView(Screen):
             loading.remove()
         if self.table:
             self.table.display = True
+
+    def _remove_empty_state(self) -> None:
+        resource_container = self.query_one("#resource_container", Vertical)
+        empty_state = next(iter(resource_container.query("#resource_empty")), None)
+        if empty_state:
+            empty_state.remove()
+
+    def _show_empty_state(
+        self,
+        resource_type: str,
+        namespace: Optional[str],
+        label_selector: Optional[str],
+        field_selector: Optional[str],
+    ) -> None:
+        resource_container = self.query_one("#resource_container", Vertical)
+        if self.table:
+            self.table.display = False
+
+        namespace_text = namespace or "All namespaces"
+        filter_text = self._format_filter_text(label_selector, field_selector) or "None"
+        kind_text = self.resource_kind_name or resource_type
+        message = (
+            f"No {kind_text} found.\n"
+            f"Namespace: {namespace_text}\n"
+            f"Filter: {filter_text or ''}"
+        )
+
+        empty_state = next(iter(resource_container.query("#resource_empty")), None)
+        if empty_state:
+            empty_state.update(message)
+            return
+        resource_container.mount(
+            Static(message, id="resource_empty"),
+            after=self.panel,
+        )
 
     def _apply_resource(
         self,
@@ -323,6 +366,13 @@ class ResourceView(Screen):
         self.page_index = page_index
         self.refresh_bindings()
 
+        if resource_count == 0:
+            self.panel.resource_count = 0
+            self._show_empty_state(resource_type, namespace, label_selector, field_selector)
+            return
+
+        self._remove_empty_state()
+
         if not self.table or self._table_resource_type != resource_type:
             self.table = table = factory.create_renderer(data)
             self._table_resource_type = resource_type
@@ -332,6 +382,7 @@ class ResourceView(Screen):
         else:
             self.table.raw_data = data.items
             self.table.data = cleaned
+            self.table.display = True
 
         self.panel.resource_count = resource_count
 
@@ -421,9 +472,28 @@ class ResourceView(Screen):
         data, cleaned, _continue_token, resource_count = pages[page_index]
         self.data = data
         self.page_index = page_index
-        if self.table:
+        if resource_count == 0:
+            if self.panel:
+                self.panel.resource_count = 0
+            self._show_empty_state(
+                self.resource_type,
+                self.namespace,
+                self.label_selector,
+                self.field_selector,
+            )
+            self.refresh_bindings()
+            return True
+        self._remove_empty_state()
+        if not self.table or self._table_resource_type != self.resource_type:
+            self.table = table = self.FACTORY_CACHE.create_renderer(data)
+            self._table_resource_type = self.resource_type
+            resource_container = self.query_one("#resource_container", Vertical)
+            resource_container.remove_children(TableRenderer)
+            resource_container.mount(table, after=self.panel)
+        else:
             self.table.raw_data = data.items
             self.table.data = cleaned
+            self.table.display = True
         if self.panel:
             self.panel.resource_count = resource_count
         self.refresh_bindings()
