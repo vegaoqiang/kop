@@ -41,6 +41,7 @@ classifiers = [
 dependencies = [
     "kubernetes>=33.1.0",
     "textual>=8.2.7",
+    "tree-sitter",
     "tree-sitter-yaml",
     "tree-sitter-bash",
     "tree-sitter-json",
