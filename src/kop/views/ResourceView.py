@@ -308,12 +308,12 @@ class ResourceView(Screen):
             self.table.display = False
 
         namespace_text = namespace or "All namespaces"
-        filter_text = self._format_filter_text(label_selector, field_selector) or "None"
+        filter_text = self._format_filter_text(label_selector, field_selector) or ""
         kind_text = self.resource_kind_name or resource_type
         message = (
             f"No {kind_text} found.\n"
             f"Namespace: {namespace_text}\n"
-            f"Filter: {filter_text or ''}"
+            f"Filter: {filter_text}"
         )
 
         empty_state = next(iter(resource_container.query("#resource_empty")), None)
