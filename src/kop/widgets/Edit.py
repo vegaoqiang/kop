@@ -66,7 +66,10 @@ class ResourceEdit(Static):
         #     f"{self.title} {self.resource.get('metadata', {}).get('name', 'Unknown')}",
         #     id="title",
         # )
-        yield TextArea.code_editor(language=self.language)
+        try:
+            yield TextArea.code_editor(language=self.language)
+        except Exception:
+            yield TextArea.code_editor(language=None)
         yield Horizontal(
             Button(label="Cancel", variant="default", id="resourceedit-cancel"),
             Button(label="Save", variant="default", id="resourceedit-save"),
