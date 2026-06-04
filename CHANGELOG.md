@@ -1,3 +1,10 @@
+# v0.4.1
+
+## Bug Fixes
+- Fixed: crash when tree-sitter is not installed or when editing documents of unknown format. 
+> Textual requires tree-sitter >= 0.25.0 which dropped support for Python 3.9. The TextArea falls back to plain text by design, rather than crashing programs where tree-sitter can't be installed.
+
+
 # v0.4.0
 ## New Features
 
