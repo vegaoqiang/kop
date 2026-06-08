@@ -14,7 +14,7 @@ kop requires Python 3.9 or later. For a better experience, recommend using the l
 
 All Linux distros come with a terminal emulator that can run kop.
 
-If you are using the Linux console (rather than a desktop environment), see [font-for-textual](https://github.com/jsatchell/font-for-textual) for details. 
+If you are using the Linux console (rather than a desktop environment), see [FAQ](faq.md#abnormal-display-on-linux-console) for details. 
 
 ### :material-apple: macOS
 
