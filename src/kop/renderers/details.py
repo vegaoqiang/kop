@@ -276,6 +276,7 @@ class DetailModalRenderer(ModalScreen):
             width: 40%;
             dock: right;
             height: 1fr;
+            scrollbar-size-vertical: 1;
         }
         DetailRule {
             padding-left: 1;
