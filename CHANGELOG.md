@@ -1,3 +1,7 @@
+# v0.4.2
+## Improves
+- Change the `VerticalScroll` bar width of the `details` screen to 1, make the vertical scrollbar style of the modal look better.
+
 # v0.4.1
 
 ## Bug Fixes
